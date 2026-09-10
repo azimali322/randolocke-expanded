@@ -32,6 +32,12 @@
 // (RANDOMIZER_FLAG_ABILITIES): abilities are still randomized, just stably.
 #define RZ_ABILITY_STABLE_ACROSS_EVOLUTION   TRUE
 
+// If TRUE, trainers tagged `Boss: Yes` in trainers.party (gym leaders, the Elite Four,
+// the Champion, Magma/Aqua leaders and admins) are randomized like anyone else. Set to
+// FALSE to keep their hand-designed teams and real abilities as fixed landmarks in an
+// otherwise randomized game.
+#define RZ_RANDOMIZE_BOSS_TRAINERS           TRUE
+
 #define RANDOMIZER_MAX_TM           ITEM_TM50
 
 // Vars and features

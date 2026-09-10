@@ -150,9 +150,11 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
 
     enum Species species = trainerMon->species;
     #if RANDOMIZER_AVAILABLE == TRUE
-        // Boss trainers keep their designed team. TRAINER_NONE means the caller had no
-        // trainer id (debug/synthetic trainers), so leave those alone too.
-        if (!trainer->rzIsBossTrainer && trainer->rzTrainerId != TRAINER_NONE)
+        // `Boss: Yes` is only a label; RZ_RANDOMIZE_BOSS_TRAINERS decides whether it
+        // exempts anyone. TRAINER_NONE means the caller had no trainer id
+        // (debug/synthetic trainers), so those are always left alone.
+        if ((RZ_RANDOMIZE_BOSS_TRAINERS || !trainer->rzIsBossTrainer)
+         && trainer->rzTrainerId != TRAINER_NONE)
         {
             species = RandomizeTrainerMon(trainer->rzTrainerId, trainer->rzSlot,
                                           trainer->rzTotalMons, species);
@@ -161,7 +163,8 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
 
     CreateMon(mon, species, trainerMon->lvl, personality, trainer->otID);
     {
-        u8 cantRandomizeAbility = trainer->rzIsBossTrainer;
+        // Abilities follow the same rule as species.
+        u8 cantRandomizeAbility = (!RZ_RANDOMIZE_BOSS_TRAINERS && trainer->rzIsBossTrainer);
         SetMonData(mon, MON_DATA_CANT_RANDOMIZE_ABILITY, &cantRandomizeAbility);
     }
     if (trainerMon->nickname != NULL)
