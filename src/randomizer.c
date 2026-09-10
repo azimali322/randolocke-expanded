@@ -1,4 +1,6 @@
 #include "randomizer.h"
+#include "move.h"
+#include "constants/battle_move_effects.h"
 
 #if RANDOMIZER_AVAILABLE == TRUE
 #include "main.h"
@@ -97,6 +99,12 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
                 return FORCE_RANDOMIZE_ABILITIES;
             #else
                 return FlagGet(RANDOMIZER_FLAG_ABILITIES);
+            #endif
+        case RANDOMIZE_LEARNSET:
+            #ifdef FORCE_RANDOMIZE_LEARNSET
+                return FORCE_RANDOMIZE_LEARNSET;
+            #else
+                return FlagGet(RANDOMIZER_FLAG_LEARNSET);
             #endif
         default:
             return FALSE;
@@ -989,6 +997,157 @@ static enum Species GetAbilityFamilyRoot(enum Species species)
 }
 
 #endif // RZ_ABILITY_STABLE_ACROSS_EVOLUTION
+
+// --- Learnset randomization -------------------------------------------------
+// Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
+// 7 non-STAB damaging, with higher Base Power learned later within each damaging
+// group. Built on demand into an EWRAM buffer and cached by species, because
+// GetSpeciesLevelUpLearnset() is called from 18 places including the battle AI.
+
+static EWRAM_DATA struct LevelUpMove sRzLearnsetBuf[RZ_LEARNSET_SLOTS + 1] = {0};
+static EWRAM_DATA u16 sRzLearnsetSpecies = SPECIES_NONE;
+
+static const u8 sRzLearnsetLevels[RZ_LEARNSET_SLOTS] = RZ_LEARNSET_LEVELS;
+
+// Moves that would be unfair or nonsensical as a guaranteed level-up move.
+static bool32 IsMoveIllegalForLearnset(enum Move move)
+{
+    if (move == MOVE_NONE || move == MOVE_STRUGGLE)
+        return TRUE;
+    // EFFECT_PLACEHOLDER marks moves that are not implemented yet.
+    if (GetMoveEffect(move) == EFFECT_PLACEHOLDER)
+        return TRUE;
+    if (GetMoveEffect(move) == EFFECT_OHKO)
+        return TRUE;
+    return FALSE;
+}
+
+// Picks `count` moves into dest, choosing only moves accepted by `accept`.
+// Damaging groups are then sorted by Base Power so stronger moves come later.
+static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
+                        bool32 (*accept)(enum Move, enum Type, enum Type),
+                        enum Type t1, enum Type t2, bool32 sortByPower)
+{
+    u32 filled = 0;
+    u32 attempts = 0;
+
+    while (filled < count && attempts < 512)
+    {
+        enum Move move = RandomizerNextRange(state, MOVES_COUNT - 1) + 1;
+        u32 i;
+        bool32 dupe = FALSE;
+
+        attempts++;
+        if (IsMoveIllegalForLearnset(move) || !accept(move, t1, t2))
+            continue;
+        for (i = 0; i < filled; i++)
+        {
+            if (dest[i] == move)
+                dupe = TRUE;
+        }
+        if (dupe)
+            continue;
+        dest[filled++] = move;
+    }
+
+    // Pad if the pool was too small to fill every slot.
+    while (filled < count)
+        dest[filled++] = MOVE_TACKLE;
+
+    if (sortByPower)
+    {
+        u32 i, j;
+
+        for (i = 1; i < count; i++)
+        {
+            enum Move key = dest[i];
+            u32 power = GetMovePower(key);
+
+            for (j = i; j > 0 && GetMovePower(dest[j - 1]) > power; j--)
+                dest[j] = dest[j - 1];
+            dest[j] = key;
+        }
+    }
+}
+
+static bool32 RzAcceptStab(enum Move move, enum Type t1, enum Type t2)
+{
+    if (GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS)
+        return FALSE;
+    return GetMoveType(move) == t1 || GetMoveType(move) == t2;
+}
+
+static bool32 RzAcceptStatus(enum Move move, enum Type t1, enum Type t2)
+{
+    return GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS;
+}
+
+static bool32 RzAcceptDamaging(enum Move move, enum Type t1, enum Type t2)
+{
+    if (GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS)
+        return FALSE;
+    // Non-STAB, so it complements the STAB block rather than duplicating it.
+    return GetMoveType(move) != t1 && GetMoveType(move) != t2;
+}
+
+// Returns the randomized 21-move level-up learnset for a species, or NULL when
+// learnset randomization is switched off.
+const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
+{
+    struct Sfc32State state;
+    enum Move picks[RZ_LEARNSET_SLOTS];
+    enum Type t1, t2;
+    u32 stabFromT1, i;
+
+    if (!RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
+        return NULL;
+
+    if (sRzLearnsetSpecies == species)
+        return sRzLearnsetBuf;
+
+    t1 = gSpeciesInfo[species].types[0];
+    t2 = gSpeciesInfo[species].types[1];
+    state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, species, species);
+
+    // 7 STAB. Dual types split 4/3 across the two.
+    stabFromT1 = (t1 == t2) ? RZ_LEARNSET_STAB_MOVES : (RZ_LEARNSET_STAB_MOVES + 1) / 2;
+    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, TRUE);
+    if (stabFromT1 < RZ_LEARNSET_STAB_MOVES)
+        RzPickMoves(&state, &picks[stabFromT1], RZ_LEARNSET_STAB_MOVES - stabFromT1,
+                    RzAcceptStab, t2, t2, TRUE);
+
+    // 7 status, in no particular order - Base Power does not apply to them.
+    RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES], RZ_LEARNSET_STATUS_MOVES,
+                RzAcceptStatus, t1, t2, FALSE);
+
+    // 7 non-STAB damaging, weakest first.
+    RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES],
+                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, TRUE);
+
+    // Interleave the three groups so each level band mixes categories, and keep the
+    // within-group power ordering so stronger moves still arrive later.
+    for (i = 0; i < RZ_LEARNSET_SLOTS; i++)
+    {
+        u32 group = i % 3;
+        u32 index = i / 3;
+        u32 src;
+
+        if (group == 0)
+            src = index;                                             // STAB
+        else if (group == 1)
+            src = RZ_LEARNSET_STAB_MOVES + index;                    // status
+        else
+            src = RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES + index;
+
+        sRzLearnsetBuf[i].move = picks[src];
+        sRzLearnsetBuf[i].level = sRzLearnsetLevels[i];
+    }
+    sRzLearnsetBuf[RZ_LEARNSET_SLOTS].move = LEVEL_UP_MOVE_END;
+    sRzLearnsetBuf[RZ_LEARNSET_SLOTS].level = 0;
+
+    sRzLearnsetSpecies = species;
+    return sRzLearnsetBuf;
+}
 
 static inline bool32 IsAbilityIllegal(enum Ability ability)
 {

@@ -3295,7 +3295,20 @@ u32 GetSpeciesBaseStatTotal(enum Species species)
 
 const struct LevelUpMove *GetSpeciesLevelUpLearnset(enum Species species)
 {
-    const struct LevelUpMove *learnset = gSpeciesInfo[SanitizeSpeciesId(species)].levelUpLearnset;
+    const struct LevelUpMove *learnset;
+
+    #if RANDOMIZER_AVAILABLE == TRUE
+    {
+        // Single choke point for all 18 callers, so level-up, the relearner, the AI
+        // and the Pokedex all agree on the same randomized learnset.
+        const struct LevelUpMove *randomized = RandomizeLevelUpLearnset(SanitizeSpeciesId(species));
+
+        if (randomized != NULL)
+            return randomized;
+    }
+    #endif
+
+    learnset = gSpeciesInfo[SanitizeSpeciesId(species)].levelUpLearnset;
     if (learnset == NULL)
         return gSpeciesInfo[SPECIES_NONE].levelUpLearnset;
     return learnset;

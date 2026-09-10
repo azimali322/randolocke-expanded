@@ -38,6 +38,20 @@
 // otherwise randomized game.
 #define RZ_RANDOMIZE_BOSS_TRAINERS           TRUE
 
+// --- Learnset randomization -------------------------------------------------
+
+// Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
+// 7 non-STAB damaging, with higher Base Power learned later. Gated at runtime by
+// RANDOMIZER_FLAG_LEARNSET; with the flag clear you get vanilla learnsets.
+#define RZ_LEARNSET_STAB_MOVES      7
+#define RZ_LEARNSET_STATUS_MOVES    7
+#define RZ_LEARNSET_DAMAGING_MOVES  7
+#define RZ_LEARNSET_SLOTS  (RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES + RZ_LEARNSET_DAMAGING_MOVES)
+
+// The level each of the 21 slots is learned at. Front-loaded so early Pokemon are
+// not moveless, with the last few above the pre-Elite-Four cap of 63.
+#define RZ_LEARNSET_LEVELS  { 1, 4, 7, 10, 13, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 70, 78, 86 }
+
 #define RANDOMIZER_MAX_TM           ITEM_TM50
 
 // Vars and features
@@ -83,6 +97,10 @@
 
 #ifndef FORCE_RANDOMIZE_ABILITIES
 #define RANDOMIZER_FLAG_ABILITIES                     FLAG_UNUSED_0x026
+#endif
+
+#ifndef FORCE_RANDOMIZE_LEARNSET
+#define RANDOMIZER_FLAG_LEARNSET                      FLAG_UNUSED_0x028
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

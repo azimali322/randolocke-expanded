@@ -129,6 +129,9 @@ enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMo
 // Given a species and an abilityNum, returns a replacement for that ability.
 enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability originalAbility);
 
+// Returns the randomized 21-move level-up learnset, or NULL if the feature is off.
+const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species);
+
 static inline bool32 GroupSetsIntersect(struct RandomizerGroupSet* originalCache, struct RandomizerGroupSet* targetCache)
 {
     return originalCache->maxGroup >= targetCache->minGroup
