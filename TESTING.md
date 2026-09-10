@@ -26,9 +26,29 @@ make -j$(sysctl -n hw.ncpu)
 That's it. `-j$(sysctl -n hw.ncpu)` builds in parallel across all your CPU cores; plain
 `make` works too, just slower.
 
-**No environment setup is needed.** `DEVKITPRO` and `DEVKITARM` are already exported from
-your `~/.zshrc`, and the Makefile puts the devkitARM toolchain on `PATH` itself, so
+**No environment setup is needed.** `DEVKITPRO` and `DEVKITARM` are exported from your
+`~/.zshrc`, and the Makefile falls back to `/opt/devkitpro/devkitARM` if they are not set,
+so the build works in any shell. The Makefile puts the toolchain on `PATH` itself, so
 `arm-none-eabi-gcc` does not need to be on your `PATH` beforehand.
+
+### `arm-none-eabi-gcc: command not found`
+
+```
+bash: arm-none-eabi-gcc: command not found
+make: *** [pokeemerald.elf] Error 127
+```
+
+This means the Makefile could not find the toolchain. Almost always it is a **stale shell**:
+a Terminal window opened *before* `~/.zshrc` was edited keeps the old environment forever.
+
+Fix, in that terminal:
+
+```bash
+source ~/.zshrc
+```
+
+Or just open a new Terminal tab. The Makefile fallback should prevent this entirely now; if
+you still see it, check that `/opt/devkitpro/devkitARM/bin/arm-none-eabi-gcc` exists.
 
 ### What success looks like
 

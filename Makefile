@@ -66,6 +66,13 @@ include config.mk
 all: rom
 
 # Toolchain selection
+# randolocke: fall back to the standard devkitPro install path when DEVKITARM is not
+# exported, so `make` works in a shell that hasn't sourced ~/.zshrc yet.
+ifeq ($(strip $(DEVKITARM)),)
+  ifneq ($(wildcard /opt/devkitpro/devkitARM/bin),)
+    DEVKITARM := /opt/devkitpro/devkitARM
+  endif
+endif
 TOOLCHAIN := $(DEVKITARM)
 # don't use dkP's base_tools anymore
 # because the redefinition of $(CC) conflicts
