@@ -14,4 +14,17 @@
 // "does not revive" the default, with reviving as the optional behaviour.
 #define RANDOLOCKE_PORTA_HEAL_REVIVES       FALSE
 
+// --- Field moves ------------------------------------------------------------
+
+// If TRUE, HM/field moves can be used out of battle without a party Pokemon that
+// knows the move. Randolocke pairs this with P_CAN_FORGET_HIDDEN_MOVE so HM slaves
+// are unnecessary. Badge requirements still apply.
+#define RANDOLOCKE_FIELD_MOVES_NEED_NO_USER  TRUE
+
+// --- Catching ---------------------------------------------------------------
+
+// Percentage applied to a species' base catch rate. 100 is unchanged; Randolocke
+// "moderately increased wild catch rates".
+#define RANDOLOCKE_CATCH_RATE_PERCENT        150
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

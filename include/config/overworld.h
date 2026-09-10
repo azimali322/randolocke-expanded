@@ -2,6 +2,9 @@
 #define GUARD_CONFIG_OVERWORLD_H
 
 // Movement config
+// Randolocke: if TRUE the player always runs, and holding B walks instead. Inverting
+// the check rather than removing it keeps precise movement available for ledges.
+#define OW_AUTO_RUN                 TRUE
 #define OW_RUNNING_INDOORS          GEN_LATEST  // In Gen4+, players are allowed to run indoors.
 #define SLOW_MOVEMENT_ON_STAIRS     FALSE       // If enabled, the player will move slower up/down stairs like in FR
 

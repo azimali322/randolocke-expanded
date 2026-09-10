@@ -8047,7 +8047,12 @@ static u32 GetBattleMonCatchRate(struct BattlePokemon *battleMon)
         species = battleMon->species;
     else
         species = battleMon->volatiles.transformedMonSpecies;
-    return gSpeciesInfo[species].catchRate;
+    {
+        // Randolocke: scale the base catch rate. u8 field, so clamp at 255.
+        u32 rate = gSpeciesInfo[species].catchRate * RANDOLOCKE_CATCH_RATE_PERCENT / 100;
+
+        return (rate > 255) ? 255 : rate;
+    }
 }
 
 static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
