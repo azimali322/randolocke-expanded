@@ -4,7 +4,7 @@
 // Randomizer item whitelist
 // Lifted initially from TheXaman's tx_randomizer_and_challenges_branch
 
-static const u16 sRandomizerItemWhitelist[] =
+static const enum Item sRandomizerItemWhitelist[] =
 {
     // Poké Balls
     ITEM_POKE_BALL,

@@ -3,7 +3,7 @@
 
 // Randomizer ability whitelist
 
-static const u16 sRandomizerAbilityWhitelist[] =
+static const enum Ability sRandomizerAbilityWhitelist[] =
 {
     ABILITY_STENCH,
     ABILITY_DRIZZLE,

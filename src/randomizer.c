@@ -15,7 +15,7 @@
 #include "constants/abilities.h"
 
 // Add the mons you wish to be randomized when given as starter/gift mon to this list
-const u16 gStarterAndGiftMonTable[STARTER_AND_GIFT_MON_COUNT] =
+const enum Species gStarterAndGiftMonTable[STARTER_AND_GIFT_MON_COUNT] =
 {
     SPECIES_CYNDAQUIL,
     SPECIES_TOTODILE,
@@ -30,7 +30,7 @@ const u16 gStarterAndGiftMonTable[STARTER_AND_GIFT_MON_COUNT] =
 };
 
 // Add the mons you wish to be randomized when given as egg mon to this list
-const u16 gEggMonTable[EGG_MON_COUNT] =
+const enum Species gEggMonTable[EGG_MON_COUNT] =
 {
     SPECIES_WYNAUT, 
 };
@@ -231,12 +231,12 @@ u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u16 
 }
 
 // Utility functions for the field item randomizer.
-static inline bool32 IsItemTMHM(u16 itemId)
+static inline bool32 IsItemTMHM(enum Item itemId)
 {
     return GetItemPocket(itemId) == POCKET_TM_HM;
 }
 
-static inline bool32 IsItemHM(u16 itemId)
+static inline bool32 IsItemHM(enum Item itemId)
 {
     return itemId >= ITEM_HM01 && IsItemTMHM(itemId);
 }
@@ -256,7 +256,7 @@ static inline bool32 ShouldRandomizeItem(u16 itemId)
 #include "data/randomizer/item_whitelist.h"
 
 // Given a found item and its location in the game, returns a replacement for that item.
-u16 RandomizeFoundItem(u16 itemId, u8 mapNum, u8 mapGroup, u8 localId)
+enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)
 {
     struct Sfc32State state;
     u16 result;
@@ -315,7 +315,7 @@ void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx)
 }
 
 // Both legendary and mythical Pokémon are included in this category.
-static inline bool32 IsRandomizerLegendary(u16 species)
+static inline bool32 IsRandomizerLegendary(enum Species species)
 {
     return gSpeciesInfo[species].isRestrictedLegendary
         || gSpeciesInfo[species].isSubLegendary
@@ -717,7 +717,7 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
     }
 }
 
-u16 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species)
+enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species)
 {
     struct Sfc32State state;
     state = RandomizerRandSeed(reason, seed, species);
@@ -785,7 +785,7 @@ static u16 ChooseFormSpecial(struct Sfc32State *state, const u16 baseSpecies)
 #undef RANDOM_FROM_ARRAY
 #undef RARE_FORM
 
-u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species)
+enum Species RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species)
 {
     u32 speciesMode;
     u16 resultSpecies;
@@ -811,7 +811,7 @@ u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, 
     }
 }
 
-u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot)
+enum Species RandomizeWildEncounter(enum Species species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_WILD_MON))
     {
@@ -831,7 +831,7 @@ u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildPokemon
 
 
 // This is used in the Pokédex area map code.
-bool32 IsRandomizationPossible(u16 originalSpecies, u16 targetSpecies)
+bool32 IsRandomizationPossible(enum Species originalSpecies, enum Species targetSpecies)
 {
     const enum RandomizerSpeciesMode mode = GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE);
     if (!IsSpeciesPermitted(targetSpecies) || !IsSpeciesPermitted(originalSpecies))
@@ -859,7 +859,7 @@ bool32 IsRandomizationPossible(u16 originalSpecies, u16 targetSpecies)
     return TRUE;
 }
 
-u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species)
+enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Species species)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_TRAINER_MON))
     {
@@ -876,7 +876,7 @@ u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species)
     return species;
 }
 
-u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId)
+enum Species RandomizeFixedEncounterMon(enum Species species, u8 mapNum, u8 mapGroup, u8 localId)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_FIXED_MON))
     {
@@ -895,7 +895,7 @@ u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId)
 EWRAM_DATA static u32 sLastMonRandomizerSeed = 0;
 EWRAM_DATA static u16 sRandomizedMons[STARTER_AND_GIFT_MON_COUNT] = {0};
 
-u16 RandomizeStarterAndGiftMon(u16 originalSlot, const u16* originalStarterAndGiftMons)
+enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_STARTER_AND_GIFT_MON))
     {
@@ -925,7 +925,7 @@ u16 RandomizeStarterAndGiftMon(u16 originalSlot, const u16* originalStarterAndGi
 EWRAM_DATA static u32 sLastEggMonRandomizerSeed = 0;
 EWRAM_DATA static u16 sRandomizedEggMons[EGG_MON_COUNT] = {0};
 
-u16 RandomizeEggMon(u16 originalSlot, const u16* originalEggMons)
+enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMons)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_EGG_MON))
     {
@@ -952,7 +952,7 @@ u16 RandomizeEggMon(u16 originalSlot, const u16* originalEggMons)
     return originalEggMons[originalSlot];
 }
 
-static inline bool32 IsAbilityIllegal(u16 ability)
+static inline bool32 IsAbilityIllegal(enum Ability ability)
 {
     if (ability == ABILITY_NONE || ability == ABILITY_WONDER_GUARD)
         return TRUE;
@@ -960,7 +960,7 @@ static inline bool32 IsAbilityIllegal(u16 ability)
 }
 
 // Given a species and an abilityNum, returns a replacement for that ability.
-u16 RandomizeAbility(u16 species, u8 abilityNum, u16 originalAbility)
+enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability originalAbility)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_ABILITIES) && originalAbility != ABILITY_NONE)
     {  

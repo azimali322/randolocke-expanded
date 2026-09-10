@@ -17,8 +17,8 @@
 #define STARTER_AND_GIFT_MON_COUNT 11 // Raise this number accordingly to [gStarterAndGiftMonTable]
 #define EGG_MON_COUNT 2 // Raise this number accordingly to [gEggMonTable]
 
-extern const u16 gStarterAndGiftMonTable[];
-extern const u16 gEggMonTable[];
+extern const enum Species gStarterAndGiftMonTable[];
+extern const enum Species gEggMonTable[];
 
 enum RandomizerFeature
 {
@@ -77,7 +77,7 @@ enum RandomizerSpeciesMode {
 
 // This object can be passed to IsRandomizationPossible to speed up queries.
 struct RandomizerGroupSet {
-    u16 species;
+    enum Species species;
     u16 minGroup;
     u16 maxGroup;
 };
@@ -98,36 +98,36 @@ u32 RandomizerNextRange(struct Sfc32State* state, u32 range);
 u16 RandomizerRand(enum RandomizerReason reason, u32 data1, u32 data2);
 u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u16 range);
 
-static inline u8 RandomizeMonType(u16 species, u8 typeNum)
+static inline enum Type RandomizeMonType(enum Species species, u8 typeNum)
 {
-    return (u8)RandomizerRandRange(RANDOMIZER_REASON_SPECIES_TYPE, species, typeNum, NUMBER_OF_MON_TYPES);
+    return (enum Type)RandomizerRandRange(RANDOMIZER_REASON_SPECIES_TYPE, species, typeNum, NUMBER_OF_MON_TYPES);
 }
 
-u16 RandomizeFoundItem(u16 itemId, u8 mapNum, u8 mapGroup, u8 localId);
+enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId);
 void FindItemRandomize_NativeCall(struct ScriptContext *ctx);
 void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx);
 
-u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species);
-u16 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species);
+enum Species RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);
+enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);
 
-u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot);
+enum Species RandomizeWildEncounter(enum Species species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot);
 
 // Returns TRUE if it is possible for the species tableSpecies to randomize into the species matchSpecies.
 // This does not mean that it actually did, though.
-bool32 IsRandomizationPossible(u16 tableSpecies, u16 matchSpecies);
+bool32 IsRandomizationPossible(enum Species tableSpecies, enum Species matchSpecies);
 
-u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species);
+enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Species species);
 
-u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId);
+enum Species RandomizeFixedEncounterMon(enum Species species, u8 mapNum, u8 mapGroup, u8 localId);
 
 // Given a starter/gift slot and the list of original starters/gifts, returns the random mon in that slot.
-u16 RandomizeStarterAndGiftMon(u16 originalSlot, const u16* originalStarterAndGiftMons);
+enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons);
 
 // Given a egg slot and the list of original egg mons, returns the random egg mon in that slot.
-u16 RandomizeEggMon(u16 originalSlot, const u16* originalEggMons);
+enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMons);
 
 // Given a species and an abilityNum, returns a replacement for that ability.
-u16 RandomizeAbility(u16 species, u8 abilityNum, u16 originalAbility);
+enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability originalAbility);
 
 static inline bool32 GroupSetsIntersect(struct RandomizerGroupSet* originalCache, struct RandomizerGroupSet* targetCache)
 {
