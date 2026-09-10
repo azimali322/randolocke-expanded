@@ -73,6 +73,16 @@ ifeq ($(strip $(DEVKITARM)),)
     DEVKITARM := /opt/devkitpro/devkitARM
   endif
 endif
+# randolocke: the expansion's Python tooling uses PEP 585 generics (dict[str, ...]),
+# which need Python 3.9+. A conda $(PYTHON) earlier on PATH can be older (3.8), which
+# fails with "TypeError: 'type' object is not subscriptable", so pick one that works.
+PYTHON := $(shell for p in $(PYTHON) /opt/homebrew/bin/python3 /usr/bin/python3; do \
+    if command -v $$p >/dev/null 2>&1 && $$p -c 'import sys; sys.exit(0 if sys.version_info >= (3,9) else 1)' >/dev/null 2>&1; \
+    then echo $$p; break; fi; done)
+ifeq ($(strip $(PYTHON)),)
+  PYTHON := python3
+endif
+
 TOOLCHAIN := $(DEVKITARM)
 # don't use dkP's base_tools anymore
 # because the redefinition of $(CC) conflicts
@@ -258,10 +268,10 @@ MISC_TOOL_DIR := $(TOOLS_DIR)/misc
 AUTO_GEN_TARGETS +=  $(INCLUDE_DIRS)/constants/script_commands.h
 
 $(DATA_SRC_SUBDIR)/wild_encounters.h: $(DATA_SRC_SUBDIR)/wild_encounters.json $(WILD_ENCOUNTERS_TOOL_DIR)/wild_encounters_to_header.py $(INCLUDE_DIRS)/config/overworld.h $(INCLUDE_DIRS)/config/dexnav.h
-	python3 $(WILD_ENCOUNTERS_TOOL_DIR)/wild_encounters_to_header.py
+	$(PYTHON) $(WILD_ENCOUNTERS_TOOL_DIR)/wild_encounters_to_header.py
 
 $(INCLUDE_DIRS)/constants/script_commands.h: $(MISC_TOOL_DIR)/make_scr_cmd_constants.py $(DATA_ASM_SUBDIR)/script_cmd_table.inc
-	python3  $(MISC_TOOL_DIR)/make_scr_cmd_constants.py
+	$(PYTHON)  $(MISC_TOOL_DIR)/make_scr_cmd_constants.py
 
 PERL := perl
 SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
@@ -552,19 +562,19 @@ $(LEARNSET_HELPERS_BUILD_DIR):
 	@mkdir -p $@
 
 $(ALL_LEARNABLES_JSON):
-	python3 $(LEARNSET_HELPERS_DIR)/make_learnables.py $(LEARNSET_HELPERS_DATA_DIR) $@
+	$(PYTHON) $(LEARNSET_HELPERS_DIR)/make_learnables.py $(LEARNSET_HELPERS_DATA_DIR) $@
 
 $(ALL_TUTORS_JSON): $(shell find data/ -type f -name '*.inc')  $(LEARNSET_HELPERS_DIR)/make_tutors.py | $(LEARNSET_HELPERS_BUILD_DIR)
-	python3 $(LEARNSET_HELPERS_DIR)/make_tutors.py $@
+	$(PYTHON) $(LEARNSET_HELPERS_DIR)/make_tutors.py $@
 
 $(ALL_TEACHING_TYPES_JSON): $(wildcard $(DATA_SRC_SUBDIR)/pokemon/species_info/*_families.h)  $(LEARNSET_HELPERS_DIR)/make_teaching_types.py | $(LEARNSET_HELPERS_BUILD_DIR)
-	python3 $(LEARNSET_HELPERS_DIR)/make_teaching_types.py $@
+	$(PYTHON) $(LEARNSET_HELPERS_DIR)/make_teaching_types.py $@
 
 $(DATA_SRC_SUBDIR)/pokemon/teachable_learnsets.h: $(TEACHABLE_DEPS) | $(ALL_TUTORS_JSON) $(ALL_TEACHING_TYPES_JSON)
-	python3 $(LEARNSET_HELPERS_DIR)/make_teachables.py $(LEARNSET_HELPERS_BUILD_DIR)
+	$(PYTHON) $(LEARNSET_HELPERS_DIR)/make_teachables.py $(LEARNSET_HELPERS_BUILD_DIR)
 
 $(DATA_SRC_SUBDIR)/tutor_moves.h: $(DATA_SRC_SUBDIR)/pokemon/special_movesets.json | $(ALL_TUTORS_JSON)
-	python3 $(LEARNSET_HELPERS_DIR)/make_teachables.py  --tutors $(LEARNSET_HELPERS_BUILD_DIR)
+	$(PYTHON) $(LEARNSET_HELPERS_DIR)/make_teachables.py  --tutors $(LEARNSET_HELPERS_BUILD_DIR)
 
 # Linker script
 LD_SCRIPT := ld_script_modern.ld

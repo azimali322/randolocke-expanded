@@ -31,6 +31,10 @@ import sys
 import typing
 
 
+
+# Randolocke: force every species to ALL_TEACHABLES (see RANDOLOCKE_PLAN.md).
+RANDOLOCKE_ALL_TEACHABLES = True
+
 CONFIG_ENABLED_PAT = re.compile(r"^#define P_LEARNSET_HELPER_TEACHABLE\s+(?P<cfg_val>[^ ]*)", flags=re.MULTILINE)
 ALPHABETICAL_ORDER_ENABLED_PAT = re.compile(r"^#define HGSS_SORT_TMS_BY_NUM\s+(?P<cfg_val>[^ ]*)", flags=re.MULTILINE)
 TM_LITERACY_PAT = re.compile(r"^#define P_TM_LITERACY\s+GEN_(?P<cfg_val>[^ ]*)", flags=re.MULTILINE)
@@ -91,6 +95,10 @@ def prepare_output(all_learnables: dict[str, set[str]], tms: list[str], tutors: 
             continue
         species = species_data["name"]
         teaching_type = species_data["teaching_type"]
+        # Randolocke: every Pokemon can learn every teachable move. Forcing it here
+        # avoids stamping .teachingType = ALL_TEACHABLES onto ~1,679 species entries.
+        if RANDOLOCKE_ALL_TEACHABLES:
+            teaching_type = "ALL_TEACHABLES"
         new += f"static const u16 s{species}TeachableLearnset[] = "
         new += "{\n"
         species_upper =  SNAKIFY_PAT.sub(r"_\1", species).upper()
