@@ -4,14 +4,73 @@ Companion to [RANDOLOCKE_PLAN.md](RANDOLOCKE_PLAN.md). Tests are added phase by 
 the project progresses. Run the tests for the phase you just built, **plus the regression
 set** (§R) every time.
 
-**How to run the ROM:** build with `make`, then open `pokeemerald.gba` in mGBA. See §P for
-patching/distribution. You do **not** need to patch anything to test your own build.
+**How to run the ROM:** see §B below to build, then open `pokeemerald.gba` in mGBA. See §P
+for patching/distribution. You do **not** need to patch anything to test your own build.
 
 **Recommended emulator:** [mGBA](https://mgba.io/) — it has a save-state system, a memory
 viewer, and prints `MgbaPrintf` debug output from the randomizer (View → Log).
 
 **Debug menu:** hold `R` and press `START` in the overworld (`DEBUG_OVERWORLD_MENU` in
 `include/config/debug.h`).
+
+---
+
+## §B — Building
+
+Open Terminal and run:
+
+```bash
+make -j$(sysctl -n hw.ncpu)
+```
+
+That's it. `-j$(sysctl -n hw.ncpu)` builds in parallel across all your CPU cores; plain
+`make` works too, just slower.
+
+**No environment setup is needed.** `DEVKITPRO` and `DEVKITARM` are already exported from
+your `~/.zshrc`, and the Makefile puts the devkitARM toolchain on `PATH` itself, so
+`arm-none-eabi-gcc` does not need to be on your `PATH` beforehand.
+
+### What success looks like
+
+The last lines should be a memory table followed by the `gbafix` steps:
+
+```
+Memory region         Used Size  Region Size  %age Used
+           EWRAM:      235896 B       256 KB     89.99%
+           IWRAM:       28388 B        32 KB     86.63%
+             ROM:    26730796 B        32 MB     79.66%
+...
+arm-none-eabi-objcopy -O binary pokeemerald.elf pokeemerald.gba
+```
+
+The playable ROM is **`pokeemerald.gba`** in the repo root. Drag it into mGBA.
+
+### Timings
+
+- **First build after `make clean`:** 10-20 minutes (builds `tools/`, then ~3000 objects).
+- **Incremental build** after editing a few files: seconds to a couple of minutes.
+- Editing a header like `include/pokemon.h` rebuilds most of the tree — expect several
+  minutes.
+
+### Useful variants
+
+| Command | Use |
+| --- | --- |
+| `make -j$(sysctl -n hw.ncpu)` | normal build |
+| `make clean` | wipe all build output; forces a full rebuild |
+| `make -j$(sysctl -n hw.ncpu) -k` | keep going after errors, to see *all* of them at once |
+| `make clean-teachables` | regenerate `all_learnables.json` (only relevant to the deferred move-randomization work) |
+
+### If a build fails
+
+1. **Read the first `error:`, not the last.** With `-j` the output interleaves, so the last
+   line is rarely the real cause. `make -j8 2>&1 | grep -m1 "error:"` finds it.
+2. **After changing a config `#define`**, a normal `make` is enough; the build tracks
+   header dependencies.
+3. **`P_SUMMARY_SCREEN_IV_EV_TILESET`** is the documented exception — changing that one
+   needs `make clean` first.
+4. **Conflict markers** (`<<<<<<<`) produce a flood of nonsense syntax errors. Check with
+   `grep -rn '^<<<<<<<' src/ include/`.
 
 ---
 
