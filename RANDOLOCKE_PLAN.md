@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phase 0 complete, Phase 1 starting
+**Status:** Phases 0-1 complete; Phase 2 (enum conversion) next
 
 ---
 
@@ -268,13 +268,25 @@ Each phase ends at a **green build**, committed separately, so failures stay bis
 - [x] Merge `upstream/tertu-randomizer` (zero conflicts, fast-forward off HEAD)
 - [x] Green randomizer build; tag `pre-randomizer-merge` for rollback
 
-### Phase 1 — Merge to 1.17
-Branch: `update/expansion-1.17`
-- [ ] Merge `rhh/master`, resolve 29 conflicts to a **compiling** state
-      (correctness deferred to Phase 2)
-- [ ] Prioritize generated files: regenerate `src/data/trainers.h` rather than hand-merging
-- [ ] Green build
-- [ ] Commit
+### Phase 1 — Merge to 1.17 ✅ complete
+Branch: `update/expansion-1.17` (commit `ba19bda633`)
+- [x] Merge `rhh/master`, resolve 29 conflicts to a **compiling** state
+- [x] `src/data/trainers.h` — **better than expected:** upstream deleted it and now
+      generates it via `trainerproc`, so it is gitignored. The 24,948-line hand-merge
+      from §5.3 evaporated; only the `Boss:` key had to be re-landed in `trainerproc`.
+- [x] Green build — EWRAM 89.99%, IWRAM 86.63%, ROM 79.66%
+- [x] Commit
+
+**Carried forward:** randomizer hooks displaced by the merge are captured in
+[`docs/randolocke/phase1-displaced-hunks.md`](docs/randolocke/phase1-displaced-hunks.md)
+(43 hunks across 28 files). Phase 3 works from that file.
+
+**Also fixed in passing:** `src/dexnav.c` `ENCOUNTER_TYPE_HIDDEN` read `waterMonsInfo`
+(leaked from the previous `case`) instead of `hiddenMonsInfo`.
+
+**Still stubbed, for Phase 3:** `MonListHasSpecies` in `src/pokedex_area_screen.c` was
+restored to upstream's version; the randomizer's Pokédex-area display needs re-landing
+(it requires `header` + `area`, which upstream's new signature no longer passes).
 
 ### Phase 2 — Enum conversion
 - [ ] Convert randomizer API from `u16` to `enum Species` / `enum Item` / `enum Ability`
