@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-5 code complete, plus level caps, key items and QoL configs pulled forward. All four enhancements implemented; Phases 3-5 awaiting in-game verification
+**Status:** Phases 0-7 code complete except F5/F6. All four enhancements implemented. Phase 8 (maps & events) and Phase 9 (ship) outstanding; Phases 3-7 awaiting in-game verification
 
 ---
 
@@ -432,8 +432,7 @@ Cheapest parity items first (§4, Tier 1):
 - [x] **F3** `P_SUMMARY_SCREEN_IV_EV_INFO = TRUE` + `_IV_EV_VALUES = TRUE` ✅ landed early
 
 ### Phase 7 — Randolocke parity: data & systems
-- [ ] 21-move level-up learnsets (format is identical between versions — generator output
-      drops in)
+- [x] 21-move level-up learnsets ✅ implemented as runtime randomization (`RANDOMIZE_LEARNSET`, flag `0x28`)
 - [x] Level caps ✅ landed early (`B_EXP_CAP_TYPE`/`B_LEVEL_CAP_TYPE` + `sLevelCapFlagMap`)
 - [x] Trainer party scaling to the caps ✅ `tools/randolocke/scale_trainers.py`
 - [x] HM usability + forgettable HMs ✅ (`RANDOLOCKE_FIELD_MOVES_NEED_NO_USER`, `P_CAN_FORGET_HIDDEN_MOVE`)
