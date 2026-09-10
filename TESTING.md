@@ -399,6 +399,47 @@ Config lives in `include/config/randolocke.h`:
 
 ---
 
+## Phase 4 — Ability stability across evolution (Enhancement 1)
+
+**What this build is:** a randomized ability is now decided by the **root of the evolution
+family** rather than the current species, so evolving no longer rerolls it.
+
+Config: `RZ_ABILITY_STABLE_ACROSS_EVOLUTION` (`include/config/randomizer.h`), default `TRUE`.
+
+⚠️ **This is not the same as turning ability randomization off.** Abilities are still
+randomized — they are just stable across a family now. The on/off switch remains
+`RANDOMIZER_FLAG_ABILITIES` (`0x26`).
+
+### Prerequisite
+
+Set flag `0x26` (abilities) — see §F — and use a real New Game.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 4.1 | Full regression | Run §R1–R7 | All pass |
+| 4.2 | **Ability survives evolution** | Catch a mon that evolves by level. Note its ability. Level it up (Endless/Cap Candy is quickest) until it evolves. Check the ability | **Unchanged** |
+| 4.3 | Two-stage evolution | Evolve a three-stage family twice (e.g. a Treecko line) | Ability is the same at all three stages |
+| 4.4 | Whole family shares an ability | Catch or debug-give the base, middle and final forms separately, same ability slot | All three show the **same** randomized ability |
+| 4.5 | Ability is still randomized | Compare against the species' real ability | It is a **different**, randomized ability — not the vanilla one |
+| 4.6 | Different families differ | Compare two unrelated families | Different abilities |
+| 4.7 | Ability slots still differ | Give the same species with ability slot 0 vs slot 1 | Different abilities per slot |
+| 4.8 | Baby forms count as the root | A family with a baby stage (Pichu → Pikachu → Raichu) | All three share the ability |
+| 4.9 | Config off restores old behaviour | Set `RZ_ABILITY_STABLE_ACROSS_EVOLUTION` to `FALSE`, rebuild, evolve a mon | Ability **changes** on evolution again |
+| 4.10 | **No battle slowdown** | Fight a full 6v6 trainer battle, watch AI turns | No stutter or lag when the AI picks moves |
+| 4.11 | Stable across reload | Note a mon's ability, save, reset, reload | Same ability |
+
+### Why 4.10 is on the list
+
+`GetSpeciesPreEvolution()` is a linear scan over all ~1,679 species, and the AI calls
+`GetAbilityBySpecies()` repeatedly while scoring moves. Walking the chain naively would
+have meant thousands of iterations per AI decision. The lookup is memoized in a 16-entry
+direct-mapped cache (64 bytes of EWRAM), which covers a full double battle plus both
+parties. If you ever *do* notice AI slowdown, that cache is the first place to look.
+
+---
+
 ## Phase 6a — Modern Emerald QoL configs (landed early)
 
 **What this build is:** three config flips pulled forward from Phase 6 because they are

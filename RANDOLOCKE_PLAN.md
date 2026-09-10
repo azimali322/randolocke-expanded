@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-3 code complete (+ QoL configs from Phase 6); Phase 3 awaiting in-game verification
+**Status:** Phases 0-4 code complete, plus level caps, key items and QoL configs pulled forward; Phases 3-4 awaiting in-game verification
 
 ---
 
@@ -11,8 +11,9 @@
 
 Recreate **Pokémon Randolocke v1.1** (by Istorian) as my own romhack, with three enhancements:
 
-1. **Abilities do not randomize on evolution.** An option where a Pokémon's randomized
-   ability stays stable across its evolution family, instead of rerolling when it evolves.
+1. **Abilities do not randomize on evolution.** ✅ **Implemented in Phase 4** as
+   `RZ_ABILITY_STABLE_ACROSS_EVOLUTION`. A Pokémon's randomized ability stays stable across
+   its evolution family instead of rerolling when it evolves.
 2. **Manual IV/EV editing.** A cheat/option toggle to manually adjust IVs and EVs, in the
    style of modern Emerald romhacks.
 3. **Full Randolocke v1.1 parity.** All features from Randolocke v1.1 present in my romhack.
@@ -386,11 +387,19 @@ Commit `e013bd220c`
 still called from `src/overworld.c`, so the tables are populated. Worth confirming during
 Phase 3 testing that the first randomized encounter after a New Game is correct.
 
-### Phase 4 — Enhancement 1: ability stability across evolution
-- [ ] Add `RZ_ABILITY_FOLLOWS_EVOLUTION` config
-- [ ] Seed `RandomizeAbility` from the evolution-family root
-- [ ] Test: catch a mon, note ability, evolve, confirm ability unchanged; confirm the
-      opposite with the config off
+### Phase 4 — Enhancement 1: ability stability across evolution — code complete
+- [x] Config added as **`RZ_ABILITY_STABLE_ACROSS_EVOLUTION`** (default `TRUE`) — renamed
+      from the planned `RZ_ABILITY_FOLLOWS_EVOLUTION`, which read ambiguously: it was
+      unclear whether TRUE meant "ability follows you through evolution" (stable) or
+      "ability changes when you evolve" (the old behaviour).
+- [x] `RandomizeAbility` seeds from the evolution-family root (both the seed and the
+      reason-species argument)
+- [x] Family root memoized in a 16-entry direct-mapped cache (64 bytes EWRAM), because
+      `GetSpeciesPreEvolution()` is a linear scan over ~1,679 species and the battle AI
+      calls `GetAbilityBySpecies()` repeatedly while scoring moves
+- [x] Chain walk bounded by `RANDOMIZER_MAX_EVO_STAGES` so a cyclic evolution table
+      cannot hang the game
+- [ ] **Verify in emulator** — [TESTING.md](TESTING.md) Phase 4, especially 4.2 and 4.10
 
 ### Phase 5 — Enhancements 2 and 4: IV/EV and nature editors
 - [ ] Add IV and EV editor rows to `sDebugMenu_Actions_EditPokemon[]`

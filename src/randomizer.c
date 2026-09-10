@@ -952,6 +952,44 @@ enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMo
     return originalEggMons[originalSlot];
 }
 
+#if RZ_ABILITY_STABLE_ACROSS_EVOLUTION == TRUE
+
+// GetSpeciesPreEvolution() is a linear scan over every species, and RandomizeAbility
+// runs often during battle (the AI calls it while scoring moves), so memoize the
+// family root in a small direct-mapped cache. 16 entries covers a full double battle
+// plus both parties comfortably.
+#define RZ_FAMILY_CACHE_SIZE 16
+static EWRAM_DATA u16 sFamilyRootKey[RZ_FAMILY_CACHE_SIZE] = {0};
+static EWRAM_DATA u16 sFamilyRootVal[RZ_FAMILY_CACHE_SIZE] = {0};
+
+// Returns the base species of this Pokemon's evolution family (e.g. Pichu for
+// Pikachu and Raichu), so every stage seeds the same randomized ability.
+static enum Species GetAbilityFamilyRoot(enum Species species)
+{
+    u32 slot = species % RZ_FAMILY_CACHE_SIZE;
+    enum Species current = species;
+    u32 guard;
+
+    if (sFamilyRootKey[slot] == species && sFamilyRootVal[slot] != SPECIES_NONE)
+        return sFamilyRootVal[slot];
+
+    // Bounded so a malformed or cyclic evolution table can never hang the game.
+    for (guard = 0; guard < RANDOMIZER_MAX_EVO_STAGES; guard++)
+    {
+        enum Species prev = GetSpeciesPreEvolution(current);
+
+        if (prev == SPECIES_NONE)
+            break;
+        current = prev;
+    }
+
+    sFamilyRootKey[slot] = species;
+    sFamilyRootVal[slot] = current;
+    return current;
+}
+
+#endif // RZ_ABILITY_STABLE_ACROSS_EVOLUTION
+
 static inline bool32 IsAbilityIllegal(enum Ability ability)
 {
     if (ability == ABILITY_NONE || ability == ABILITY_WONDER_GUARD)
@@ -968,11 +1006,18 @@ enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability 
         u16 result;
         u32 seed;
 
-        // Seed the generator using the species and the abilityNum 
-        seed = ((u32)species) << 8;
+        enum Species seedSpecies = species;
+
+        #if RZ_ABILITY_STABLE_ACROSS_EVOLUTION == TRUE
+            // Seed from the family root so evolving does not reroll the ability.
+            seedSpecies = GetAbilityFamilyRoot(species);
+        #endif
+
+        // Seed the generator using the species and the abilityNum
+        seed = ((u32)seedSpecies) << 8;
         seed |= abilityNum;
 
-        state = RandomizerRandSeed(RANDOMIZER_REASON_ABILITIES, seed, species);
+        state = RandomizerRandSeed(RANDOMIZER_REASON_ABILITIES, seed, seedSpecies);
 
         // Randomize abilities
         do

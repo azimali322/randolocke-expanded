@@ -26,6 +26,12 @@
 
 #endif // RANDOMIZER_DYNAMIC_SPECIES
 
+// If TRUE, a Pokemon's randomized ability is decided by the root of its evolution
+// family rather than by its current species, so evolving no longer rerolls the
+// ability. Note this is separate from turning ability randomization off entirely
+// (RANDOMIZER_FLAG_ABILITIES): abilities are still randomized, just stably.
+#define RZ_ABILITY_STABLE_ACROSS_EVOLUTION   TRUE
+
 #define RANDOMIZER_MAX_TM           ITEM_TM50
 
 // Vars and features
