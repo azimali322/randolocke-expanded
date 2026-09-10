@@ -5,6 +5,8 @@
 #include "random.h"
 #include "string_util.h"
 #include "trainer_util.h"
+#include "randomizer.h"
+#include "constants/opponents.h"
 #include "text.h"
 
 #include "constants/battle_ai.h"
@@ -94,8 +96,12 @@ static bool32 SetCorrectAbilityNum(struct Pokemon *mon, enum Species species, en
     return TRUE;
 }
 
-void MakeTrainerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *trainer)
+void MakeTrainerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *trainer, u16 trainerId)
 {
+    trainerGen->rzTrainerId = trainerId;
+    trainerGen->rzIsBossTrainer = trainer->isBossTrainer;
+    trainerGen->rzSlot = 0;
+    trainerGen->rzTotalMons = trainer->partySize;
     trainerGen->gender = trainer->gender;
     if (trainer->aiFlags & AI_FLAG_SMART_TERA)
         trainerGen->smartTera = TRUE;
@@ -109,6 +115,12 @@ void MakeTrainerGenerator(struct TrainerGenerator *trainerGen, const struct Trai
 void MakePartnerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *partner)
 {
     u32 otID;
+    // Callers pass a stack local, so these must be set explicitly or they are garbage.
+    // Partner parties are not randomized (matching tertu's original behaviour).
+    trainerGen->rzTrainerId = TRAINER_NONE;
+    trainerGen->rzIsBossTrainer = FALSE;
+    trainerGen->rzSlot = 0;
+    trainerGen->rzTotalMons = partner->partySize;
     trainerGen->gender = partner->gender;
     if (partner->aiFlags & AI_FLAG_SMART_TERA)
         trainerGen->smartTera = TRUE;
@@ -135,7 +147,23 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
         errorf("Unkwown trainer mon gender value %d", trainerMon->gender);
     personality |= genderValue;
     ModifyPersonalityForNature(&personality, trainerMon->nature);
-    CreateMon(mon, trainerMon->species, trainerMon->lvl, personality, trainer->otID);
+
+    enum Species species = trainerMon->species;
+    #if RANDOMIZER_AVAILABLE == TRUE
+        // Boss trainers keep their designed team. TRAINER_NONE means the caller had no
+        // trainer id (debug/synthetic trainers), so leave those alone too.
+        if (!trainer->rzIsBossTrainer && trainer->rzTrainerId != TRAINER_NONE)
+        {
+            species = RandomizeTrainerMon(trainer->rzTrainerId, trainer->rzSlot,
+                                          trainer->rzTotalMons, species);
+        }
+    #endif
+
+    CreateMon(mon, species, trainerMon->lvl, personality, trainer->otID);
+    {
+        u8 cantRandomizeAbility = trainer->rzIsBossTrainer;
+        SetMonData(mon, MON_DATA_CANT_RANDOMIZE_ABILITY, &cantRandomizeAbility);
+    }
     if (trainerMon->nickname != NULL)
         SetMonData(mon, MON_DATA_NICKNAME, trainerMon->nickname);
     if (trainerMon->ev) //ev in struct TrainerMon are stored in Showdown order not vanilla Emerald order
@@ -155,7 +183,7 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
     bool32 abilitySet = FALSE;
     if (trainerMon->ability)
     {
-        abilitySet = SetCorrectAbilityNum(mon, trainerMon->species, trainerMon->ability);
+        abilitySet = SetCorrectAbilityNum(mon, species, trainerMon->ability);
     }
 
     if (!abilitySet)
@@ -164,7 +192,7 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
         {
             do {
                 data = Random() % NUM_ABILITY_SLOTS; // includes hidden abilities
-            } while (GetAbilityBySpecies(trainerMon->species, data, FALSE) == ABILITY_NONE);
+            } while (GetAbilityBySpecies(species, data, FALSE) == ABILITY_NONE);
             SetMonData(mon, MON_DATA_ABILITY_NUM, &data);
         }
         else if (B_TRAINER_MON_RANDOM_ABILITY == 0)
