@@ -193,16 +193,16 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 
 ### Battle
 - [ ] Every Pokémon learns 21 moves at fixed levels (7 STAB / 7 status / 7 damaging)
-- [ ] All Pokémon can learn every move (`ALL_TEACHABLES`)
+- [x] All Pokémon can learn every move (`ALL_TEACHABLES`) ✅
 - [x] Hard level caps per badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 / 63, E4 -> 100 ✅ landed early via 1.17's built-in cap system
 - [ ] Trainer parties scaled to the level caps
 - [ ] Upgraded opponent AI (likely config on 1.17)
 
 ### Quality of life
-- [ ] HMs usable out of battle without a party member knowing the move
-- [ ] HMs forgettable like normal moves
+- [x] HMs usable out of battle without a party member knowing the move ✅
+- [x] HMs forgettable like normal moves ✅
 - [x] IVs visible in the summary screen (`P_SUMMARY_SCREEN_IV_EV_INFO`) ✅ done via F3
-- [ ] Expanded bag size
+- [x] Expanded bag size ✅
 - [x] Key items: infinite Repellant, Porta Heal, Endless Candy, Cap Candy ✅ landed early
       *(Cap Candy takes the soonest of next cap / next level-up move / next level evolution.
       Distinct from `B_RARE_CANDY_CAP`, which only stops normal Rare Candy exceeding the cap.)*
@@ -224,7 +224,7 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 ### v1.1 additions
 - [ ] Oldale NPC gifting 999 Ultra Balls
 - [ ] Oldale NPC gifting $999,999
-- [ ] Increased wild catch rates
+- [x] Increased wild catch rates ✅
 - [ ] Slateport NPC selling legendary location maps (Latios/Latias, Mew, Deoxys, Ho-oh/Lugia)
 - [ ] Regi caves unlocked post-Sootopolis
 - [ ] Kyogre/Groudon Weather Institute events post-Sootopolis
@@ -420,13 +420,13 @@ Phase 3 testing that the first randomized encounter after a New Game is correct.
 
 ### Phase 6 — Randolocke parity: config-level
 Cheapest parity items first (§4, Tier 1):
-- [ ] `ALL_TEACHABLES` teaching type
+- [x] `ALL_TEACHABLES` teaching type ✅ forced in `make_teachables.py`
 - [x] `P_SUMMARY_SCREEN_IV_EV_INFO` ✅ done in Phase 6a (F3)
-- [ ] Move relearner configs
-- [ ] Instant text config
-- [ ] Explicitly disable Mega / Primal / Dynamax / Gmax / Tera / Fusion / Z-Moves
-      (including 1.17's new Z-A Megas)
-- [ ] Bag size, catch rates
+- [x] Move relearner configs ✅
+- [x] Instant text config ✅ (`TEXT_SPEED_FAST_MODIFIER = 18`)
+- [x] Explicitly disable Mega / Primal / Dynamax / Gmax / Tera / Fusion ✅ — freed 1.8 MB ROM
+- [x] Bag size ✅ (50/40/24)
+- [x] Catch rates ✅ (`RANDOLOCKE_CATCH_RATE_PERCENT = 150`)
 - [x] **F1** `I_REUSABLE_TMS = TRUE` ✅ landed early
 - [x] **F2** `B_SHOW_TYPES = SHOW_TYPES_ALWAYS` ✅ landed early (revisit ALWAYS vs CAUGHT/SEEN after play-testing)
 - [x] **F3** `P_SUMMARY_SCREEN_IV_EV_INFO = TRUE` + `_IV_EV_VALUES = TRUE` ✅ landed early
@@ -436,10 +436,10 @@ Cheapest parity items first (§4, Tier 1):
       drops in)
 - [x] Level caps ✅ landed early (`B_EXP_CAP_TYPE`/`B_LEVEL_CAP_TYPE` + `sLevelCapFlagMap`)
 - [ ] Trainer party scaling to the caps
-- [ ] HM usability + forgettable HMs
+- [x] HM usability + forgettable HMs ✅ (`RANDOLOCKE_FIELD_MOVES_NEED_NO_USER`, `P_CAN_FORGET_HIDDEN_MOVE`)
 - [x] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy) ✅
-- [ ] Field/gift item randomization wiring
-- [ ] **F4** always-run: add `OW_AUTO_RUN`, invert the `B_BUTTON` dash gate
+- [x] Field/gift item randomization wiring ✅ (done in Phase 3)
+- [x] **F4** always-run ✅ `OW_AUTO_RUN`; holding B walks
 - [ ] **F5** second registered key item (⚠️ save-layout change — batch with other save work)
 - [ ] **F6** show EVs in the move-learning screen
 

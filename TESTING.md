@@ -535,6 +535,42 @@ independent of the randomizer. No custom code.
 
 ---
 
+## Phase 6 / 7 — Parity configs and systems
+
+**What this build is:** the config-level Randolocke parity pass, plus three code features.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 6.1 | Full regression | Run §R1–R7 | All pass |
+| 6.2 | **Every mon learns every move** | Debug-give any Pokémon, take it to a TM/move relearner | It can learn essentially any TM/tutor move (89 teachables per species) |
+| 6.3 | Move relearners work | Use the summary-screen relearner | Egg, TM and tutor moves offered |
+| 6.4 | HMs are forgettable | Teach an HM move, then try to forget it | Allowed |
+| 6.5 | **HMs need no user** | Face surfable water with **no** party mon knowing Surf, with the Balance Badge | You can still Surf |
+| 6.6 | Badge gating still applies | Try the same **without** the badge | Blocked |
+| 6.7 | Fast text is near-instant | Options → Text Speed → Fast, read dialogue | Text prints almost instantly |
+| 6.8 | **No Mega/Tera/Dynamax** | Check the battle menu and species list | No gimmick forms available |
+| 6.9 | Bigger bag | Collect more than 30 distinct items | Bag holds up to 50 (items), 40 (key), 24 (balls) |
+| 6.10 | Catch rates raised | Throw Poké Balls at wild mons | Noticeably easier than vanilla (base rate ×1.5) |
+| 7.1 | **Always run** | Walk around without touching B | Player runs by default |
+| 7.2 | Hold B to walk | Hold B while moving | Player walks — useful for ledges |
+| 7.3 | Running still badge-gated | Before the Running Shoes | Cannot run |
+
+### Note on 6.2
+
+Teachable learnsets are generated at build time. If you change TMs or tutors later, run
+`make clean-teachables` then `make` to regenerate. Every species is forced to
+`ALL_TEACHABLES` from `tools/learnset_helpers/make_teachables.py` — a single switch rather
+than an edit to all ~1,679 species entries.
+
+### Note on 6.8
+
+Disabling the gimmick forms freed **1.8 MB of ROM** (79.67% → 74.14%), which is useful
+headroom for the map and event work still to come.
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed
