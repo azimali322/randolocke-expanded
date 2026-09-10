@@ -200,7 +200,7 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 ### Quality of life
 - [ ] HMs usable out of battle without a party member knowing the move
 - [ ] HMs forgettable like normal moves
-- [ ] IVs visible in the summary screen (`P_SUMMARY_SCREEN_IV_EV_INFO`)
+- [x] IVs visible in the summary screen (`P_SUMMARY_SCREEN_IV_EV_INFO`) ✅ done via F3
 - [ ] Expanded bag size
 - [ ] Key items: infinite Repellant, Porta Heal, Endless Candy, Cap Candy
 - [ ] Press R to throw a ball
@@ -399,9 +399,9 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] Explicitly disable Mega / Primal / Dynamax / Gmax / Tera / Fusion / Z-Moves
       (including 1.17's new Z-A Megas)
 - [ ] Bag size, catch rates
-- [ ] **F1** `I_REUSABLE_TMS = TRUE`
-- [ ] **F2** `B_SHOW_TYPES = SHOW_TYPES_ALWAYS` (decide ALWAYS vs CAUGHT vs SEEN)
-- [ ] **F3** `P_SUMMARY_SCREEN_IV_EV_INFO = TRUE` (+ `_IV_EV_VALUES` for raw numbers)
+- [x] **F1** `I_REUSABLE_TMS = TRUE` ✅ landed early
+- [x] **F2** `B_SHOW_TYPES = SHOW_TYPES_ALWAYS` ✅ landed early (revisit ALWAYS vs CAUGHT/SEEN after play-testing)
+- [x] **F3** `P_SUMMARY_SCREEN_IV_EV_INFO = TRUE` + `_IV_EV_VALUES = TRUE` ✅ landed early
 
 ### Phase 7 — Randolocke parity: data & systems
 - [ ] 21-move level-up learnsets (format is identical between versions — generator output

@@ -161,6 +161,46 @@ would keep working and hide the bug. Always test at the top of the range.
 
 ---
 
+## Phase 6a — Modern Emerald QoL configs (landed early)
+
+**What this build is:** three config flips pulled forward from Phase 6 because they are
+independent of the randomizer. No custom code.
+
+| Config | Value | File |
+| --- | --- | --- |
+| `I_REUSABLE_TMS` | `TRUE` | `include/config/item.h` |
+| `B_SHOW_TYPES` | `SHOW_TYPES_ALWAYS` | `include/config/battle.h` |
+| `P_SUMMARY_SCREEN_IV_EV_INFO` | `TRUE` | `include/config/summary_screen.h` |
+| `P_SUMMARY_SCREEN_IV_EV_VALUES` | `TRUE` | `include/config/summary_screen.h` |
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 6a.1 | Full regression | Run §R1–R7 | All pass |
+| 6a.2 | TM is not consumed | Debug → Give item → a TM. Check bag quantity, teach it to a mon, check the bag again | TM is **still in the bag** at the same quantity |
+| 6a.3 | TM still teaches | After 6a.2, open the mon's summary | It knows the move |
+| 6a.4 | TM reusable on a second mon | Teach the same TM to a different party mon | Works; TM still in the bag |
+| 6a.5 | Type icons appear | Enter any battle, choose FIGHT, then select a target | Type indicator(s) show next to the opposing Pokémon's HP bar |
+| 6a.6 | Type icons are correct | Target a Pokémon whose types you know (e.g. a Zigzagoon → Normal) | Icons match the species' actual types |
+| 6a.7 | Dual-type display | Target a dual-type Pokémon | **Both** types shown |
+| 6a.8 | IV/EV cycling in summary | Open a mon's summary → Skills page → press the cycle input | Page cycles Stats → IVs → EVs |
+| 6a.9 | IVs show raw numbers | On the IV page | Numbers `0`–`31`, not letter grades (F/D/C/B/A/S) |
+| 6a.10 | EVs read plausibly | On the EV page for a freshly caught mon | All `0`; they rise after battles |
+| 6a.11 | IV page matches debug | Compare the summary IV page against Debug → Party → Check IVs | Identical values |
+| 6a.12 | ROM size sanity | Check the memory table | ROM up ~1.4 KB vs Phase 2; EWRAM/IWRAM unchanged |
+
+### Notes
+
+- **`B_SHOW_TYPES` is a one-word change.** If always-on feels like it removes discovery,
+  switch to `SHOW_TYPES_CAUGHT` or `SHOW_TYPES_SEEN` in `include/config/battle.h`.
+- **`P_SUMMARY_SCREEN_IV_EV_TILESET` was left `FALSE`.** Setting it `TRUE` re-labels the
+  "STATS" header but requires a `make clean`. Cosmetic only.
+- 6a.8's cycle input is defined by the summary screen implementation — if it is not obvious
+  in-game, try left/right or Select on the Skills page.
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed
