@@ -139,6 +139,7 @@ simply switched off, not broken.
 | Starters & gifts | `RANDOMIZER_FLAG_STARTER_AND_GIFT_MON` | `0x24` |
 | Egg Pokémon | `RANDOMIZER_FLAG_EGG_MON` | `0x25` |
 | Abilities | `RANDOMIZER_FLAG_ABILITIES` | `0x26` |
+| Learnsets (21 moves) | `RANDOMIZER_FLAG_LEARNSET` | `0x28` |
 
 **To turn them on for a test session:** Debug menu → Flags & Vars → Flags, and set the hex
 values above.
@@ -568,6 +569,58 @@ than an edit to all ~1,679 species entries.
 
 Disabling the gimmick forms freed **1.8 MB of ROM** (79.67% → 74.14%), which is useful
 headroom for the map and event work still to come.
+
+---
+
+## Phase 7c — Trainer scaling, boss tags, 21-move learnsets
+
+### Randomizer flags recap (see §F)
+
+A new one: **`0x28` = learnset randomization**. Set it alongside `0x20`–`0x26`.
+
+### Tests — trainer level scaling
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 7c.1 | Full regression | Run §R1–R7 | All pass |
+| 7c.2 | Early trainers near the cap | Battle Route 102/103 trainers | Levels in the low teens, at or under the 0-badge cap of 14 |
+| 7c.3 | **Roxanne sits at the cap** | Battle Roxanne | Her ace is level 14 — the 0-badge cap |
+| 7c.4 | Mid-game inflation | Battle trainers around Petalburg/Fortree | Noticeably higher than vanilla (vanilla 33 → 43). Expect this to be the hardest stretch |
+| 7c.5 | Champion at 63 | Battle Wallace | Level 63 |
+| 7c.6 | Post-game unchanged | Battle Frontier or rematch trainers | Still 63–78, not inflated |
+
+### Tests — boss trainers
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 7c.7 | **Gym leaders ARE randomized** | With flag `0x22` set, battle Roxanne | Her team is randomized, not Geodude/Nosepass — bosses are randomized by default |
+| 7c.8 | Boss exemption works | Set `RZ_RANDOMIZE_BOSS_TRAINERS` to `FALSE`, rebuild, battle Roxanne | Her designed team and real abilities return |
+| 7c.9 | Non-bosses unaffected by that toggle | With the toggle `FALSE`, battle a route trainer | Still randomized |
+
+### Tests — 21-move learnsets
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 7c.10 | **21 moves at fixed levels** | Set flag `0x28`, then check a mon in the move relearner or level it up | Moves at 1, 4, 7, 10, 13, 16, 20, 24, … |
+| 7c.11 | Every species uses the same levels | Compare two unrelated species | Identical level ladder, different moves |
+| 7c.12 | STAB present | Check a Fire-type's moves | Several Fire moves among them |
+| 7c.13 | Status moves present | Same mon | Roughly a third are status moves |
+| 7c.14 | **Stronger moves later** | Compare the Base Power of early vs late damaging moves | Later ones hit harder |
+| 7c.15 | No OHKO moves | Scan several species' learnsets | No Fissure / Sheer Cold / Horn Drill |
+| 7c.16 | Flag off = vanilla | Clear flag `0x28`, check a starter | Vanilla learnset returns |
+| 7c.17 | Stable across reload | Note a species' learnset, save, reset, reload | Identical |
+| 7c.18 | **No AI slowdown** | Full 6v6 battle | No stutter — the learnset is cached per species, but the AI queries it often |
+| 7c.19 | Relearner agrees | Open the move relearner | Offers the same randomized moves the mon levels into |
+
+### What to watch
+
+- **7c.4** is the known consequence of your cap curve, not a bug. The jump is concentrated
+  between badges 4 and 6 because your caps rise much faster there than vanilla's did.
+- **7c.7 vs 7c.8** verify the `Boss:` tag is now only a *label*: it identifies bosses, and
+  `RZ_RANDOMIZE_BOSS_TRAINERS` decides whether the label exempts them.
+- **7c.18** matters because the learnset is rebuilt whenever the queried species changes.
+  In a battle with many distinct species the cache turns over; if you feel lag, that single
+  -species cache is the thing to enlarge.
 
 ---
 

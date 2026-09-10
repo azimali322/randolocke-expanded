@@ -192,10 +192,10 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 - [ ] *(deferred)* Tutor moves randomized
 
 ### Battle
-- [ ] Every Pokémon learns 21 moves at fixed levels (7 STAB / 7 status / 7 damaging)
+- [x] Every Pokémon learns 21 moves at fixed levels (7 STAB / 7 status / 7 damaging) ✅
 - [x] All Pokémon can learn every move (`ALL_TEACHABLES`) ✅
 - [x] Hard level caps per badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 / 63, E4 -> 100 ✅ landed early via 1.17's built-in cap system
-- [ ] Trainer parties scaled to the level caps
+- [x] Trainer parties scaled to the level caps ✅
 - [ ] Upgraded opponent AI (likely config on 1.17)
 
 ### Quality of life
@@ -233,9 +233,9 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 
 ### v1.1 option toggles
 - [ ] Don't randomize abilities *(nearly free — tertu flag)*
-- [ ] Higher-Base-Power moves learned later (default on)
+- [x] Higher-Base-Power moves learned later (default on) ✅
 - [x] Porta Heal does not revive by default ✅ (`RANDOLOCKE_PORTA_HEAL_REVIVES`)
-- [ ] ~~Don't randomize movesets~~ — deferred with move randomization
+- [x] Don't randomize movesets ✅ — clear flag `0x28` for vanilla learnsets
 - [ ] ~~Enforce nicknaming~~ — deferred
 - [ ] ~~Nuzlocke wild encounters~~ — **cut**
 - [ ] ~~Disable bag in trainer battles~~ — deferred
@@ -435,7 +435,7 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] 21-move level-up learnsets (format is identical between versions — generator output
       drops in)
 - [x] Level caps ✅ landed early (`B_EXP_CAP_TYPE`/`B_LEVEL_CAP_TYPE` + `sLevelCapFlagMap`)
-- [ ] Trainer party scaling to the caps
+- [x] Trainer party scaling to the caps ✅ `tools/randolocke/scale_trainers.py`
 - [x] HM usability + forgettable HMs ✅ (`RANDOLOCKE_FIELD_MOVES_NEED_NO_USER`, `P_CAN_FORGET_HIDDEN_MOVE`)
 - [x] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy) ✅
 - [x] Field/gift item randomization wiring ✅ (done in Phase 3)
