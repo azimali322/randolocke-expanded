@@ -193,7 +193,7 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 ### Battle
 - [ ] Every Pokémon learns 21 moves at fixed levels (7 STAB / 7 status / 7 damaging)
 - [ ] All Pokémon can learn every move (`ALL_TEACHABLES`)
-- [ ] Hard level caps per badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 / 63, E4 -> 100
+- [x] Hard level caps per badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 / 63, E4 -> 100 ✅ landed early via 1.17's built-in cap system
 - [ ] Trainer parties scaled to the level caps
 - [ ] Upgraded opponent AI (likely config on 1.17)
 
@@ -203,6 +203,8 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 - [x] IVs visible in the summary screen (`P_SUMMARY_SCREEN_IV_EV_INFO`) ✅ done via F3
 - [ ] Expanded bag size
 - [ ] Key items: infinite Repellant, Porta Heal, Endless Candy, Cap Candy
+      *(Cap Candy = level up to the next cap / next move / next evolution. Distinct from
+      `B_RARE_CANDY_CAP`, already TRUE, which only stops normal Rare Candy exceeding the cap.)*
 - [ ] Press R to throw a ball
 
 ### Map & event changes
@@ -416,7 +418,8 @@ Cheapest parity items first (§4, Tier 1):
 ### Phase 7 — Randolocke parity: data & systems
 - [ ] 21-move level-up learnsets (format is identical between versions — generator output
       drops in)
-- [ ] Level caps + trainer scaling
+- [x] Level caps ✅ landed early (`B_EXP_CAP_TYPE`/`B_LEVEL_CAP_TYPE` + `sLevelCapFlagMap`)
+- [ ] Trainer party scaling to the caps
 - [ ] HM usability + forgettable HMs
 - [ ] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy)
 - [ ] Field/gift item randomization wiring

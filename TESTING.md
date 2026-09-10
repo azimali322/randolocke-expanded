@@ -294,6 +294,60 @@ would turn coin piles into random items.
 
 ---
 
+## Phase 7a — Hard level caps (landed early)
+
+**What this build is:** Randolocke's per-badge hard level caps, using 1.17's built-in cap
+system (`include/config/caps.h`, `src/caps.c`). No custom code.
+
+```c
+B_EXP_CAP_TYPE    = EXP_CAP_HARD        // at/over the cap, no experience at all
+B_LEVEL_CAP_TYPE  = LEVEL_CAP_FLAG_LIST // cap comes from the badge flag table
+B_RARE_CANDY_CAP  = TRUE                // Rare Candy cannot push past the cap
+```
+
+| Badges | Cap |
+| --- | --- |
+| 0 | 14 |
+| 1 | 21 |
+| 2 | 24 |
+| 3 | 29 |
+| 4 | 36 |
+| 5 | 43 |
+| 6 | 47 |
+| 7 | 50 |
+| 8 | 63 |
+| Elite Four beaten | 100 |
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 7a.1 | Full regression | Run §R1–R7 | All pass |
+| 7a.2 | **Cap blocks EXP at 14** | New Game, battle until a mon reaches level 14, keep battling | Mon gains **no** experience past 14 |
+| 7a.3 | Cap is exactly 14, not 15 | Check the mon stops at 14 | Level 14 — this is the value Randolocke uses; upstream's default was 15 |
+| 7a.4 | Rare Candy respects the cap | Debug → Give item → Rare Candy; use it on a level-14 mon with 0 badges | Refuses / does not exceed 14 |
+| 7a.5 | Cap raises with a badge | Debug → Flags, set `FLAG_BADGE01_GET`, then battle | Mon can now progress toward 21 |
+| 7a.6 | Second badge → 24 | Set `FLAG_BADGE02_GET` | Cap becomes 24 |
+| 7a.7 | Champion → 63 | Set `FLAG_BADGE08_GET`, then `FLAG_IS_CHAMPION` | Cap 63 with 8 badges; after `FLAG_IS_CHAMPION` is set, cap is 100 |
+| 7a.8 | Under-cap mons still level normally | A level-5 mon with 0 badges | Gains EXP normally up to 14 |
+| 7a.9 | Traded/caught mons obey the cap | Catch a wild mon at/near the cap | Cannot exceed the cap |
+
+### Note on the flag table's semantics
+
+`sLevelCapFlagMap` returns the cap for the **first flag that is still unset**. So the row
+`{FLAG_BADGE01_GET, 14}` means "cap 14 while badge 1 has not been earned." Beating the
+Elite Four sets `FLAG_IS_CHAMPION`, the loop falls through, and `MAX_LEVEL` (100) applies —
+which is exactly Randolocke's "Elite Four defeated: 100."
+
+### Not included: the Cap Candy
+
+`B_RARE_CANDY_CAP` makes the **normal** Rare Candy respect the cap. Randolocke's **Cap
+Candy** is a different, custom item that levels a Pokémon *up to* the next meaningful
+point (next level cap, next move learned, or next evolution). That still needs a new item
+and effect — see Phase 7.
+
+---
+
 ## Phase 6a — Modern Emerald QoL configs (landed early)
 
 **What this build is:** three config flips pulled forward from Phase 6 because they are
