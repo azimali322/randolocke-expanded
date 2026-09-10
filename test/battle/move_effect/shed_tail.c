@@ -18,7 +18,7 @@ SINGLE_BATTLE_TEST("Shed Tail creates a Substitute at the cost of 1/2 users maxi
     } WHEN {
         TURN { MOVE(player, MOVE_SHED_TAIL); SEND_OUT(player, 1); }
     } SCENE {
-        maxHP = GetMonData(&gPlayerParty[0], MON_DATA_HP);
+        maxHP = GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_HP);
         ANIMATION(ANIM_TYPE_MOVE, MOVE_SHED_TAIL, player);
         HP_BAR(player, captureDamage: &costHP);
         MESSAGE("Wobbuffet shed its tail to create a decoy!");
@@ -52,12 +52,11 @@ SINGLE_BATTLE_TEST("Shed Tail's HP cost can trigger a berry before the user swit
         TURN { MOVE(player, MOVE_SHED_TAIL); SEND_OUT(player, 1); }
     } SCENE {
         ANIMATION(ANIM_TYPE_MOVE, MOVE_SHED_TAIL, player);
-        MESSAGE("Wobbuffet restored its health using its Sitrus Berry!");
         SEND_IN_MESSAGE("Wynaut");
     }
 }
 
-SINGLE_BATTLE_TEST("Shed Tail fails if there are no usable pokemon left")
+SINGLE_BATTLE_TEST("Shed Tail fails if there are no usable Pokémon left")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET)
@@ -110,8 +109,8 @@ SINGLE_BATTLE_TEST("Shed Tail creates a Substitute with 1/4 of user maximum heal
     PARAMETRIZE { hp = 164; }
 
     GIVEN {
-        ASSUME(GetMoveFixedDamage(MOVE_DRAGON_RAGE) == 40);
-        ASSUME(GetMoveEffect(MOVE_DRAGON_RAGE) == EFFECT_FIXED_DAMAGE_ARG);
+        ASSUME(GetMoveFixedHPDamage(MOVE_DRAGON_RAGE) == 40);
+        ASSUME(GetMoveEffect(MOVE_DRAGON_RAGE) == EFFECT_FIXED_HP_DAMAGE);
         PLAYER(SPECIES_BULBASAUR) { MaxHP(hp); }
         PLAYER(SPECIES_BULBASAUR);
         OPPONENT(SPECIES_CHARMANDER);

@@ -145,12 +145,7 @@ u32 GenerateSeedForRandomizer(void)
 {
     u32 data;
     const u32 vblankCounter = gMain.vblankCounter1;
-    #if HQ_RANDOM == TRUE
-        data = Random32();
-    #else
-        data = gRngValue;
-        Random();
-    #endif
+    data = Random32();
     return data ^ vblankCounter;
 }
 
@@ -238,7 +233,7 @@ u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u16 
 // Utility functions for the field item randomizer.
 static inline bool32 IsItemTMHM(u16 itemId)
 {
-    return ItemId_GetPocket(itemId) == POCKET_TM_HM;
+    return GetItemPocket(itemId) == POCKET_TM_HM;
 }
 
 static inline bool32 IsItemHM(u16 itemId)
@@ -248,7 +243,7 @@ static inline bool32 IsItemHM(u16 itemId)
 
 static inline bool32 IsKeyItem(u16 itemId)
 {
-    return ItemId_GetPocket(itemId) == POCKET_KEY_ITEMS;
+    return GetItemPocket(itemId) == POCKET_KEY_ITEMS;
 }
 
 // Don't randomize HMs or key items, that can make the game unwinnable.
@@ -322,7 +317,8 @@ void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx)
 // Both legendary and mythical Pokémon are included in this category.
 static inline bool32 IsRandomizerLegendary(u16 species)
 {
-    return gSpeciesInfo[species].isLegendary
+    return gSpeciesInfo[species].isRestrictedLegendary
+        || gSpeciesInfo[species].isSubLegendary
         || gSpeciesInfo[species].isMythical
         || gSpeciesInfo[species].isUltraBeast;
 }
@@ -344,8 +340,8 @@ static inline u16 GetSpeciesGroup(const struct SpeciesTable* table, u16 species)
     groupEntry = table->groupData[table->speciesToGroupIndex[species]];
 
     #ifndef NDEBUG
-        MgbaPrintf(MGBA_LOG_INFO, "GetSpeciesGroup: input %lu species %lu group %lu",
-            (unsigned long)species+1, (unsigned long)groupEntry.species, (unsigned long)groupEntry.group);
+        MgbaPrintf(MGBA_LOG_INFO, "GetSpeciesGroup: input %lu group %lu",
+            (unsigned long)species+1, (unsigned long)groupEntry);
     #endif
 
     return groupEntry;
@@ -815,7 +811,7 @@ u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, 
     }
 }
 
-u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildArea area, u8 slot)
+u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_WILD_MON))
     {
