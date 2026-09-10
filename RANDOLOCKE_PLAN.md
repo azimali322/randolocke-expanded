@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-2 complete; Phase 3 (re-land randomizer hooks) next
+**Status:** Phases 0-3 code complete (+ QoL configs from Phase 6); Phase 3 awaiting in-game verification
 
 ---
 
@@ -363,16 +363,26 @@ Commit `2d6fbeb3b9`
 The raw RNG helpers (`RandomizerRand`, `RandomizerRandRange`) intentionally keep `u16` —
 they return numbers, not domain values. Tests in [TESTING.md](TESTING.md) §Phase 2.
 
-### Phase 3 — Re-land the randomizer hooks
-- [ ] Trainer-mon hook into `GenerateMonFromTrainerMon` / `TrainerGenerator`, re-plumbing
-      the seed (§5.2)
-- [ ] `isBossTrainer` into the 1.17 trainer pipeline + `trainerproc` + regenerate (§5.3)
-- [ ] `cantRandomizeAbility` save bitfield — verify layout carefully (§5.5)
-- [ ] Re-sync `givemonrandom` against 1.17's `givemon` (§5.6)
-- [ ] Wild / field item / fixed / starter / gift / egg hooks
-- [ ] Green build
-- [ ] **Verify in emulator: new game, randomization active, trainer parties stable across
-      save/reload**
+### Phase 3 — Re-land the randomizer hooks — code complete, awaiting in-game verification
+Commit `e013bd220c`
+- [x] Trainer-mon hook into `GenerateMonFromTrainerMon` / `TrainerGenerator`, seed carried
+      on the generator struct as `rzTrainerId` / `rzSlot` / `rzTotalMons` (§5.2)
+- [x] `isBossTrainer` end to end — `trainerproc` emits it (Phase 1), and it now drives
+      both species exemption and `MON_DATA_CANT_RANDOMIZE_ABILITY` (§5.3)
+- [x] `cantRandomizeAbility` — set on every generated trainer mon
+- [x] `givemonrandom` re-synced (done in Phase 1) (§5.6)
+- [x] Hidden-item hook re-landed, placed after upstream's new coins branch
+- [x] Wild / fixed / starter / gift / egg / ability hooks confirmed live by audit
+- [x] Green build (ROM +192 bytes, RAM unchanged)
+- [ ] **Verify in emulator** — see [TESTING.md](TESTING.md) Phase 3, especially 3.3
+      (trainer parties stable across a true reset) and 3.11 (hidden coins)
+
+**Not done, carried forward:** the Pokédex area screen randomizer display
+(`MonListHasSpecies` needs `header` + `area`, which upstream's signature no longer passes).
+
+**Note:** `PreloadRandomizationTables()` was dropped from `new_game.c` by the merge but is
+still called from `src/overworld.c`, so the tables are populated. Worth confirming during
+Phase 3 testing that the first randomized encounter after a New Game is correct.
 
 ### Phase 4 — Enhancement 1: ability stability across evolution
 - [ ] Add `RZ_ABILITY_FOLLOWS_EVOLUTION` config

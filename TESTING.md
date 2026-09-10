@@ -161,6 +161,60 @@ would keep working and hide the bug. Always test at the top of the range.
 
 ---
 
+## Phase 3 — Randomizer hooks re-landed
+
+**What this build is:** the first build where the ROM should actually *behave* like a
+randomizer. Trainer parties and hidden items are reconnected.
+
+### ⚠️ Read §F first
+
+Nothing below will do anything until you **set the randomizer flags** and start from a
+**real New Game** (not debug quickstart — a Trainer ID of `00000` means a seed of 0).
+
+Set at minimum: `0x20` (wild), `0x21` (field items), `0x22` (trainer), `0x26` (abilities).
+
+### Still EXPECTED BROKEN
+
+- **Pokédex area screen** still does not show randomized locations (Phase 3 leftover).
+- Move/TM/tutor randomization — deferred to v1.1 by design, was never in tertu.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 3.1 | Full regression | Run §R1–R7 | All pass |
+| 3.2 | **Trainer mons randomize** | Set flag `0x22`, New Game, battle the first trainer on Route 103 | Their Pokémon are **not** the vanilla species |
+| 3.3 | **Trainer parties are stable** | Note the trainer's team, then reset (File → Reset, not a save state) and re-battle | **Identical team.** This is the single most important test — it proves the seed re-plumbing works |
+| 3.4 | Stable across save/reload | Save, power-cycle, reload, re-battle a trainer | Same team again |
+| 3.5 | Per-slot variety | Battle a trainer with 3+ mons | Slots differ from one another (not the same species repeated) |
+| 3.6 | Different trainers differ | Battle two different trainers | Different randomized teams |
+| 3.7 | Boss trainers exempt | Mark a trainer `Boss: Yes` in `trainers.party`, rebuild, battle them | Their team is the **designed** one, un-randomized |
+| 3.8 | Boss abilities exempt | Same boss trainer, check abilities in battle | Abilities are the species' real ones, not randomized |
+| 3.9 | Ability follows randomized species | Battle a normal trainer, note a mon's ability | Ability is legal for the **randomized** species, not the designed one |
+| 3.10 | **Hidden items randomize** | Set flag `0x21`, find a hidden item (e.g. with the Itemfinder/Dowsing Machine) | Item differs from vanilla |
+| 3.11 | **Hidden coins still work** | Find a hidden-coins spot in the Game Corner area | You receive **Coins**, not a randomized item. *This verifies the callnative sits after the coins branch* |
+| 3.12 | Visible items still randomize | Pick up a visible item ball | Randomized (this path was never broken) |
+| 3.13 | Partner party unaffected | Reach a multi-battle with Steven | Steven's team is his designed one, not randomized garbage |
+| 3.14 | Debug battles unaffected | Debug → Party → Start Debug Battle | Runs normally; debug trainers pass `TRAINER_NONE` |
+| 3.15 | Wild encounters still fine | Set flag `0x20`, walk in grass | Randomized and stable across reloads |
+
+### Why 3.3 and 3.11 matter most
+
+**3.3** — tertu seeded trainer randomization from `trainerNum`, and 1.17 removed that
+parameter entirely. The whole hook was rebuilt around carrying the id on
+`struct TrainerGenerator`. If the seed is not reaching the randomizer, teams will reroll
+every battle instead of staying fixed. Use a true **reset**, not a save-state reload.
+
+**3.13** — `MakePartnerGenerator` writes into an uninitialized stack local. If its new
+fields were ever left unset, Steven's party would randomize on a garbage seed. A sane
+Steven team confirms the initialization.
+
+**3.11** — the hidden-item hook was deliberately placed *after* upstream's coins branch,
+because `VAR_0x8005 == 0` means coins rather than an item. Randomizing before that check
+would turn coin piles into random items.
+
+---
+
 ## Phase 6a — Modern Emerald QoL configs (landed early)
 
 **What this build is:** three config flips pulled forward from Phase 6 because they are
