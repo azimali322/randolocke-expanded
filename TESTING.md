@@ -440,6 +440,61 @@ parties. If you ever *do* notice AI slowdown, that cache is the first place to l
 
 ---
 
+## Phase 5 — IV / EV / nature editors (Enhancements 2 and 4)
+
+**What this build is:** three new rows under **Debug → Party → Edit Pokemon**, operating on
+an existing party Pokémon:
+
+| Row | Effect |
+| --- | --- |
+| **Set IVs** | Edit all six IVs (0–31), pre-filled with current values |
+| **Set EVs** | Edit all six EVs (0–252), pre-filled with current values |
+| **Set Nature** | Set the **true** nature — the one shown on the summary screen |
+
+The existing **Set Hidden Nature** (Mint-style, affects stats only) stays alongside it.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 5.1 | Full regression | Run §R1–R7 | All pass |
+| 5.2 | Rows appear | Debug → Party → Edit Pokemon | Set IVs, Set EVs, Set Nature present |
+| 5.3 | IVs pre-fill | Set IVs on a mon whose IVs you know (check first with Check IVs) | Starting values match the mon's current IVs, not zeros |
+| 5.4 | IV edit sticks | Set all six IVs to 31, confirm, open the summary | Summary IV page shows 31 across the board |
+| 5.5 | **Stats recalculate** | After 5.4, look at the stat numbers | Stats increased — `CalculateMonStats` ran |
+| 5.6 | IVs persist | Save, reset, reload, check again | Still 31 |
+| 5.7 | EVs pre-fill and edit | Set EVs, e.g. 252 HP / 252 Speed | Summary EV page matches; stats recalculate |
+| 5.8 | Per-stat cursor | Step through all six substeps | Each stat is editable individually, labelled correctly |
+| 5.9 | Cancel does nothing | Open Set IVs, press B | Values unchanged |
+| 5.10 | **Nature changes on the summary** | Set Nature → Adamant, then open the summary | Summary shows **Adamant** *(this is the difference from Set Hidden Nature, which deliberately does not change the label)* |
+| 5.11 | **Gender never flips** | Pick a species with a split gender ratio (e.g. a starter, 87.5% male). Note the gender, then set every nature in turn, checking gender each time | Gender is **identical** every time |
+| 5.12 | Shininess preserved | Debug-give a shiny mon, then change its nature | Still shiny |
+| 5.13 | Non-shiny stays non-shiny | Change a normal mon's nature repeatedly | Never becomes shiny |
+| 5.14 | Nature affects stats | Set a nature with a clear spread and check the stat arrows/colours | Stats and colouring reflect the new nature |
+| 5.15 | Both nature editors coexist | Use Set Nature, then Set Hidden Nature, to different values | Summary shows the **true** nature; stats follow the **hidden** one |
+
+### Why 5.11 and 5.12 matter
+
+Nature lives inside the personality value, which also determines gender, shininess, Unown
+letter, Wurmple's evolution and Spinda spots. The naive fix — upstream's
+`ModifyPersonalityForNature()` — nudges the personality by up to ±12, which can flip gender
+near a ratio boundary.
+
+This editor instead steps the personality by **multiples of 256**:
+
+- gender reads only `personality & 0xFF`, and `+256` never touches the low byte → gender is
+  preserved *exactly*
+- nature is `personality % 25`, and `256 % 25 == 6`, which is coprime with 25 → stepping by
+  256 can still reach all 25 natures
+
+Shininess hashes the whole personality, so it is read before the change and re-asserted
+afterwards (the `MON_DATA_IS_SHINY` setter recomputes `shinyModifier` from the *current*
+personality, so the order matters).
+
+Residual, accepted changes: Unown letter, Wurmple's evolution branch and Spinda spots.
+
+---
+
 ## Phase 6a — Modern Emerald QoL configs (landed early)
 
 **What this build is:** three config flips pulled forward from Phase 6 because they are

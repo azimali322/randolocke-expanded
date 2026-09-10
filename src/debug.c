@@ -378,6 +378,9 @@ extern const u8 Debug_EventScript_KoPokemon[];
 extern const u8 Debug_EventScript_SetHiddenNature[];
 extern const u8 Debug_EventScript_SetAbility[];
 extern const u8 Debug_EventScript_SetFriendship[];
+extern const u8 Debug_EventScript_SetIVs[];
+extern const u8 Debug_EventScript_SetEVs[];
+extern const u8 Debug_EventScript_SetNature[];
 extern const u8 Debug_EventScript_Script_1[];
 extern const u8 Debug_EventScript_Script_2[];
 extern const u8 Debug_EventScript_Script_3[];
@@ -634,6 +637,9 @@ static const struct DebugMenuOption sDebugMenu_Actions_EditPokemon[] =
     { COMPOUND_STRING("Set Hidden Nature"),  DebugAction_ExecuteScript, Debug_EventScript_SetHiddenNature },
     { COMPOUND_STRING("Set Friendship"),     DebugAction_ExecuteScript, Debug_EventScript_SetFriendship },
     { COMPOUND_STRING("Set Ability"),        DebugAction_ExecuteScript, Debug_EventScript_SetAbility },
+    { COMPOUND_STRING("Set IVs"),            DebugAction_ExecuteScript, Debug_EventScript_SetIVs },
+    { COMPOUND_STRING("Set EVs"),            DebugAction_ExecuteScript, Debug_EventScript_SetEVs },
+    { COMPOUND_STRING("Set Nature"),         DebugAction_ExecuteScript, Debug_EventScript_SetNature },
     { NULL }
 };
 
@@ -4686,6 +4692,146 @@ static const struct DebugSelection sFriendshipSelection = {
     .steps = {&sFriendshipSelectionStep},
     .maxSteps = 1,
 };
+
+// --- Randolocke: party IV / EV / nature editors -----------------------------
+
+static void DebugSelection_PartyIVs_OnInit(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+    u32 i;
+
+    DebugNativeStep_InitAfterPartyMenu(taskId);
+    for (i = 0; i < NUM_STATS; i++)
+        DebugSelection_SetData(taskId, i, GetMonData(mon, MON_DATA_HP_IV + i));
+}
+
+static bool32 DebugSelection_PartyIVs_OnComplete(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+    u32 i;
+
+    for (i = 0; i < NUM_STATS; i++)
+    {
+        u16 value = DebugSelection_GetData(taskId, i);
+        SetMonData(mon, MON_DATA_HP_IV + i, &value);
+    }
+    CalculateMonStats(mon);
+    gTasks[taskId].func = DebugNativeStep_DelayedSelection;
+    return TRUE;
+}
+
+static void DebugSelection_PartyEVs_OnInit(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+    u32 i;
+
+    DebugNativeStep_InitAfterPartyMenu(taskId);
+    for (i = 0; i < NUM_STATS; i++)
+        DebugSelection_SetData(taskId, i, GetMonData(mon, MON_DATA_HP_EV + i));
+}
+
+static bool32 DebugSelection_PartyEVs_OnComplete(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+    u32 i;
+
+    for (i = 0; i < NUM_STATS; i++)
+    {
+        u16 value = DebugSelection_GetData(taskId, i);
+        SetMonData(mon, MON_DATA_HP_EV + i, &value);
+    }
+    CalculateMonStats(mon);
+    gTasks[taskId].func = DebugNativeStep_DelayedSelection;
+    return TRUE;
+}
+
+static void DebugSelection_PartyNature_OnInit(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+
+    DebugNativeStep_InitAfterPartyMenu(taskId);
+    DebugSelection_SetData(taskId, 0, GetNature(mon));
+}
+
+// Sets the *true* nature, which lives in the personality value. Stepping the
+// personality by a multiple of 256 leaves its low byte untouched, so gender
+// (genderRatio > (personality & 0xFF)) is preserved exactly; and because
+// 256 % NUM_NATURES is coprime with NUM_NATURES, stepping by 256 can reach every
+// nature. Shininess hashes the whole personality, so it is restored afterwards.
+static bool32 DebugSelection_PartyNature_OnComplete(u8 taskId)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
+    u32 target = DebugSelection_GetData(taskId, 0);
+    u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
+    bool8 wasShiny = GetMonData(mon, MON_DATA_IS_SHINY);
+    u32 i;
+
+    for (i = 0; i < NUM_NATURES; i++)
+    {
+        if (GetNatureFromPersonality(personality) == target)
+            break;
+        personality += 256;
+    }
+
+    SetMonData(mon, MON_DATA_PERSONALITY, &personality);
+    // Shininess is derived from the personality, so re-assert what it was.
+    SetMonData(mon, MON_DATA_IS_SHINY, &wasShiny);
+    CalculateMonStats(mon);
+
+    gTasks[taskId].func = DebugNativeStep_DelayedSelection;
+    return TRUE;
+}
+
+static const struct DebugSelection sPartyIVsSelection = {
+    .onInit = DebugSelection_PartyIVs_OnInit,
+    .onCancel = DebugNativeStep_CloseDebugWindow,
+    .onComplete = DebugSelection_PartyIVs_OnComplete,
+    .steps = {&sIVsSelectionStep},
+    .maxSteps = 1,
+};
+
+static const struct DebugSelection sPartyEVsSelection = {
+    .onInit = DebugSelection_PartyEVs_OnInit,
+    .onCancel = DebugNativeStep_CloseDebugWindow,
+    .onComplete = DebugSelection_PartyEVs_OnComplete,
+    .steps = {&sEVsSelectionStep},
+    .maxSteps = 1,
+};
+
+static const struct DebugSelection sPartyNatureSelection = {
+    .onInit = DebugSelection_PartyNature_OnInit,
+    .onCancel = DebugNativeStep_CloseDebugWindow,
+    .onComplete = DebugSelection_PartyNature_OnComplete,
+    .steps = {&sNatureSelectionStep},
+    .maxSteps = 1,
+};
+
+void DebugNative_Party_SetIVs(void)
+{
+    if (gSpecialVar_0x8004 < PARTY_SIZE)
+    {
+        u32 taskId = CreateTask(DebugNativeStep_DelayedSelection, 1);
+        SetWordTaskArg(taskId, DEBUG_SELECTION_PTR_ARG, (u32) &sPartyIVsSelection);
+    }
+}
+
+void DebugNative_Party_SetEVs(void)
+{
+    if (gSpecialVar_0x8004 < PARTY_SIZE)
+    {
+        u32 taskId = CreateTask(DebugNativeStep_DelayedSelection, 1);
+        SetWordTaskArg(taskId, DEBUG_SELECTION_PTR_ARG, (u32) &sPartyEVsSelection);
+    }
+}
+
+void DebugNative_Party_SetNature(void)
+{
+    if (gSpecialVar_0x8004 < PARTY_SIZE)
+    {
+        u32 taskId = CreateTask(DebugNativeStep_DelayedSelection, 1);
+        SetWordTaskArg(taskId, DEBUG_SELECTION_PTR_ARG, (u32) &sPartyNatureSelection);
+    }
+}
 
 void DebugNative_Party_SetFriendship(void)
 {

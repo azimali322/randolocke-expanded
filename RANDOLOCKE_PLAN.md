@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-4 code complete, plus level caps, key items and QoL configs pulled forward; Phases 3-4 awaiting in-game verification
+**Status:** Phases 0-5 code complete, plus level caps, key items and QoL configs pulled forward. All four enhancements implemented; Phases 3-5 awaiting in-game verification
 
 ---
 
@@ -14,10 +14,10 @@ Recreate **Pokémon Randolocke v1.1** (by Istorian) as my own romhack, with thre
 1. **Abilities do not randomize on evolution.** ✅ **Implemented in Phase 4** as
    `RZ_ABILITY_STABLE_ACROSS_EVOLUTION`. A Pokémon's randomized ability stays stable across
    its evolution family instead of rerolling when it evolves.
-2. **Manual IV/EV editing.** A cheat/option toggle to manually adjust IVs and EVs, in the
-   style of modern Emerald romhacks.
+2. **Manual IV/EV editing.** ✅ **Implemented in Phase 5** — Debug → Party → Edit Pokemon →
+   Set IVs / Set EVs.
 3. **Full Randolocke v1.1 parity.** All features from Randolocke v1.1 present in my romhack.
-4. **Nature editing.** The ability to adjust a Pokémon's nature.
+4. **Nature editing.** ✅ **Implemented in Phase 5** — Set Nature (true nature) alongside the existing Set Hidden Nature (Mint).
 5. **Modern Emerald-style QoL.** Reusable TMs, battle type icons, always-run, dual
    registered key items, and IV/EV visibility in the summary and move-learning screens.
    Reference: <https://github.com/resetes12/pokeemerald>
@@ -401,15 +401,22 @@ Phase 3 testing that the first randomized encounter after a New Game is correct.
       cannot hang the game
 - [ ] **Verify in emulator** — [TESTING.md](TESTING.md) Phase 4, especially 4.2 and 4.10
 
-### Phase 5 — Enhancements 2 and 4: IV/EV and nature editors
-- [ ] Add IV and EV editor rows to `sDebugMenu_Actions_EditPokemon[]`
-- [ ] Reuse give-time digit-input widgets (`sNatureSelectionStep` already exists for nature)
-- [ ] Add "Set Nature (true)" using the +256 stepping method (Enhancement 4, Option B),
-      preserving gender exactly and re-setting `shinyModifier` to preserve shininess
-- [ ] Leave the existing "Set Hidden Nature" (Mint-style, Option A) in place alongside it
-- [ ] Check EWRAM after (§6)
-- [ ] Test: edit IVs/EVs on a live party mon, confirm stats recalculate and persist
-- [ ] Test: set every nature on a gender-ratio-boundary species and confirm gender never flips
+### Phase 5 — Enhancements 2 and 4: IV/EV and nature editors — code complete
+- [x] Added **Set IVs**, **Set EVs** and **Set Nature** rows to
+      `sDebugMenu_Actions_EditPokemon[]`
+- [x] Reused the existing give-time widgets (`sIVsSelectionStep`, `sEVsSelectionStep`,
+      `sNatureSelectionStep`) via the `DebugSelection` framework, following the
+      `Set Friendship` pattern — no new UI code
+- [x] Editors pre-fill with the mon's current values and call `CalculateMonStats()` after
+- [x] "Set Nature" sets the **true** nature by stepping the personality in multiples of
+      256: gender reads only `personality & 0xFF` so it is preserved exactly, and
+      `256 % 25 == 6` is coprime with 25 so every nature is still reachable. Shininess is
+      read before and re-asserted after, since its setter derives `shinyModifier` from the
+      current personality.
+- [x] The Mint-style "Set Hidden Nature" is left in place alongside it
+- [x] EWRAM unchanged
+- [ ] **Verify in emulator** — [TESTING.md](TESTING.md) Phase 5, especially 5.11 (gender
+      never flips) and 5.12 (shininess preserved)
 
 ### Phase 6 — Randolocke parity: config-level
 Cheapest parity items first (§4, Tier 1):

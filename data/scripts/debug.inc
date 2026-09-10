@@ -488,6 +488,24 @@ Debug_EventScript_SetFriendship::
 	releaseall
 	end
 
+Debug_EventScript_SetIVs::
+	special ChoosePartyMon
+	callnative DebugNative_Party_SetIVs
+	releaseall
+	end
+
+Debug_EventScript_SetEVs::
+	special ChoosePartyMon
+	callnative DebugNative_Party_SetEVs
+	releaseall
+	end
+
+Debug_EventScript_SetNature::
+	special ChoosePartyMon
+	callnative DebugNative_Party_SetNature
+	releaseall
+	end
+
 Debug_EventScript_GivePokerus::
 	special ChoosePartyMon
 	callnative DebugNative_Party_SetPokerus
