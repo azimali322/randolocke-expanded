@@ -405,7 +405,7 @@ Phase 3 testing that the first randomized encounter after a New Game is correct.
 ### Phase 6 — Randolocke parity: config-level
 Cheapest parity items first (§4, Tier 1):
 - [ ] `ALL_TEACHABLES` teaching type
-- [ ] `P_SUMMARY_SCREEN_IV_EV_INFO`
+- [x] `P_SUMMARY_SCREEN_IV_EV_INFO` ✅ done in Phase 6a (F3)
 - [ ] Move relearner configs
 - [ ] Instant text config
 - [ ] Explicitly disable Mega / Primal / Dynamax / Gmax / Tera / Fusion / Z-Moves
