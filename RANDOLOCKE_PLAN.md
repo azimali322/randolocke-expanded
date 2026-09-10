@@ -16,6 +16,10 @@ Recreate **Pokémon Randolocke v1.1** (by Istorian) as my own romhack, with thre
 2. **Manual IV/EV editing.** A cheat/option toggle to manually adjust IVs and EVs, in the
    style of modern Emerald romhacks.
 3. **Full Randolocke v1.1 parity.** All features from Randolocke v1.1 present in my romhack.
+4. **Nature editing.** The ability to adjust a Pokémon's nature.
+5. **Modern Emerald-style QoL.** Reusable TMs, battle type icons, always-run, dual
+   registered key items, and IV/EV visibility in the summary and move-learning screens.
+   Reference: <https://github.com/resetes12/pokeemerald>
 
 **Reference:** <https://www.pokecommunity.com/threads/pok%C3%A9mon-randolocke-v1-1.537596/>
 
@@ -44,6 +48,67 @@ but there is no editor for an existing party Pokémon.
 `sDebugMenu_Actions_EditPokemon[]` table in `src/debug.c` — which already hosts
 Set Hidden Nature / Set Friendship / Set Ability. The digit-input widgets from the
 give-time flow are reusable. Watch EWRAM (see §6).
+
+#### Enhancement 4 — Nature editing
+
+Nature is **derived**, not stored: `GetNature()` is `personality % NUM_NATURES`
+(`src/pokemon.c`). Personality also determines gender, shininess, Unown letter, Wurmple's
+evolution branch and Spinda spots, so editing it naively has side effects.
+
+1.17 already stores a separate `hiddenNatureModifier:5` (`include/pokemon.h`), XORed against
+the personality nature. Stat calculation reads `MON_DATA_HIDDEN_NATURE`; the summary screen
+displays `GetNature()` and colours stat arrows from the mint nature. This is the Gen 8 Mint
+mechanic.
+
+**Option A — Mint-style (already shipping).** `Debug -> Party -> Edit Pokemon ->
+Set Hidden Nature` exists as of Phase 1. Changes which nature governs **stats**, no side
+effects, no work required.
+
+**Option B — true nature (changes the displayed nature too).** Do *not* use
+`ModifyPersonalityForNature()` (`src/battle_main.c`) directly: it shifts personality by up
+to +/-12, and gender is `genderRatio > (personality & 0xFF)` with **no gender modifier
+field**, so it can silently flip gender near a ratio boundary.
+
+Instead, step personality by a **multiple of 256**:
+- gender reads only the low byte, and `+256*m` leaves it byte-identical -> gender preserved
+- nature is `personality % 25`, and `256 = 6 (mod 25)`; 6 is coprime to 25, so stepping by
+  256 reaches every nature
+
+Then recompute and re-set `shinyModifier:1` to preserve the original shiny state. Residual
+changes are limited to Unown letter, Wurmple's branch and Spinda spots (cosmetic, rare).
+
+**Placement:** Phase 5, alongside Enhancement 2 — same debug menu table, same test pass.
+
+#### Enhancement 5 — Modern Emerald-style QoL
+
+Verified against the 1.17 tree. **Three of six are one-line config flips.**
+
+| # | Feature | Status on 1.17 | Where |
+| --- | --- | --- | --- |
+| F1 | TMs not consumed on use | ✅ **config exists** — `I_REUSABLE_TMS` (`include/config/item.h`), currently `FALSE` | Phase 6 |
+| F2 | Type icons next to opposing Pokémon when choosing a move | ✅ **config exists** — `B_SHOW_TYPES` (`include/config/battle.h`), currently `SHOW_TYPES_NEVER`. Options: `_ALWAYS`, `_CAUGHT`, `_SEEN` | Phase 6 |
+| F3 | See IVs/EVs in the summary screen | ✅ **config exists** — `P_SUMMARY_SCREEN_IV_EV_INFO`, plus `P_SUMMARY_SCREEN_IV_EV_VALUES` for numbers instead of letter grades | Phase 6 |
+| F4 | Always run (no B button) | ❌ needs code — no auto-run config exists | Phase 7 |
+| F5 | Two registered key items (Select / hold Select) | ❌ needs code **and a save field** | Phase 7 |
+| F6 | See EVs when choosing a move to learn | ❌ needs code | Phase 7 |
+
+**F2 note:** the config comment describes it as showing type indicators next to Pokémon HP
+bars *while choosing a move after selecting a target* — exactly the requested behaviour.
+
+**F3 note:** this also satisfies the Randolocke v1.0 parity item "IVs can be seen in the
+summary screen" (§4).
+
+**F4 implementation:** running is gated at `src/field_player_avatar.c` by
+`(heldKeys & B_BUTTON)` inside the dash check. Add an `OW_AUTO_RUN` config that inverts the
+test (hold B to *walk*) rather than deleting it, so the player keeps a way to walk precisely.
+
+**F5 implementation:** vanilla stores exactly one, `u16 registeredItem` in `SaveBlock1`
+(`include/global.h`). A second requires a new save field plus Select / hold-Select input
+handling. ⚠️ **This changes the save layout — requires a new game.** Batch it with any
+other save-affecting work so players only lose saves once.
+
+**F6 implementation:** the move-learning UI needs the mon's EV spread surfaced so the player
+can judge a physical vs. special move. No config; a UI addition.
 
 #### Enhancement 3 — Randolocke v1.1 parity
 
@@ -315,11 +380,15 @@ they return numbers, not domain values. Tests in [TESTING.md](TESTING.md) §Phas
 - [ ] Test: catch a mon, note ability, evolve, confirm ability unchanged; confirm the
       opposite with the config off
 
-### Phase 5 — Enhancement 2: IV/EV editor
+### Phase 5 — Enhancements 2 and 4: IV/EV and nature editors
 - [ ] Add IV and EV editor rows to `sDebugMenu_Actions_EditPokemon[]`
-- [ ] Reuse give-time digit-input widgets
+- [ ] Reuse give-time digit-input widgets (`sNatureSelectionStep` already exists for nature)
+- [ ] Add "Set Nature (true)" using the +256 stepping method (Enhancement 4, Option B),
+      preserving gender exactly and re-setting `shinyModifier` to preserve shininess
+- [ ] Leave the existing "Set Hidden Nature" (Mint-style, Option A) in place alongside it
 - [ ] Check EWRAM after (§6)
-- [ ] Test: edit both on a live party mon, confirm stats recalculate and persist
+- [ ] Test: edit IVs/EVs on a live party mon, confirm stats recalculate and persist
+- [ ] Test: set every nature on a gender-ratio-boundary species and confirm gender never flips
 
 ### Phase 6 — Randolocke parity: config-level
 Cheapest parity items first (§4, Tier 1):
@@ -330,6 +399,9 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] Explicitly disable Mega / Primal / Dynamax / Gmax / Tera / Fusion / Z-Moves
       (including 1.17's new Z-A Megas)
 - [ ] Bag size, catch rates
+- [ ] **F1** `I_REUSABLE_TMS = TRUE`
+- [ ] **F2** `B_SHOW_TYPES = SHOW_TYPES_ALWAYS` (decide ALWAYS vs CAUGHT vs SEEN)
+- [ ] **F3** `P_SUMMARY_SCREEN_IV_EV_INFO = TRUE` (+ `_IV_EV_VALUES` for raw numbers)
 
 ### Phase 7 — Randolocke parity: data & systems
 - [ ] 21-move level-up learnsets (format is identical between versions — generator output
@@ -338,6 +410,9 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] HM usability + forgettable HMs
 - [ ] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy)
 - [ ] Field/gift item randomization wiring
+- [ ] **F4** always-run: add `OW_AUTO_RUN`, invert the `B_BUTTON` dash gate
+- [ ] **F5** second registered key item (⚠️ save-layout change — batch with other save work)
+- [ ] **F6** show EVs in the move-learning screen
 
 ### Phase 8 — Randolocke parity: maps & events
 - [ ] All map changes and NPC/event additions from §4

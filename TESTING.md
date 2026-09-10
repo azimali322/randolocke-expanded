@@ -42,6 +42,46 @@ viewer, and prints `MgbaPrintf` debug output from the randomizer (View → Log).
 
 ---
 
+## §F — Enabling the randomizer (read this before testing randomization)
+
+**Every randomizer feature is flag-gated and defaults to OFF.** `RandomizerFeatureEnabled()`
+in `src/randomizer.c` calls `FlagGet(RANDOMIZER_FLAG_*)`, and flags start clear on a new
+game. A fresh save is a *normal* Emerald until you set these.
+
+This is why picking up the Route 102 Potion gives you a Potion: field-item randomization is
+simply switched off, not broken.
+
+| Feature | Flag | Hex |
+| --- | --- | --- |
+| Wild Pokémon | `RANDOMIZER_FLAG_WILD_MON` | `0x20` |
+| Field items | `RANDOMIZER_FLAG_FIELD_ITEMS` | `0x21` |
+| Trainer Pokémon | `RANDOMIZER_FLAG_TRAINER_MON` | `0x22` |
+| Fixed encounters | `RANDOMIZER_FLAG_FIXED_MON` | `0x23` |
+| Starters & gifts | `RANDOMIZER_FLAG_STARTER_AND_GIFT_MON` | `0x24` |
+| Egg Pokémon | `RANDOMIZER_FLAG_EGG_MON` | `0x25` |
+| Abilities | `RANDOMIZER_FLAG_ABILITIES` | `0x26` |
+
+**To turn them on for a test session:** Debug menu → Flags & Vars → Flags, and set the hex
+values above.
+
+**To turn them on permanently** (recommended once you reach parity work): uncomment the
+matching `FORCE_RANDOMIZE_*` defines in `include/config/randomizer.h`, which override the
+flags entirely.
+
+### ⚠️ The seed is your Trainer ID
+
+`RZ_TRAINER_ID_IS_SEED` is `TRUE`, so `GetRandomizerSeed()` returns your Trainer ID. Two
+consequences:
+
+- Two saves with the same Trainer ID get **identical** randomization. That is the intended
+  design and it is what makes runs shareable.
+- **A Trainer ID of `00000` means a seed of 0.** If you see that, you likely started via
+  debug quickstart rather than a real New Game — `InitPlayerTrainerId()` in
+  `src/new_game.c` only runs on the normal new-game path. Start a proper New Game before
+  judging any randomization result.
+
+---
+
 ## Phase 1 — 1.17 merge base
 
 **What this build is:** expansion 1.17.1 with the randomizer merged and *compiling*.
@@ -67,6 +107,7 @@ before Phase 3 changes behaviour.
 | 1.5 | `Boss:` key survived | `grep -n "Boss:" src/data/trainers.party` then battle that trainer | Builds without a trainerproc error; the battle runs |
 | 1.6 | Debug Edit Pokemon submenu | Debug → Party → Edit Pokemon | Submenu opens with Set Hidden Nature / Set Friendship / Set Ability |
 | 1.7 | Set Ability works | Edit Pokemon → Set Ability on a party mon, then check the summary | Ability changes and persists |
+| 1.11 | Set Hidden Nature (Mint) | Edit Pokemon → Set Hidden Nature, then open the summary | ⚠️ The **displayed nature does NOT change** — that is correct Mint behaviour. What *should* change is the **stat numbers** and the red/blue stat arrow colouring. Compare stats before and after |
 | 1.8 | Wild encounters work | Walk in grass on Route 101 until an encounter | A wild battle starts with a valid species |
 | 1.9 | Hidden encounters (dexnav bug fix) | If DexNav is enabled, search for a hidden encounter | Hidden search returns hidden-table species, not water species |
 | 1.10 | Save/reload stability | Save, reset, reload, walk around, enter a battle | No corruption; party intact |
@@ -106,7 +147,7 @@ unported. Nothing in Phase 2 addresses them.
 | 2.3 | Same seed, same starter | Load `phase1-baseline` save state; check starter species + ability | Identical to your Phase 1 screenshot |
 | 2.4 | Same seed, same wild mons | From the same state, walk Route 101 grass | The same species you recorded in Phase 1 |
 | 2.5 | Trainer ID unchanged | Check your Trainer ID | Same as Phase 1 (it is the randomizer seed) |
-| 2.6 | Item randomization stable | Pick up a known field item (e.g. the Potion on Route 102) | Same item as Phase 1 |
+| 2.6 | Item randomization stable | **First set flag `0x21`** (see §F), then pick up the Route 102 Potion | Same item as Phase 1 *for the same Trainer ID*. Without the flag set you correctly get a plain Potion |
 | 2.7 | Ability display correct | Open a party mon's summary | Ability name renders correctly, not a number or blank |
 | 2.8 | No enum truncation | Give yourself a **high-ID** species (Debug → Give → Pokémon, pick a Gen 9 / Z-A mon) | Correct species appears; not `SPECIES_NONE`, not a wrong mon. *This is the key test — it would catch an enum narrowed to the wrong width* |
 | 2.9 | High-ID item | Debug → Give item, pick a high-ID item | Correct item, correct name and icon |
