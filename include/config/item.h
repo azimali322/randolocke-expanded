@@ -1,6 +1,8 @@
 #ifndef GUARD_CONFIG_ITEM_H
 #define GUARD_CONFIG_ITEM_H
 
+#include "config/randolocke.h"
+
 // Item config
 #define I_SHINY_CHARM_ADDITIONAL_ROLLS  2           // The amount of additional Shiny rolls if the player has the Shiny Charm. Set it to 0 to disable the Shiny Charm's effects.
 #define I_KEY_FOSSILS                   GEN_LATEST  // In Gen4+, fossils are no longer Key Items.

@@ -5813,6 +5813,125 @@ static void UNUSED DisplayExpPoints(u8 taskId, TaskFunc task, u8 holdEffectParam
     gTasks[taskId].func = task;
 }
 
+// --- Randolocke candies -----------------------------------------------------
+
+// Returns the level a Cap Candy should raise this Pokémon to: the soonest of the
+// current level cap, the next level it learns a move, and the next level it
+// evolves. Falls back to +1 (which also covers item-based evolutions).
+static u32 GetCapCandyTargetLevel(struct Pokemon *mon)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
+    u32 level = GetMonData(mon, MON_DATA_LEVEL);
+    u32 target = level + 1;
+    u32 best = MAX_LEVEL + 1;
+    u32 i;
+    const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
+    const struct Evolution *evolutions = GetSpeciesEvolutions(species);
+
+    // Next level-up move.
+    if (learnset != NULL)
+    {
+        for (i = 0; learnset[i].move != LEVEL_UP_MOVE_END; i++)
+        {
+            if (learnset[i].level > level && learnset[i].level < best)
+                best = learnset[i].level;
+        }
+    }
+
+    // Next level-based evolution.
+    if (evolutions != NULL)
+    {
+        for (i = 0; evolutions[i].method != EVOLUTIONS_END; i++)
+        {
+            if (evolutions[i].method == EVO_LEVEL
+             && evolutions[i].param > level && evolutions[i].param < best)
+                best = evolutions[i].param;
+        }
+    }
+
+    if (best <= MAX_LEVEL && best > target)
+        target = best;
+
+    // Never exceed the level cap or the maximum level.
+    if (B_EXP_CAP_TYPE != EXP_CAP_NONE)
+    {
+        u32 cap = GetCurrentLevelCap();
+
+        if (target > cap)
+            target = cap;
+    }
+    if (target > MAX_LEVEL)
+        target = MAX_LEVEL;
+
+    return target;
+}
+
+// Shared body for the Endless Candy (always +1) and the Cap Candy (jump to the
+// next meaningful level). Neither is consumed - both are key items.
+static void RandolockeCandy(u8 taskId, TaskFunc task, bool32 isCapCandy)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
+    struct PartyMenuInternal *ptr = sPartyMenuInternal;
+    s16 *arrayPtr = ptr->data;
+    u32 targetLevel;
+    u32 cap = (B_EXP_CAP_TYPE != EXP_CAP_NONE) ? GetCurrentLevelCap() : MAX_LEVEL;
+
+    sInitialLevel = GetMonData(mon, MON_DATA_LEVEL);
+    targetLevel = isCapCandy ? GetCapCandyTargetLevel(mon) : sInitialLevel + 1;
+
+    if (targetLevel > MAX_LEVEL)
+        targetLevel = MAX_LEVEL;
+
+    PlaySE(SE_SELECT);
+
+    if (targetLevel <= sInitialLevel || sInitialLevel >= cap)
+    {
+        // Already at the cap or at max level - nothing to do.
+        sInitialLevel = 0;
+        sFinalLevel = 0;
+        gPartyMenuUseExitCallback = FALSE;
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD)
+            gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+        else
+            gTasks[taskId].func = task;
+        return;
+    }
+
+    BufferMonStatsToTaskData(mon, arrayPtr);
+    {
+        u32 species = GetMonData(mon, MON_DATA_SPECIES);
+        u32 exp = gExperienceTables[gSpeciesInfo[species].growthRate][targetLevel];
+
+        SetMonData(mon, MON_DATA_EXP, &exp);
+        CalculateMonStats(mon);
+    }
+    BufferMonStatsToTaskData(mon, &ptr->data[NUM_STATS]);
+
+    sFinalLevel = GetMonData(mon, MON_DATA_LEVEL);
+    gPartyMenuUseExitCallback = TRUE;
+    UpdateMonDisplayInfoAfterRareCandy(gPartyMenu.slotId, mon);
+    GetMonNickname(mon, gStringVar1);
+
+    PlayFanfareByFanfareNum(FANFARE_LEVEL_UP);
+    ConvertIntToDecimalStringN(gStringVar2, sFinalLevel, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringExpandPlaceholders(gStringVar4, gText_PkmnElevatedToLvVar2);
+    DisplayPartyMenuMessage(gStringVar4, TRUE);
+    ScheduleBgCopyTilemapToVram(2);
+    gTasks[taskId].func = Task_DisplayLevelUpStatsPg1;
+}
+
+void ItemUseCB_EndlessCandy(u8 taskId, TaskFunc task)
+{
+    RandolockeCandy(taskId, task, FALSE);
+}
+
+void ItemUseCB_CapCandy(u8 taskId, TaskFunc task)
+{
+    RandolockeCandy(taskId, task, TRUE);
+}
+
 void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];

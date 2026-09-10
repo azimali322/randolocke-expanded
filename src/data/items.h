@@ -14091,6 +14091,72 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_SuperRod,
     },
 
+    // --- Randolocke custom key items ---
+
+    [ITEM_REPELLANT] =
+    {
+        .name = ITEM_NAME("Repellant"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Repels weak wild\n"
+            "Pokémon forever.\n"
+            "Use to toggle."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_Repellant,
+        .iconPic = gItemIcon_Repel,
+        .iconPalette = gItemIconPalette_MaxRepel,
+    },
+
+    [ITEM_PORTA_HEAL] =
+    {
+        .name = ITEM_NAME("Porta Heal"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A portable Pokémon\n"
+            "Center. Restores\n"
+            "your party."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_PortaHeal,
+        .iconPic = gItemIcon_Potion,
+        .iconPalette = gItemIconPalette_Potion,
+    },
+
+    [ITEM_ENDLESS_CANDY] =
+    {
+        .name = ITEM_NAME("Endless Candy"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Raises a Pokémon's\n"
+            "level by one. It is\n"
+            "never used up."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_PARTY_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_EndlessCandy,
+        .iconPic = gItemIcon_RareCandy,
+        .iconPalette = gItemIconPalette_RareCandy,
+    },
+
+    [ITEM_CAP_CANDY] =
+    {
+        .name = ITEM_NAME("Cap Candy"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Raises a Pokémon to\n"
+            "the next cap, move\n"
+            "or evolution."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_PARTY_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CapCandy,
+        .iconPic = gItemIcon_RareCandy,
+        .iconPalette = gItemIconPalette_RareCandy,
+    },
+
     [ITEM_DOWSING_MACHINE] =
     {
         .name = ITEM_NAME("Dowsing Machine"),

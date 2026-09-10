@@ -1080,6 +1080,10 @@ bool8 UpdateRepelCounter(void)
     if (InUnionRoom() == TRUE)
         return FALSE;
 
+    // Randolocke: the Repellant key item makes the repel permanent.
+    if (FlagGet(RANDOLOCKE_FLAG_INFINITE_REPEL))
+        return FALSE;
+
     if (steps != 0)
     {
         steps--;

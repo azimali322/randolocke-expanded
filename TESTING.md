@@ -348,6 +348,57 @@ and effect — see Phase 7.
 
 ---
 
+## Phase 7b — The four custom key items
+
+**What this build is:** Randolocke's four QoL key items. All are **key items** in the Key
+Items pocket, so none of them is ever consumed.
+
+| Item | Effect |
+| --- | --- |
+| **Repellant** | Toggles a permanent repel on/off |
+| **Porta Heal** | Portable Pokémon Center; by default does **not** revive fainted Pokémon |
+| **Endless Candy** | Raises a Pokémon's level by 1 |
+| **Cap Candy** | Raises a Pokémon to the next level cap, next level-up move, or next level evolution — whichever comes first |
+
+Config lives in `include/config/randolocke.h`:
+`RANDOLOCKE_FLAG_INFINITE_REPEL` and `RANDOLOCKE_PORTA_HEAL_REVIVES` (default `FALSE`).
+
+**To get them:** Debug → Give → Give item XYZ… and pick each by name.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 7b.1 | Full regression | Run §R1–R7 | All pass |
+| 7b.2 | Items exist and are key items | Give all four, open the Bag | All four in the **Key Items** pocket with sensible names, icons and descriptions |
+| 7b.3 | Repellant turns on | Use it | "The Repellant is now active!" |
+| 7b.4 | Repellant actually repels | Walk 100+ steps in grass with a higher-level lead | No wild encounters from weaker Pokémon |
+| 7b.5 | **Repellant never wears off** | Walk several hundred steps | Still active; no "repel wore off" message |
+| 7b.6 | Repellant toggles off | Use it again | "The Repellant was switched off"; wild encounters resume |
+| 7b.7 | Repellant survives save/reload | Toggle on, save, reset, reload | Still active (it is a flag, so it persists) |
+| 7b.8 | Not consumed | Check the bag after each use | All four still present |
+| 7b.9 | Porta Heal restores HP/PP | Damage a mon and use PP, then use it | HP and PP restored, status cured |
+| 7b.10 | **Porta Heal does NOT revive** | Let a mon faint, then use it | Fainted mon **stays fainted** — this is Randolocke's default. Healthy mons still heal |
+| 7b.11 | Endless Candy +1 | Use on a level-5 mon | Becomes level 6, stat screen shown |
+| 7b.12 | Endless Candy respects the cap | Use on a mon at the cap (14 with 0 badges) | "It won't have any effect" |
+| 7b.13 | **Cap Candy jumps to the cap** | Use on a low-level mon with 0 badges | Jumps to **14** in one use |
+| 7b.14 | Cap Candy stops at a move | Use on a mon that learns a move before the cap | Stops at that level, not the cap |
+| 7b.15 | Cap Candy stops at an evolution | Use on a mon that evolves by level before the cap | Stops at the evolution level |
+| 7b.16 | Cap Candy at the cap | Use on a mon already at the cap | "It won't have any effect" |
+| 7b.17 | Stats recalculate | After any candy, open the summary | Stats match the new level |
+
+### What to watch for
+
+- **7b.5** is the point of the Repellant. `UpdateRepelCounter()` returns early while the
+  flag is set, so the step counter never decrements.
+- **7b.10** is the Randolocke-specific behaviour. If you would rather it revive, set
+  `RANDOLOCKE_PORTA_HEAL_REVIVES` to `TRUE` in `include/config/randolocke.h` and rebuild.
+- **7b.13–7b.15** exercise the three branches of the Cap Candy's target calculation. It
+  takes the *soonest* of cap / next move / next evolution, so a mon that learns a move at
+  level 10 with a cap of 14 should stop at 10.
+
+---
+
 ## Phase 6a — Modern Emerald QoL configs (landed early)
 
 **What this build is:** three config flips pulled forward from Phase 6 because they are

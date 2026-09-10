@@ -82,6 +82,9 @@ static void CB2_OpenPokeblockFromBag(void);
 static void ItemUseOnFieldCB_Honey(u8 taskId);
 static bool32 IsValidLocationForVsSeeker(void);
 
+static const u8 sText_RepellantOn[] = _("The Repellant is now active!{PAUSE_UNTIL_PRESS}");
+static const u8 sText_RepellantOff[] = _("The Repellant was switched off.{PAUSE_UNTIL_PRESS}");
+static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored to full health!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_CantDismountBike[] = _("You can't dismount your BIKE here.{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderNearby[] = _("Huh?\nThe ITEMFINDER's responding!\pThere's an item buried around here!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderOnTop[] = _("Oh!\nThe ITEMFINDER's shaking wildly!{PAUSE_UNTIL_PRESS}");
@@ -961,6 +964,72 @@ static void RemoveUsedItem(void)
         UpdatePyramidBagList();
         UpdatePyramidBagCursorPos();
     }
+}
+
+// --- Randolocke custom key items -------------------------------------------
+
+// Toggles a permanent repel. UpdateRepelCounter() skips its decrement while
+// RANDOLOCKE_FLAG_INFINITE_REPEL is set, so the effect never wears off.
+void ItemUseOutOfBattle_Repellant(u8 taskId)
+{
+    const u8 *msg;
+
+    PlaySE(SE_REPEL);
+    if (FlagGet(RANDOLOCKE_FLAG_INFINITE_REPEL))
+    {
+        FlagClear(RANDOLOCKE_FLAG_INFINITE_REPEL);
+        VarSet(VAR_REPEL_STEP_COUNT, 0);
+        msg = sText_RepellantOff;
+    }
+    else
+    {
+        FlagSet(RANDOLOCKE_FLAG_INFINITE_REPEL);
+        // Any non-zero step count keeps the repel check active; it never ticks down.
+        VarSet(VAR_REPEL_STEP_COUNT, 0x7FFF);
+        msg = sText_RepellantOn;
+    }
+
+    if (!gTasks[taskId].tUsingRegisteredKeyItem)
+        DisplayItemMessage(taskId, FONT_NORMAL, msg, CloseItemMessage);
+    else
+        DisplayItemMessageOnField(taskId, msg, Task_CloseCantUseKeyItemMessage);
+}
+
+// A portable Pokémon Center. Whether it revives fainted Pokémon is configurable;
+// Randolocke v1.1 made "does not revive" the default.
+void ItemUseOutOfBattle_PortaHeal(u8 taskId)
+{
+    u32 i;
+
+    PlayFanfare(MUS_HEAL);
+    for (i = 0; i < gPartiesCount[B_TRAINER_PLAYER]; i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+
+        if (GetMonData(mon, MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE)
+            continue;
+        if (!RANDOLOCKE_PORTA_HEAL_REVIVES && GetMonData(mon, MON_DATA_HP) == 0)
+            continue;   // leave fainted Pokémon fainted
+
+        HealPokemon(mon);
+    }
+
+    if (!gTasks[taskId].tUsingRegisteredKeyItem)
+        DisplayItemMessage(taskId, FONT_NORMAL, sText_PortaHealUsed, CloseItemMessage);
+    else
+        DisplayItemMessageOnField(taskId, sText_PortaHealUsed, Task_CloseCantUseKeyItemMessage);
+}
+
+void ItemUseOutOfBattle_EndlessCandy(u8 taskId)
+{
+    gItemUseCB = ItemUseCB_EndlessCandy;
+    SetUpItemUseCallback(taskId);
+}
+
+void ItemUseOutOfBattle_CapCandy(u8 taskId)
+{
+    gItemUseCB = ItemUseCB_CapCandy;
+    SetUpItemUseCallback(taskId);
 }
 
 void ItemUseOutOfBattle_Repel(u8 taskId)

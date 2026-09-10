@@ -202,9 +202,9 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 - [ ] HMs forgettable like normal moves
 - [x] IVs visible in the summary screen (`P_SUMMARY_SCREEN_IV_EV_INFO`) ✅ done via F3
 - [ ] Expanded bag size
-- [ ] Key items: infinite Repellant, Porta Heal, Endless Candy, Cap Candy
-      *(Cap Candy = level up to the next cap / next move / next evolution. Distinct from
-      `B_RARE_CANDY_CAP`, already TRUE, which only stops normal Rare Candy exceeding the cap.)*
+- [x] Key items: infinite Repellant, Porta Heal, Endless Candy, Cap Candy ✅ landed early
+      *(Cap Candy takes the soonest of next cap / next level-up move / next level evolution.
+      Distinct from `B_RARE_CANDY_CAP`, which only stops normal Rare Candy exceeding the cap.)*
 - [ ] Press R to throw a ball
 
 ### Map & event changes
@@ -233,7 +233,7 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 ### v1.1 option toggles
 - [ ] Don't randomize abilities *(nearly free — tertu flag)*
 - [ ] Higher-Base-Power moves learned later (default on)
-- [ ] Porta Heal does not revive by default
+- [x] Porta Heal does not revive by default ✅ (`RANDOLOCKE_PORTA_HEAL_REVIVES`)
 - [ ] ~~Don't randomize movesets~~ — deferred with move randomization
 - [ ] ~~Enforce nicknaming~~ — deferred
 - [ ] ~~Nuzlocke wild encounters~~ — **cut**
@@ -421,7 +421,7 @@ Cheapest parity items first (§4, Tier 1):
 - [x] Level caps ✅ landed early (`B_EXP_CAP_TYPE`/`B_LEVEL_CAP_TYPE` + `sLevelCapFlagMap`)
 - [ ] Trainer party scaling to the caps
 - [ ] HM usability + forgettable HMs
-- [ ] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy)
+- [x] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy) ✅
 - [ ] Field/gift item randomization wiring
 - [ ] **F4** always-run: add `OW_AUTO_RUN`, invert the `B_BUTTON` dash gate
 - [ ] **F5** second registered key item (⚠️ save-layout change — batch with other save work)
