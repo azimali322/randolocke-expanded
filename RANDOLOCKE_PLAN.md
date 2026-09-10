@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-1 complete; Phase 2 (enum conversion) next
+**Status:** Phases 0-2 complete; Phase 3 (re-land randomizer hooks) next
 
 ---
 
@@ -288,10 +288,15 @@ Branch: `update/expansion-1.17` (commit `ba19bda633`)
 restored to upstream's version; the randomizer's Pokédex-area display needs re-landing
 (it requires `header` + `area`, which upstream's new signature no longer passes).
 
-### Phase 2 — Enum conversion
-- [ ] Convert randomizer API from `u16` to `enum Species` / `enum Item` / `enum Ability`
-- [ ] Convert `ability_whitelist.h` and `item_whitelist.h`
-- [ ] Green build; commit separately (§5.4)
+### Phase 2 — Enum conversion ✅ complete
+Commit `2d6fbeb3b9`
+- [x] Convert randomizer API from `u16` to `enum Species` / `enum Item` / `enum Ability`
+      (plus `enum Type` for `RandomizeMonType`)
+- [x] Convert `ability_whitelist.h` and `item_whitelist.h`
+- [x] Green build, no `-Wenum-conversion` warnings; memory byte-identical to Phase 1
+
+The raw RNG helpers (`RandomizerRand`, `RandomizerRandRange`) intentionally keep `u16` —
+they return numbers, not domain values. Tests in [TESTING.md](TESTING.md) §Phase 2.
 
 ### Phase 3 — Re-land the randomizer hooks
 - [ ] Trainer-mon hook into `GenerateMonFromTrainerMon` / `TrainerGenerator`, re-plumbing

@@ -83,6 +83,43 @@ Record these so later phases have something to compare against:
 
 ---
 
+## Phase 2 — Enum conversion
+
+**What this build is:** the randomizer's API converted from `u16` to 1.17's typed enums
+(`enum Species` / `enum Item` / `enum Ability` / `enum Type`). This is a **type-safety
+change only** — no behaviour should differ from Phase 1 in any way.
+
+**The whole point of these tests is to prove nothing changed.** If you see *any* behavioural
+difference from your Phase 1 baseline, that is a bug, because this phase should be inert.
+
+### EXPECTED BROKEN in Phase 2 — unchanged from Phase 1
+
+Same list as Phase 1: trainer randomization and the Pokédex area screen are still
+unported. Nothing in Phase 2 addresses them.
+
+### Tests
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 2.1 | Full regression | Run §R1–R7 | All pass |
+| 2.2 | Memory did not move | Compare the `make` memory table against Phase 1 | **Byte-identical.** Enums lower to the same integers; any change means something real was altered |
+| 2.3 | Same seed, same starter | Load `phase1-baseline` save state; check starter species + ability | Identical to your Phase 1 screenshot |
+| 2.4 | Same seed, same wild mons | From the same state, walk Route 101 grass | The same species you recorded in Phase 1 |
+| 2.5 | Trainer ID unchanged | Check your Trainer ID | Same as Phase 1 (it is the randomizer seed) |
+| 2.6 | Item randomization stable | Pick up a known field item (e.g. the Potion on Route 102) | Same item as Phase 1 |
+| 2.7 | Ability display correct | Open a party mon's summary | Ability name renders correctly, not a number or blank |
+| 2.8 | No enum truncation | Give yourself a **high-ID** species (Debug → Give → Pokémon, pick a Gen 9 / Z-A mon) | Correct species appears; not `SPECIES_NONE`, not a wrong mon. *This is the key test — it would catch an enum narrowed to the wrong width* |
+| 2.9 | High-ID item | Debug → Give item, pick a high-ID item | Correct item, correct name and icon |
+
+### Why 2.8 and 2.9 matter
+
+Converting `u16` to an enum changes the type the compiler uses for storage and comparison.
+If any conversion silently narrowed a value, the failure would only show up at **high IDs**
+— above 255, or above 1,627 for the species added in 1.17. Low-ID Pokémon like Treecko
+would keep working and hide the bug. Always test at the top of the range.
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed
