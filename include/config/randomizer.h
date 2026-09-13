@@ -68,19 +68,30 @@
 
 // Item weights, x100. Pool of 475. No community list exists for items, so tiers 1-2 are
 // hand-graded from pokeemerald_rando_enh and the rest are placed by heuristic; see
-// tools/randolocke/gen_item_tiers.py. 1.90x / 1.85x / 1.72x / 0.30x / 0.10x vs uniform.
-// Tier 5 (healing, vitamins, X items, and mega/Z/Tera gear that Phase 6 disabled) is at
-// 0.10x: azim does not use consumables in a nuzlocke, so finding one is a wasted pickup.
+// tools/randolocke/gen_item_tiers.py. Pool of 408; berries are excluded because they are
+// randomized separately at berry trees. 2.41x / 2.30x / 2.06x / 0.30x / 0.10x vs uniform.
+// Tier 4 is Poke Balls and evolution items - both sold cheaply in the Phase 11 shop, so
+// finding one is not a reward. Tier 5 is healing, vitamins, X items and the mega/Z/Tera
+// gear Phase 6 disabled; at 0.10x it is effectively off.
 #define RZ_TIER_WEIGHTED_ITEMS     TRUE
-#define RZ_ITEM_W_T1             80
-#define RZ_ITEM_W_T2             3311
-#define RZ_ITEM_W_T3             5881
-#define RZ_ITEM_W_T4             379
-#define RZ_ITEM_W_T5             349
+#define RZ_ITEM_W_T1             118
+#define RZ_ITEM_W_T2             4792
+#define RZ_ITEM_W_T3             4146
+#define RZ_ITEM_W_T4             537
+#define RZ_ITEM_W_T5             407
 
 // Share of ordinary field-item pickups that become a TM instead of an item, x100.
 // Randolocke wants TMs to be a common find; with I_REUSABLE_TMS on they are permanent.
 #define RZ_ITEM_W_TM_BAND          3000
+
+// Which TM, once the TM band is chosen. These are separate from the move weights: a TM is
+// permanent under I_REUSABLE_TMS, so the band leans much harder toward good moves than a
+// one-off move roll does. TMs whose move is Bad or Pokemon Homeless are not in the pool
+// at all. Over 40 eligible TMs this gives roughly 4.0x / 2.4x / 1.05x / 0.27x uniform.
+#define RZ_TM_W_META_DEFINING      1000
+#define RZ_TM_W_STAPLES            3000
+#define RZ_TM_W_FILLER             5000
+#define RZ_TM_W_NICHE              1000
 
 // --- Learnset randomization -------------------------------------------------
 

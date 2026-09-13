@@ -194,12 +194,10 @@ static const struct RzTier sItemTiers[] =
 // good TM is about as likely as a good move would be.
 static const struct RzTier sTmTiers[] =
 {
-    RZ_TIER(sTmTierMetaDefining, RZ_MOVE_W_META_DEFINING),
-    RZ_TIER(sTmTierStaples,      RZ_MOVE_W_STAPLES),
-    RZ_TIER(sTmTierFiller,       RZ_MOVE_W_FILLER),
-    RZ_TIER(sTmTierNiche,        RZ_MOVE_W_NICHE),
-    RZ_TIER(sTmTierBad,          RZ_MOVE_W_BAD),
-    RZ_TIER(sTmTierHomeless,     RZ_MOVE_W_HOMELESS),
+    RZ_TIER(sTmTierMetaDefining, RZ_TM_W_META_DEFINING),
+    RZ_TIER(sTmTierStaples,      RZ_TM_W_STAPLES),
+    RZ_TIER(sTmTierFiller,       RZ_TM_W_FILLER),
+    RZ_TIER(sTmTierNiche,        RZ_TM_W_NICHE),
 };
 
 static const struct RzTier sMoveTiers[] =

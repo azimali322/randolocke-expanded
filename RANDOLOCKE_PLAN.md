@@ -456,15 +456,22 @@ Cheapest parity items first (§4, Tier 1):
 
 The only Modern Emerald QoL feature azim wants that this repo does not already cover.
 
-**Wanted:** a shop selling **Ultra Balls, Fast Balls and Timer Balls** cheaply.
+**Wanted:** a shop selling **Ultra Balls, Fast Balls and Timer Balls** *and every evolution
+item* cheaply, stocked in ordinary Poke Marts.
+
+Because these are buyable, both are deliberately demoted in the field-item randomizer
+(Phase 10 tier 4, 0.30x uniform): finding one on the ground is not a reward when it is on
+sale. The two decisions are linked - if the shop does not happen, tier 4 should go back up.
 
 Modern Emerald puts ₽1 Ultra Balls plus evolution stones and trade-evolution items on
 Lilycove Dept. Store 3F. That overlaps Randolocke's own planned Lilycove evolution-item
 sellers (§4, Phase 8), so the two should be designed as one shop rather than two.
 
-- [ ] Decide location — folding it into the Phase 8 Lilycove sellers is cheapest
+- [ ] Decide location — ordinary Poke Marts, so it is available from the start
 - [ ] Stock Ultra / Fast / Timer Balls at a low price
+- [ ] Stock every evolution item and evolution stone at a low price
 - [ ] Confirm Fast Ball and Timer Ball exist and behave in 1.17 (they are not vanilla Emerald)
+- [ ] Retire the Phase 8 Lilycove evolution-item sellers if the mart covers them
 
 #### Explicitly declined from Modern Emerald
 
@@ -484,6 +491,25 @@ Reviewed and **not wanted**, recorded so they are not revisited:
 Already covered natively by 1.17 or by earlier phases: modern typings, Fairy, better stats,
 extra legendaries, legendary abilities, new moves, nature mints, reusable TMs, opponent type
 display, free TM/HM use, the Level Cap Candy and level caps.
+
+### Phase 12 — Berry tree randomization
+
+Berries are **excluded from field-item randomization** (Phase 10), on the basis that they
+are randomized where they are actually found: at berry trees. That second half does not
+exist yet, so right now berries are simply never randomized.
+
+pokeemerald_rando_enh has this: `src/berry.c` plus `src/data/pokemon/berry_tiers.h`, 43
+berries in 5 bands split on whether the berry does anything when held (22 have a hold
+effect, 21 do not), graded by how much that effect is worth in a fight.
+
+- [ ] Port the berry tier table, extending it to 1.17's 68 berries
+- [ ] Hook berry tree generation to a weighted pick
+- [ ] Decide whether tree berries should respect the same nuzlocke logic — in-battle healing
+      berries are near-worthless here, so Lum and the stat-boost berries should dominate
+
+⚠️ **Until this lands, berries are unrandomized.** If that is worse than the double-dipping
+it was meant to avoid, re-enable them in `gen_item_tiers.py` by removing the
+`POCKET_BERRIES` skip.
 
 ### Phase 10 — Tier-weighted randomization (ported from pokeemerald_rando_enh)
 

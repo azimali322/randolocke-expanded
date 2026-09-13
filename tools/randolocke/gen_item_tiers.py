@@ -99,18 +99,14 @@ def heuristic(name: str, d: dict) -> int:
         return 4
     if pocket == "POCKET_POKE_BALLS":
         return 3                          # cheap to buy, so not a find worth rewarding
+    if sort in ("ITEM_TYPE_EVOLUTION_ITEM", "ITEM_TYPE_EVOLUTION_STONE",
+                "ITEM_TYPE_LEVEL_UP_ITEM"):
+        return 3                          # also sold cheaply, same reasoning as balls
     if hold and hold != "HOLD_EFFECT_NONE":
-        if pocket == "POCKET_BERRIES":
-            return 2                      # held berries: useful, rarely decisive
         if sort in ("ITEM_TYPE_HELD_ITEM", "ITEM_TYPE_SPECIAL_HELD_ITEM",
                     "ITEM_TYPE_TYPE_BOOST_HELD_ITEM", "ITEM_TYPE_EV_BOOST_HELD_ITEM"):
             return 1                      # the good stuff: real battle hold items
         return 2
-    if sort in ("ITEM_TYPE_EVOLUTION_ITEM", "ITEM_TYPE_EVOLUTION_STONE",
-                "ITEM_TYPE_LEVEL_UP_ITEM"):
-        return 2                          # evolution access matters in a randomizer
-    if pocket == "POCKET_BERRIES":
-        return 3                          # inert berries
     return 4
 
 
@@ -120,8 +116,13 @@ def main() -> int:
     hand = hand_tiers()
 
     tiers: list[list[str]] = [[] for _ in range(TIERS)]
-    by_hand = by_heur = unknown = 0
+    by_hand = by_heur = unknown = berries = 0
     for name in wl:
+        # Berries are excluded from field-item randomization entirely: they are randomized
+        # separately at berry trees, so finding one on the ground would double-dip.
+        if data.get(name, {}).get("pocket") == "POCKET_BERRIES":
+            berries += 1
+            continue
         if name in hand:
             tiers[hand[name]].append(name); by_hand += 1
         elif name in data:
@@ -152,7 +153,8 @@ def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(L))
     print(f"wrote {OUT.relative_to(ROOT)}")
-    print(f"  hand-graded {by_hand}, heuristic {by_heur}, unrecognised {unknown}")
+    print(f"  hand-graded {by_hand}, heuristic {by_heur}, unrecognised {unknown}, "
+          f"berries excluded {berries}")
     for i, names in enumerate(tiers, 1):
         print(f"  tier {i}: {len(names)}")
     return 0
