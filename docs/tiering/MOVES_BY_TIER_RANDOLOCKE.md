@@ -15,20 +15,55 @@ they appear; the tools resolve them to `MOVE_*` constants and fail loudly on a m
 **Known errors in the source image**, corrected by the validator's alias table:
 `X-Scizzor` -> X-Scissor. A second `Curse???` tile duplicating Curse was dropped.
 
+## Weights
+
+```
+python3 tools/randolocke/tier_report.py --moves
+python3 tools/randolocke/tier_report.py --moves --weights="Niche=50,Bad=8"
+```
+
+Pool of 818 rollable moves; uniform draw is 0.1222% each.
+
+| Tier | Count | Weight | Per move | vs uniform | Share of pool |
+| --- | --- | --- | --- | --- | --- |
+| Meta Defining | 4 | 0.75% | 0.1875% | 1.53x | 0.5% |
+| Staples | 42 | 7.5% | 0.1786% | 1.46x | 5.1% |
+| Filler/Outclassed | 189 | 32% | 0.1693% | 1.38x | 23.1% |
+| Niche | 375 | 54% | 0.1440% | 1.18x | 45.8% |
+| Bad | 180 | 5.25% | 0.0292% | **0.24x** | 22.0% |
+| Pokemon Homeless | 28 | 0.5% | 0.0179% | **0.15x** | 3.4% |
+
+Deliberately **compressed at the top and steep at the bottom**: the top four bands sit
+between 1.53x and 1.18x, so a good move is only modestly favoured, while Bad and Pokemon
+Homeless drop to 0.24x and 0.15x. Variety is preserved; genuinely bad moves are rare.
+
+Meta Defining holds only 4 moves, so its weight is very sensitive — even 1% would put it at
+2.04x. It is set to 0.75% to keep it in line with Staples.
+
+## Exclusions applied
+
+| Rule | Count | Why |
+| --- | --- | --- |
+| Z / Max / G-Max moves | 87 | Everything at or after `FIRST_Z_MOVE` in `include/constants/moves.h`. Phase 6 disabled Gigantamax and Randolocke lists Z-moves as unavailable, so these are inert. Detected structurally, not by name list. |
+| Struggle | 1 | The game's fallback move, not a real option. |
+
+## Nuzlocke pushdowns
+
+Moved to Pokemon Homeless regardless of community placement, because a move that KOs its own
+user costs a permanently dead Pokemon rather than a turn:
+
+- **Self-KO:** Explosion, Self-Destruct, Memento, Misty Explosion, Final Gambit,
+  Healing Wish, Lunar Dance
+- **OHKO:** Fissure, Guillotine, Horn Drill, Sheer Cold
+
+The community list is not nuzlocke-aware — it had Explosion and Final Gambit in *Niche*.
+These live in `MOVES_PUSHDOWN` in `tools/randolocke/validate_tiers.py`, so they are applied
+at generation time rather than by hand-editing this worksheet.
+
 **Still to decide** (see RANDOLOCKE_PLAN.md 10.5 and 10.6):
 
-- **Struggle** is listed under Bad but is the game's fallback move — it should almost
-  certainly be excluded rather than rollable.
-- **Max / G-Max moves** (~45 of them, mostly in Bad and Pokemon Homeless) are Dynamax
-  moves. Phase 6 disabled Gigantamax forms, so like the Tera abilities they may be inert
-  here — worth excluding rather than rolling dead moves.
-- **Z-moves** (Catastropika, Gigavolt Havoc, Guardian of Alola, the "-ium Z" specials)
-  are listed as unavailable by Randolocke, so likely exclude too.
-- **Nuzlocke pushdowns** from the pokeemerald_rando_enh tables still to re-apply:
-  self-KO moves (Explosion, Self-Destruct, Memento, Misty Explosion, Final Gambit,
-  Healing Wish, Lunar Dance) and OHKO moves (Fissure, Guillotine, Horn Drill, Sheer Cold).
-  Several already sit low, but Explosion is in Niche and Final Gambit in Niche.
-- The **53 moves the image does not cover** are not yet listed.
+- The **51 moves the image does not cover** are not yet listed and stay unreachable
+  until they are tiered or a fallback is chosen.
 
 ## Meta Defining
 Boomburst, Extreme Speed, Belly Drum, Protect

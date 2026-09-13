@@ -30,6 +30,32 @@ ALIASES = {
 # ability; 314 and 317 are unnamed placeholder slots in the expansion.
 EXCLUDED = {"WONDER_GUARD", "NONE", "314", "317"}
 
+# Moves never rolled. STRUGGLE is the game's fallback move, not a real option; everything
+# from FIRST_Z_MOVE onward is a Z, Max or G-Max move, and Phase 6 disabled Gigantamax while
+# Randolocke lists Z-moves as unavailable, so those are inert here.
+MOVES_EXCLUDED = {"STRUGGLE", "NONE"}
+
+# Pushed to the bottom tier for nuzlocke play regardless of community placement: a move that
+# KOs its own user costs a permanently dead Pokemon, not a turn. Carried over from the
+# pokeemerald_rando_enh tables, which the community list is not aware of.
+MOVES_PUSHDOWN = {
+    "EXPLOSION", "SELF_DESTRUCT", "MEMENTO", "MISTY_EXPLOSION", "FINAL_GAMBIT",
+    "HEALING_WISH", "LUNAR_DANCE",                    # self-KO
+    "FISSURE", "GUILLOTINE", "HORN_DRILL", "SHEER_COLD",  # OHKO
+}
+
+
+def z_and_max_moves() -> set[str]:
+    """Every MOVE_ constant declared at or after FIRST_Z_MOVE."""
+    text = (ROOT / "include/constants/moves.h").read_text().split("\n")
+    start = next(i for i, l in enumerate(text) if "FIRST_Z_MOVE" in l)
+    out = set()
+    for line in text[start:]:
+        m = re.match(r"\s*MOVE_([A-Z0-9_]+)", line)
+        if m:
+            out.add(m.group(1))
+    return out
+
 
 def constants(header: str, prefix: str) -> set[str]:
     text = (ROOT / header).read_text()
@@ -68,6 +94,7 @@ def main() -> int:
     header, prefix, sheet = POOLS[which]
     valid = constants(header, prefix)
     tiers = parse(ROOT / sheet)
+    excluded = EXCLUDED if which == "abilities" else (MOVES_EXCLUDED | z_and_max_moves())
 
     bad, seen, total = [], {}, 0
     for tier, names in tiers.items():
@@ -85,8 +112,10 @@ def main() -> int:
         for tier in tiers:
             print(f"  {tier:<10} {len(tiers[tier]):>3}")
         print(f"  {'TOTAL':<10} {total:>3}   resolved {len(seen)}   unresolved {len(bad)}")
-        print(f"  coverage: {len(seen)}/{len(valid)} {which} in this ROM "
-              f"({100*len(seen)//max(1,len(valid))}%)")
+        roll = len([c for c in seen if c not in excluded])
+        pool = len(valid - excluded)
+        print(f"  rollable: {roll}/{pool} {which} ({100*roll//max(1,pool)}%)   "
+              f"{len(seen)-roll} tiered but excluded")
 
     if bad:
         print("\nUNRESOLVED — fix the worksheet or add an alias:")
