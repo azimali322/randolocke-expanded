@@ -452,6 +452,39 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] Produce distribution patch against `baserom.gba`
 - [ ] Credits: RHH, pret, tertu-m, Zetraphes, Istorian, PChal/Pointcrow
 
+### Phase 11 — Cheap ball shop
+
+The only Modern Emerald QoL feature azim wants that this repo does not already cover.
+
+**Wanted:** a shop selling **Ultra Balls, Fast Balls and Timer Balls** cheaply.
+
+Modern Emerald puts ₽1 Ultra Balls plus evolution stones and trade-evolution items on
+Lilycove Dept. Store 3F. That overlaps Randolocke's own planned Lilycove evolution-item
+sellers (§4, Phase 8), so the two should be designed as one shop rather than two.
+
+- [ ] Decide location — folding it into the Phase 8 Lilycove sellers is cheapest
+- [ ] Stock Ultra / Fast / Timer Balls at a low price
+- [ ] Confirm Fast Ball and Timer Ball exist and behave in 1.17 (they are not vanilla Emerald)
+
+#### Explicitly declined from Modern Emerald
+
+Reviewed and **not wanted**, recorded so they are not revisited:
+
+| Feature | Why not |
+| --- | --- |
+| Nuzlocke modes (Easy/Normal/Hardcore) | Not wanted |
+| Party size limit (1-5) | Not wanted |
+| New Game options menu | Not wanted |
+| Wonder Trade stations | Not wanted |
+| Item drops from wild Pokemon | Not wanted |
+| Custom type chart rebalance | 1.17's own balance is more faithful to modern generations |
+| Survive Poison outside battle | Not wanted |
+| Shiny colour variants, easier Feebas, Frontier bans | Modern Emerald flavour, no value here |
+
+Already covered natively by 1.17 or by earlier phases: modern typings, Fairy, better stats,
+extra legendaries, legendary abilities, new moves, nature mints, reusable TMs, opponent type
+display, free TM/HM use, the Level Cap Candy and level caps.
+
 ### Phase 10 — Tier-weighted randomization (ported from pokeemerald_rando_enh)
 
 Port the tier systems from azim's other fork,
