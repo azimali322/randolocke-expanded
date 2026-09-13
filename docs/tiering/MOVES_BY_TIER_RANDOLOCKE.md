@@ -26,10 +26,10 @@ Pool of 844 rollable moves; uniform draw is 0.1185% each.
 
 | Tier | Count | Weight | Per move | vs uniform | Share of pool |
 | --- | --- | --- | --- | --- | --- |
-| Meta Defining | 4 | 1.18% | 0.2950% | **2.49x** | 0.5% |
+| Meta Defining | 4 | 1.07% | 0.2675% | **2.26x** | 0.5% |
 | Staples | 46 | 10.90% | 0.2370% | **2.00x** | 5.5% |
 | Filler/Outclassed | 203 | 42.09% | 0.2073% | **1.75x** | 24.1% |
-| Niche | 383 | 40.15% | 0.1048% | 0.88x | 45.4% |
+| Niche | 383 | 40.26% | 0.1051% | 0.89x | 45.4% |
 | Bad | 186 | 5.29% | 0.0284% | 0.24x | 22.0% |
 | Pokemon Homeless | 22 | 0.39% | 0.0177% | 0.15x | 2.6% |
 

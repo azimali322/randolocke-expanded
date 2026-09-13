@@ -58,11 +58,11 @@
 #define RZ_ABILITY_W_NEGATIVE         0   // never rolled
 
 // Move weights, x100. Pool of 846 (every rollable move is tiered). Compressed at the
-// top: 2.49x / 2.00x / 1.75x / 0.88x / 0.24x / 0.15x against uniform.
-#define RZ_MOVE_W_META_DEFINING  118
+// top: 2.25x / 2.00x / 1.75x / 0.89x / 0.24x / 0.15x against uniform.
+#define RZ_MOVE_W_META_DEFINING  107
 #define RZ_MOVE_W_STAPLES        1090
 #define RZ_MOVE_W_FILLER         4209
-#define RZ_MOVE_W_NICHE          4015
+#define RZ_MOVE_W_NICHE          4026
 #define RZ_MOVE_W_BAD            529
 #define RZ_MOVE_W_HOMELESS       39
 

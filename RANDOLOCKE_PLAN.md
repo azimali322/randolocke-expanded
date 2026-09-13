@@ -585,6 +585,37 @@ than hand-edits:
 - [ ] Add an Off / Weighted / Strict mode per pool, matching the fork
 - [ ] Tests in [TESTING.md](TESTING.md)
 
+#### 10.9 How TM pickups randomize
+
+`RandomizeFoundItem()` treats TMs as a closed set:
+
+```c
+if (IsItemTMHM(itemId))
+    return RandomizerNextRange(&state, RANDOMIZER_MAX_TM - ITEM_TM01 + 1) + ITEM_TM01;
+```
+
+- A pickup that was a TM in vanilla becomes another TM; a pickup that was not can never
+  become one, because the whitelist loop rejects `IsItemTMHM(result)`. The number of TM
+  pickups in the game is therefore unchanged.
+- HMs are never randomized: `ShouldRandomizeItem()` returns FALSE for them, so the code
+  after that point can assume a TM.
+- The seed is per-location (`mapGroup`, `mapNum`, `localId` plus the original item), and
+  each location rolls **independently**, so the same TM can appear in several places.
+  This is already **with replacement**, which is what azim wants given `I_REUSABLE_TMS`.
+
+**Two limitations worth deciding on:**
+
+1. **`RANDOMIZER_MAX_TM` is `ITEM_TM50`, but 1.17 has 100 TMs.** TM51-TM100 are never
+   rolled, so half the TM pool is unreachable. Raising it to `ITEM_TM100` is a one-line
+   change; it was presumably set for vanilla Emerald's 50.
+2. **TM drops are uniform, not tier-weighted.** pokeemerald_rando_enh weighted which TM
+   appears by the tier of the move it teaches. Now that `sMoveTier*` exists, that is
+   straightforward: map each TM to its move, look up the tier, and weight accordingly.
+
+**Not implemented:** randomizing *what each TM teaches*. TM26 still teaches Earthquake.
+That is the deferred v1.1 item in 10.1, and it is the piece that needs the build-time
+teachables pipeline.
+
 #### 10.8 Open decisions for azim
 
 1. Tier **weights** per pool (the fork's: moves 4/24/38/27/6, abilities 40/30/22/6).
