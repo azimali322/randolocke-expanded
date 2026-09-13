@@ -1194,8 +1194,8 @@ static bool32 IsMoveIllegalForLearnset(enum Move move)
 // Picks `count` moves into dest, choosing only moves accepted by `accept`.
 // Damaging groups are then sorted by Base Power so stronger moves come later.
 static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
-                        bool32 (*accept)(enum Move, enum Type, enum Type),
-                        enum Type t1, enum Type t2, bool32 sortByPower)
+                        bool32 (*accept)(enum Move, enum Type, enum Type, u32),
+                        enum Type t1, enum Type t2, u32 category, bool32 sortByPower)
 {
     u32 filled = 0;
     u32 attempts = 0;
@@ -1217,7 +1217,7 @@ static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
         #else
             move = RandomizerNextRange(state, MOVES_COUNT - 1) + 1;
         #endif
-        if (IsMoveIllegalForLearnset(move) || !accept(move, t1, t2))
+        if (IsMoveIllegalForLearnset(move) || !accept(move, t1, t2, category))
             continue;
         for (i = 0; i < filled; i++)
         {
@@ -1249,21 +1249,55 @@ static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
     }
 }
 
-static bool32 RzAcceptStab(enum Move move, enum Type t1, enum Type t2)
+// DAMAGE_CATEGORY_NONE is used here to mean "either category will do" - a mixed attacker.
+static bool32 RzCategoryOk(enum Move move, u32 wanted)
+{
+    if (wanted == DAMAGE_CATEGORY_NONE)
+        return TRUE;
+    return GetMoveCategory(move) == wanted;
+}
+
+// Which category a species can actually attack in. A pure physical attacker rolling seven
+// special STAB moves cannot use any of them, which is the failure this prevents.
+static u32 RzPreferredCategory(enum Species species)
+{
+    u32 atk, spa, hi, lo;
+
+    #if RZ_STAB_MATCH_CATEGORY == FALSE
+        return DAMAGE_CATEGORY_NONE;
+    #endif
+
+    atk = gSpeciesInfo[species].baseAttack;
+    spa = gSpeciesInfo[species].baseSpAttack;
+    hi = (atk > spa) ? atk : spa;
+    lo = (atk > spa) ? spa : atk;
+
+    // Close enough to use both: draw STAB from either category.
+    if (hi == 0 || lo * 100 >= hi * RZ_MIXED_ATTACKER_PERCENT)
+        return DAMAGE_CATEGORY_NONE;
+
+    return (atk > spa) ? DAMAGE_CATEGORY_PHYSICAL : DAMAGE_CATEGORY_SPECIAL;
+}
+
+static bool32 RzAcceptStab(enum Move move, enum Type t1, enum Type t2, u32 category)
 {
     if (GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS)
+        return FALSE;
+    if (!RzCategoryOk(move, category))
         return FALSE;
     return GetMoveType(move) == t1 || GetMoveType(move) == t2;
 }
 
-static bool32 RzAcceptStatus(enum Move move, enum Type t1, enum Type t2)
+static bool32 RzAcceptStatus(enum Move move, enum Type t1, enum Type t2, u32 category)
 {
     return GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS;
 }
 
-static bool32 RzAcceptDamaging(enum Move move, enum Type t1, enum Type t2)
+static bool32 RzAcceptDamaging(enum Move move, enum Type t1, enum Type t2, u32 category)
 {
     if (GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS)
+        return FALSE;
+    if (!RzCategoryOk(move, category))
         return FALSE;
     // Non-STAB, so it complements the STAB block rather than duplicating it.
     return GetMoveType(move) != t1 && GetMoveType(move) != t2;
@@ -1276,7 +1310,7 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
     struct Sfc32State state;
     enum Move picks[RZ_LEARNSET_SLOTS];
     enum Type t1, t2;
-    u32 stabFromT1, i;
+    u32 stabFromT1, i, category;
 
     if (!RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
         return NULL;
@@ -1286,22 +1320,23 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
 
     t1 = gSpeciesInfo[species].types[0];
     t2 = gSpeciesInfo[species].types[1];
+    category = RzPreferredCategory(species);
     state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, species, species);
 
     // 7 STAB. Dual types split 4/3 across the two.
     stabFromT1 = (t1 == t2) ? RZ_LEARNSET_STAB_MOVES : (RZ_LEARNSET_STAB_MOVES + 1) / 2;
-    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, TRUE);
+    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, category, TRUE);
     if (stabFromT1 < RZ_LEARNSET_STAB_MOVES)
         RzPickMoves(&state, &picks[stabFromT1], RZ_LEARNSET_STAB_MOVES - stabFromT1,
-                    RzAcceptStab, t2, t2, TRUE);
+                    RzAcceptStab, t2, t2, category, TRUE);
 
     // 7 status, in no particular order - Base Power does not apply to them.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES], RZ_LEARNSET_STATUS_MOVES,
-                RzAcceptStatus, t1, t2, FALSE);
+                RzAcceptStatus, t1, t2, DAMAGE_CATEGORY_NONE, FALSE);
 
     // 7 non-STAB damaging, weakest first.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES],
-                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, TRUE);
+                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, category, TRUE);
 
     // Interleave the three groups so each level band mixes categories, and keep the
     // within-group power ordering so stronger moves still arrive later.

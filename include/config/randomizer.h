@@ -120,6 +120,16 @@
 // not moveless, with the last few above the pre-Elite-Four cap of 63.
 #define RZ_LEARNSET_LEVELS  { 1, 4, 7, 10, 13, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 70, 78, 86 }
 
+// If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
+// physical attacker gets physical STAB, a special attacker special STAB. Without this a
+// pure physical attacker can roll seven special STAB moves and be unable to use any of them.
+#define RZ_STAB_MATCH_CATEGORY      TRUE
+
+// How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a
+// species to count as a mixed attacker and draw STAB from both categories. 85 means a
+// species whose weaker attacking stat is at least 85% of its stronger one is mixed.
+#define RZ_MIXED_ATTACKER_PERCENT   85
+
 #define RANDOMIZER_MAX_TM           ITEM_TM50
 
 // Vars and features
