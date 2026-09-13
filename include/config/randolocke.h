@@ -73,4 +73,36 @@
 // pokeemerald_rando_enh, where randomized TMs made this close to essential.
 #define RANDOLOCKE_TM_HOVER_INFO        TRUE
 
+// --- New game defaults ------------------------------------------------------
+
+// Randolocke is meant to be randomized out of the box, but tertu's randomizer defaults
+// every feature to OFF and expects the debug menu to switch them on. Rather than force
+// them on at compile time (FORCE_RANDOMIZE_* in config/randomizer.h), which would remove
+// the debug toggles that TESTING.md relies on, a new game sets the flags below. They stay
+// flags: switchable in-game, per save, at any time.
+//
+// Only affects NEW games. An existing save keeps whatever flags it already has.
+#define RANDOLOCKE_RANDOMIZE_ON_NEW_GAME    TRUE
+
+// Which features a new game turns on. Set any of these to FALSE to start with that one
+// off; the debug menu can still turn it on later.
+#define RANDOLOCKE_DEFAULT_WILD_MON         TRUE   // wild encounters
+#define RANDOLOCKE_DEFAULT_TRAINER_MON      TRUE   // trainer parties
+#define RANDOLOCKE_DEFAULT_FIXED_MON        TRUE   // scripted/static encounters and legendaries
+#define RANDOLOCKE_DEFAULT_STARTER_GIFT_MON TRUE   // starters, gift Pokemon, the Lati eon
+#define RANDOLOCKE_DEFAULT_EGG_MON          TRUE   // eggs
+#define RANDOLOCKE_DEFAULT_ABILITIES        TRUE   // abilities
+#define RANDOLOCKE_DEFAULT_FIELD_ITEMS      TRUE   // overworld item balls and hidden items
+#define RANDOLOCKE_DEFAULT_LEARNSET         TRUE   // the 21-move level-up learnsets
+#define RANDOLOCKE_DEFAULT_BERRY_TREES      TRUE   // what grows on berry trees
+#define RANDOLOCKE_DEFAULT_TM_MOVES         TRUE   // which move each TM teaches
+
+// How species are substituted. Also only applied to new games; the debug menu writes the
+// same var (RANDOMIZER_VAR_SPECIES_MODE).
+//   MON_RANDOM              anything can become anything. Randolocke's own behaviour
+//   MON_RANDOM_LEGEND_AWARE legendaries only ever replace other legendaries
+//   MON_RANDOM_BST          replacements have a similar base stat total
+//   MON_EVOLUTION           replacements sit at the same evolution stage
+#define RANDOLOCKE_DEFAULT_SPECIES_MODE     MON_RANDOM
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

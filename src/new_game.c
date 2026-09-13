@@ -1,4 +1,6 @@
 #include "global.h"
+#include "config/randomizer.h"
+#include "config/randolocke.h"
 #include "clock.h"
 #include "new_game.h"
 #include "random.h"
@@ -62,6 +64,7 @@ static void WarpToTruck(void);
 static void ResetMiniGamesRecords(void);
 static void ResetItemFlags(void);
 static void ResetDexNav(void);
+static void RandolockeSetDefaultRandomizerOptions(void);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
@@ -235,6 +238,49 @@ void NewGameInitData(void)
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
+    RandolockeSetDefaultRandomizerOptions();
+}
+
+// A fresh Randolocke save is randomized from the start. Runs after InitEventData(), which
+// clears every flag and var, so this is the last word on them. Existing saves are never
+// touched - loading one keeps whatever it was already set to.
+static void RandolockeSetDefaultRandomizerOptions(void)
+{
+#if RANDOMIZER_AVAILABLE == TRUE && RANDOLOCKE_RANDOMIZE_ON_NEW_GAME == TRUE
+    // A feature compiled as FORCE_RANDOMIZE_* ignores its flag entirely, so there is no
+    // flag to set for it.
+    #if RANDOLOCKE_DEFAULT_WILD_MON == TRUE && !defined(FORCE_RANDOMIZE_WILD_MON)
+        FlagSet(RANDOMIZER_FLAG_WILD_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_TRAINER_MON == TRUE && !defined(FORCE_RANDOMIZE_TRAINER_MON)
+        FlagSet(RANDOMIZER_FLAG_TRAINER_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_FIXED_MON == TRUE && !defined(FORCE_RANDOMIZE_FIXED_MON)
+        FlagSet(RANDOMIZER_FLAG_FIXED_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_STARTER_GIFT_MON == TRUE && !defined(FORCE_RANDOMIZE_STARTER_AND_GIFT_MON)
+        FlagSet(RANDOMIZER_FLAG_STARTER_AND_GIFT_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_EGG_MON == TRUE && !defined(FORCE_RANDOMIZE_EGG_MON)
+        FlagSet(RANDOMIZER_FLAG_EGG_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_ABILITIES == TRUE && !defined(FORCE_RANDOMIZE_ABILITIES)
+        FlagSet(RANDOMIZER_FLAG_ABILITIES);
+    #endif
+    #if RANDOLOCKE_DEFAULT_FIELD_ITEMS == TRUE && !defined(FORCE_RANDOMIZE_FIELD_ITEMS)
+        FlagSet(RANDOMIZER_FLAG_FIELD_ITEMS);
+    #endif
+    #if RANDOLOCKE_DEFAULT_LEARNSET == TRUE && !defined(FORCE_RANDOMIZE_LEARNSET)
+        FlagSet(RANDOMIZER_FLAG_LEARNSET);
+    #endif
+    #if RANDOLOCKE_DEFAULT_BERRY_TREES == TRUE && !defined(FORCE_RANDOMIZE_BERRY_TREES)
+        FlagSet(RANDOMIZER_FLAG_BERRY_TREES);
+    #endif
+    #if RANDOLOCKE_DEFAULT_TM_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TM_MOVES)
+        FlagSet(RANDOMIZER_FLAG_TM_MOVES);
+    #endif
+    VarSet(RANDOMIZER_VAR_SPECIES_MODE, RANDOLOCKE_DEFAULT_SPECIES_MODE);
+#endif
 }
 
 static void ResetMiniGamesRecords(void)
