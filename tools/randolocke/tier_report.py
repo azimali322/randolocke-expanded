@@ -27,16 +27,17 @@ DEFAULTS = {
     "abilities": {"S": 9, "A": 20, "B": 32, "C": 24, "D": 11, "F": 4, "Negative": 0},
     # Deliberately compressed at the top (1.5x down to 1.2x) and steep at the bottom:
     # good moves should be a little more likely, bad ones markedly rarer.
-    "moves": {"Meta Defining": 0.9, "Staples": 9.05, "Filler/Outclassed": 38.4,
-              "Niche": 45.85, "Bad": 5.3, "Pokemon Homeless": 0.5},
+    "moves": {"Meta Defining": 0.86, "Staples": 9.46,
+              "Filler/Outclassed": 39.36, "Niche": 44.74,
+              "Bad": 5.07, "Pokemon Homeless": 0.51},
 }
 
 
 def counts(which: str) -> dict[str, int]:
     header, prefix, sheet = POOLS[which]
     valid = constants(header, prefix)
-    tiers = parse(ROOT / sheet)
     order = ORDERS[which]
+    tiers = parse(ROOT / sheet, order)
     excluded = EXCLUDED if which == "abilities" else (MOVES_EXCLUDED | z_and_max_moves())
     bottom = order[-1]
 

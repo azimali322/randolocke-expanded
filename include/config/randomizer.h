@@ -57,14 +57,14 @@
 #define RZ_ABILITY_W_F              400
 #define RZ_ABILITY_W_NEGATIVE         0   // never rolled
 
-// Move weights, x100. Pool of 818. Compressed at the top, steep at the bottom:
-// 1.84x / 1.76x / 1.66x / 1.00x / 0.24x / 0.15x against uniform.
-#define RZ_MOVE_W_META_DEFINING      90
-#define RZ_MOVE_W_STAPLES           905
-#define RZ_MOVE_W_FILLER           3840
-#define RZ_MOVE_W_NICHE            4585
-#define RZ_MOVE_W_BAD               530
-#define RZ_MOVE_W_HOMELESS           50
+// Move weights, x100. Pool of 846 (every rollable move is tiered). Compressed at the
+// top, steep at the bottom: 1.82x / 1.74x / 1.64x / 0.99x / 0.24x / 0.15x against uniform.
+#define RZ_MOVE_W_META_DEFINING      86
+#define RZ_MOVE_W_STAPLES           946
+#define RZ_MOVE_W_FILLER           3936
+#define RZ_MOVE_W_NICHE            4474
+#define RZ_MOVE_W_BAD               507
+#define RZ_MOVE_W_HOMELESS           51
 
 // --- Learnset randomization -------------------------------------------------
 

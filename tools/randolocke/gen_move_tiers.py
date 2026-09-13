@@ -22,7 +22,7 @@ OUT = ROOT / "src/data/randomizer/move_tiers.h"
 def main() -> int:
     header, prefix, sheet = POOLS["moves"]
     valid = constants(header, prefix)
-    tiers = parse(ROOT / sheet)
+    tiers = parse(ROOT / sheet, ORDER)
     excluded = MOVES_EXCLUDED | z_and_max_moves()
     bottom = ORDER[-1]
 

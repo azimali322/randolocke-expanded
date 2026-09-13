@@ -22,23 +22,27 @@ python3 tools/randolocke/tier_report.py --moves
 python3 tools/randolocke/tier_report.py --moves --weights="Niche=50,Bad=8"
 ```
 
-Pool of 818 rollable moves; uniform draw is 0.1222% each.
+Pool of 846 rollable moves; uniform draw is 0.1182% each.
 
 | Tier | Count | Weight | Per move | vs uniform | Share of pool |
 | --- | --- | --- | --- | --- | --- |
-| Meta Defining | 4 | 0.75% | 0.1875% | 1.53x | 0.5% |
-| Staples | 42 | 7.5% | 0.1786% | 1.46x | 5.1% |
-| Filler/Outclassed | 189 | 32% | 0.1693% | 1.38x | 23.1% |
-| Niche | 375 | 54% | 0.1440% | 1.18x | 45.8% |
-| Bad | 180 | 5.25% | 0.0292% | **0.24x** | 22.0% |
-| Pokemon Homeless | 28 | 0.5% | 0.0179% | **0.15x** | 3.4% |
+| Meta Defining | 4 | 0.86% | 0.2150% | 1.82x | 0.5% |
+| Staples | 46 | 9.46% | 0.2057% | 1.74x | 5.4% |
+| Filler/Outclassed | 203 | 39.36% | 0.1939% | 1.64x | 24.0% |
+| Niche | 383 | 44.74% | 0.1168% | **0.99x** | 45.3% |
+| Bad | 181 | 5.07% | 0.0280% | **0.24x** | 21.4% |
+| Pokemon Homeless | 29 | 0.51% | 0.0176% | **0.15x** | 3.4% |
 
-Deliberately **compressed at the top and steep at the bottom**: the top four bands sit
-between 1.53x and 1.18x, so a good move is only modestly favoured, while Bad and Pokemon
-Homeless drop to 0.24x and 0.15x. Variety is preserved; genuinely bad moves are rare.
+**Niche is pinned to uniform** and the bottom two are steep. Because weights must sum to
+100, holding Niche at 1.00x while keeping Bad low pushes the released weight into the bands
+above, so the top three sit at 1.82x / 1.74x / 1.64x rather than the ~1.4-1.5x of an earlier
+draft. That trade is unavoidable: Niche is 45% of the pool.
 
-Meta Defining holds only 4 moves, so its weight is very sensitive — even 1% would put it at
-2.04x. It is set to 0.75% to keep it in line with Staples.
+Meta Defining holds only 4 moves, so its weight is very sensitive — 1% would already put it
+above 2x. Tune it in steps of 0.1.
+
+Re-run `tier_report.py --moves` after **any** change to the worksheet: adding moves changes
+the counts, and the per-move rate is weight/count.
 
 ## Exclusions applied
 
@@ -62,8 +66,21 @@ at generation time rather than by hand-editing this worksheet.
 
 **Still to decide** (see RANDOLOCKE_PLAN.md 10.5 and 10.6):
 
-- The **51 moves the image does not cover** are not yet listed and stay unreachable
-  until they are tiered or a fallback is chosen.
+All 846 rollable moves are now tiered; nothing is unreachable.
+
+The 28 the community image does not cover are Gen 9 DLC (Teal Mask / Indigo Disk) plus
+Misty Terrain, placed by hand:
+
+- **Staples** — Ivy Cudgel, Blood Moon, Thunderclap, Electro Shot: high-power or priority
+  signature moves that work on any species.
+- **Filler/Outclassed** — the five Team Star Torque moves (100 BP with a status rider) plus
+  Matcha Gotcha, Psychic Noise, Malignant Chain, Supercell Slam, Hard Press, Burning
+  Bulwark, Psyblade, Mighty Cleave and Tera Starstorm. Tera Starstorm sits here rather than
+  higher because `P_TERA_FORMS` is `FALSE`, so it is a plain 120 BP move.
+- **Niche** — conditional or two-step moves: Upper Hand, Temper Flare, Alluring Voice,
+  Hydro Steam, Tachyon Cutter, Fickle Beam, Syrup Bomb, Misty Terrain.
+- **Bad** — Dragon Cheer, which only helps allies in a double battle.
+- **Pokemon Homeless** — Hold Hands, which does nothing.
 
 ## Meta Defining
 Boomburst, Extreme Speed, Belly Drum, Protect
@@ -75,7 +92,8 @@ Astonish, Agility, Hyper Voice, Growth, Bounce, Aeroblast, Bug Buzz, Dazzling Gl
 Ancient Power, Rage Fist, Bullet Punch, Eruption,
 Giga Drain, Shadow Ball, Recover, Baneful Bunker, Astral Barrage, Endure, Giga Impact,
 Dragon Dance, Acid Spray, Follow Me, Foul Play, First Impression,
-Leech Seed, Swords Dance, Attack Order, Trick Room, Aromatherapy, Drain Punch
+Leech Seed, Swords Dance, Attack Order, Trick Room, Aromatherapy, Drain Punch,
+Ivy Cudgel, Blood Moon, Thunderclap, Electro Shot
 
 ## Filler/Outclassed
 Baton Pass, Hyper Beam, Brave Bird, Helping Hand, Aerial Ace, Air Slash, Baby-Doll Eyes,
@@ -111,7 +129,10 @@ Counter, Gastro Acid, Corrosive Gas, Electro Ball, Lock-On
 Taunt, Weather Ball, Overheat, Hyper Drill, Double Iron Bash,
 Core Enforcer, Horn Drill, Cosmic Power, Dynamic Punch, Frenzy Plant, Drill Run,
 Dragon Pulse, Growl, Head Smash, Strength, Torment,
-Revenge, Psychic Terrain, Salt Cure
+Revenge, Psychic Terrain, Salt Cure,
+Matcha Gotcha, Psychic Noise, Malignant Chain, Supercell Slam,
+Hard Press, Burning Bulwark, Psyblade, Mighty Cleave, Tera Starstorm,
+Blazing Torque, Combat Torque, Magical Torque, Noxious Torque, Wicked Torque
 
 ## Niche
 Behemoth Bash, False Surrender, Moongeist Beam, Burn Up, Entrainment, Jaw Lock, Meteor Mash,
@@ -182,7 +203,9 @@ Rock Throw, Spider Web, Psych Up, Telekinesis, Plasma Fists,
 Scale Shot, Wicked Blow, Heal Pulse, Coaching, Happy Hour, Magic Powder, Ice Burn,
 Sinister Arrow Raid, Poison Sting, Wrap, Shell Side Arm, Rage,
 Reversal, Snore, V-create, Water Shuriken, Prismatic Laser, Stuff Cheeks, Scorching Sands,
-Terrain Pulse, Flower Trick
+Terrain Pulse, Flower Trick,
+Upper Hand, Temper Flare, Alluring Voice, Hydro Steam, Tachyon Cutter,
+Fickle Beam, Syrup Bomb, Misty Terrain
 
 ## Bad
 Freezy Frost, Low Kick, Memento, Hone Claws, Magnet Rise, Cut, Subzero Slammer, Zap Cannon,
@@ -224,7 +247,8 @@ Max Airstream,
 Attract, Max Phantasm, Razor Wind, Catastropika, Psywave, Sludge Bomb, Hypnosis, Psychic,
 Struggle, Play Rough, Max Geyser, Ice Punch
 ,
-Power Whip, G-Max Malodor
+Power Whip, G-Max Malodor,
+Dragon Cheer
 
 ## Pokemon Homeless
 Double Team, Spirit Shackle, Pulverizing Pancake, Power Shift, Thunder Punch, Trick,
@@ -236,4 +260,5 @@ G-Max Tartness, G-Max Sweetness, G-Max Sandblast, Max Ooze, G-Max Stun Shock, Ma
 G-Max Centiferno, G-Max Smite, G-Max Snooze, Max Steelspike, Max Knuckle, Max Quake,
 G-Max Finale, Max Flutterby, Max Hailstorm, G-Max Steelsurge, G-Max Depletion, Max Wyrmwind,
 G-Max One Blow, G-Max Rapid Flow, Black Hole Eclipse, Mud Bomb, Roar of Time, Spacial Rend,
-Steamroller, Fairy Lock, Smokescreen, High Jump Kick, Strength Sap, Smog, Power Trick
+Steamroller, Fairy Lock, Smokescreen, High Jump Kick, Strength Sap, Smog, Power Trick,
+Hold Hands

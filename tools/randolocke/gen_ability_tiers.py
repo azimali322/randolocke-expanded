@@ -17,7 +17,7 @@ OUT = ROOT / "src/data/randomizer/ability_tiers.h"
 
 def main() -> int:
     valid = constants("include/constants/abilities.h", "ABILITY_")
-    tiers = parse(ROOT / "docs/tiering/ABILITIES_BY_TIER.md")
+    tiers = parse(ROOT / "docs/tiering/ABILITIES_BY_TIER.md", ORDER)
 
     resolved, bad = {}, []
     for tier in ORDER:

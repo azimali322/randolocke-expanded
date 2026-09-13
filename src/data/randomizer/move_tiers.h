@@ -2,7 +2,7 @@
 // docs/tiering/MOVES_BY_TIER_RANDOLOCKE.md. Do not edit by hand.
 //
 // Source: docs/tiering/community-moves-tierlist.png (community-voted).
-// 818 rollable moves tiered; 90 excluded
+// 846 rollable moves tiered; 89 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
 // 11 self-KO and OHKO moves were pushed to the bottom band for nuzlocke
@@ -17,7 +17,7 @@ static const u16 sMoveTierMetaDefining[] =
     MOVE_PROTECT,
 };
 
-// Staples -- 42 moves
+// Staples -- 46 moves
 static const u16 sMoveTierStaples[] =
 {
     MOVE_AQUA_JET,
@@ -62,9 +62,13 @@ static const u16 sMoveTierStaples[] =
     MOVE_TRICK_ROOM,
     MOVE_AROMATHERAPY,
     MOVE_DRAIN_PUNCH,
+    MOVE_IVY_CUDGEL,
+    MOVE_BLOOD_MOON,
+    MOVE_THUNDERCLAP,
+    MOVE_ELECTRO_SHOT,
 };
 
-// Filler/Outclassed -- 189 moves
+// Filler/Outclassed -- 203 moves
 static const u16 sMoveTierFiller[] =
 {
     MOVE_BATON_PASS,
@@ -256,9 +260,23 @@ static const u16 sMoveTierFiller[] =
     MOVE_REVENGE,
     MOVE_PSYCHIC_TERRAIN,
     MOVE_SALT_CURE,
+    MOVE_MATCHA_GOTCHA,
+    MOVE_PSYCHIC_NOISE,
+    MOVE_MALIGNANT_CHAIN,
+    MOVE_SUPERCELL_SLAM,
+    MOVE_HARD_PRESS,
+    MOVE_BURNING_BULWARK,
+    MOVE_PSYBLADE,
+    MOVE_MIGHTY_CLEAVE,
+    MOVE_TERA_STARSTORM,
+    MOVE_BLAZING_TORQUE,
+    MOVE_COMBAT_TORQUE,
+    MOVE_MAGICAL_TORQUE,
+    MOVE_NOXIOUS_TORQUE,
+    MOVE_WICKED_TORQUE,
 };
 
-// Niche -- 375 moves
+// Niche -- 383 moves
 static const u16 sMoveTierNiche[] =
 {
     MOVE_BEHEMOTH_BASH,
@@ -636,9 +654,17 @@ static const u16 sMoveTierNiche[] =
     MOVE_SCORCHING_SANDS,
     MOVE_TERRAIN_PULSE,
     MOVE_FLOWER_TRICK,
+    MOVE_UPPER_HAND,
+    MOVE_TEMPER_FLARE,
+    MOVE_ALLURING_VOICE,
+    MOVE_HYDRO_STEAM,
+    MOVE_TACHYON_CUTTER,
+    MOVE_FICKLE_BEAM,
+    MOVE_SYRUP_BOMB,
+    MOVE_MISTY_TERRAIN,
 };
 
-// Bad -- 180 moves
+// Bad -- 181 moves
 static const u16 sMoveTierBad[] =
 {
     MOVE_FREEZY_FROST,
@@ -821,9 +847,10 @@ static const u16 sMoveTierBad[] =
     MOVE_PLAY_ROUGH,
     MOVE_ICE_PUNCH,
     MOVE_POWER_WHIP,
+    MOVE_DRAGON_CHEER,
 };
 
-// Pokemon Homeless -- 28 moves
+// Pokemon Homeless -- 29 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
@@ -854,60 +881,11 @@ static const u16 sMoveTierHomeless[] =
     MOVE_STRENGTH_SAP,
     MOVE_SMOG,
     MOVE_POWER_TRICK,
+    MOVE_HOLD_HANDS,
 };
 
-// 51 rollable moves appear in no tier and are currently unreachable.
+// 0 rollable moves appear in no tier and are currently unreachable.
 static const u16 sMoveUntiered[] =
 {
-    MOVE_ALLURING_VOICE,
-    MOVE_ANCIENTPOWER,
-    MOVE_BLAZING_TORQUE,
-    MOVE_BLOOD_MOON,
-    MOVE_BUBBLEBEAM,
-    MOVE_BURNING_BULWARK,
-    MOVE_COMBAT_TORQUE,
-    MOVE_DEFAULT,
-    MOVE_DOUBLESLAP,
-    MOVE_DRAGONBREATH,
-    MOVE_DRAGON_CHEER,
-    MOVE_DYNAMICPUNCH,
-    MOVE_ELECTRO_SHOT,
-    MOVE_EXTREMESPEED,
-    MOVE_FAINT_ATTACK,
-    MOVE_FEATHERDANCE,
-    MOVE_FICKLE_BEAM,
-    MOVE_GRASSWHISTLE,
-    MOVE_HARD_PRESS,
-    MOVE_HI_JUMP_KICK,
-    MOVE_HOLD_HANDS,
-    MOVE_HYDRO_STEAM,
-    MOVE_IVY_CUDGEL,
-    MOVE_MAGICAL_TORQUE,
-    MOVE_MALIGNANT_CHAIN,
-    MOVE_MATCHA_GOTCHA,
-    MOVE_MIGHTY_CLEAVE,
-    MOVE_MISTY_TERRAIN,
-    MOVE_NOXIOUS_TORQUE,
-    MOVE_POISONPOWDER,
-    MOVE_PSYBLADE,
-    MOVE_PSYCHIC_NOISE,
-    MOVE_RANDOM_TEACHABLE,
-    MOVE_SELFDESTRUCT,
-    MOVE_SMELLINGSALT,
-    MOVE_SOFTBOILED,
-    MOVE_SOLARBEAM,
-    MOVE_SONICBOOM,
-    MOVE_SUPERCELL_SLAM,
-    MOVE_SYRUP_BOMB,
-    MOVE_TACHYON_CUTTER,
-    MOVE_TEMPER_FLARE,
-    MOVE_TERA_STARSTORM,
-    MOVE_THUNDERCLAP,
-    MOVE_THUNDERPUNCH,
-    MOVE_THUNDERSHOCK,
-    MOVE_UNAVAILABLE,
-    MOVE_UPPER_HAND,
-    MOVE_VICEGRIP,
-    MOVE_VICE_GRIP,
-    MOVE_WICKED_TORQUE,
+    MOVE_NONE,
 };

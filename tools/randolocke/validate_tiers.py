@@ -58,8 +58,25 @@ def z_and_max_moves() -> set[str]:
 
 
 def constants(header: str, prefix: str) -> set[str]:
-    text = (ROOT / header).read_text()
-    return set(re.findall(rf"\b{prefix}([A-Z0-9_]+)\b", text))
+    """Real enum members only.
+
+    Skips legacy aliases (`MOVE_ANCIENTPOWER = MOVE_ANCIENT_POWER`), which name a value
+    that already has a canonical constant, and `#define` sentinels like MOVE_UNAVAILABLE.
+    Counting either as a separate entry inflates the pool and makes covered entries look
+    untiered.
+    """
+    out = set()
+    for line in (ROOT / header).read_text().split("\n"):
+        if line.lstrip().startswith("#define"):
+            continue
+        m = re.match(rf"\s*{prefix}([A-Z0-9_]+)\s*(=\s*(.*?))?,", line)
+        if not m:
+            continue
+        value = (m.group(3) or "").strip()
+        if value.startswith(prefix):          # alias for another constant
+            continue
+        out.add(m.group(1))
+    return out
 
 
 def normalise(name: str) -> str:
@@ -70,15 +87,26 @@ def normalise(name: str) -> str:
     return ALIASES.get(n, n)
 
 
-def parse(worksheet: Path) -> dict[str, list[str]]:
+def parse(worksheet: Path, tier_names: list[str] | None = None) -> dict[str, list[str]]:
+    """Read the tier sections. Sections whose heading is not a tier name (prose such as
+    "## Weights" or "## Nuzlocke pushdowns") are ignored, so the worksheets can carry
+    documentation without it being read as data."""
     out = {}
     text = worksheet.read_text()
     for m in re.finditer(r"^## (.+?)\n(.*?)(?=\n## |\Z)", text, re.S | re.M):
         tier = m.group(1).strip()
+        if tier_names is not None and tier not in tier_names:
+            continue
         names = [x.strip() for x in m.group(2).replace("\n", " ").split(",") if x.strip()]
         out[tier] = names
     return out
 
+
+TIER_NAMES = {
+    "abilities": ["S", "A", "B", "C", "D", "F", "Negative"],
+    "moves": ["Meta Defining", "Staples", "Filler/Outclassed", "Niche", "Bad",
+              "Pokemon Homeless"],
+}
 
 POOLS = {
     "abilities": ("include/constants/abilities.h", "ABILITY_",
@@ -93,7 +121,7 @@ def main() -> int:
     which = "moves" if "--moves" in sys.argv else "abilities"
     header, prefix, sheet = POOLS[which]
     valid = constants(header, prefix)
-    tiers = parse(ROOT / sheet)
+    tiers = parse(ROOT / sheet, TIER_NAMES[which])
     excluded = EXCLUDED if which == "abilities" else (MOVES_EXCLUDED | z_and_max_moves())
 
     bad, seen, total = [], {}, 0
