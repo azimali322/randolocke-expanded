@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "braille_puzzles.h"
 #include "decompress.h"
 #include "event_data.h"
@@ -80,6 +81,38 @@ bool32 SetUpFieldMove_Flash(void)
         gPostMenuFieldCallback = SetUpPuzzleEffectRegisteel;
         return TRUE;
     }
+    #if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
+    // Flash also stands in for the Braille puzzles, which a randomized run cannot count on
+    // solving: Rock Smash may not be on the team, and Relicanth and Wailord may not exist.
+    else if (RandolockeFlashOpensRegirock())
+    {
+        gSpecialVar_Result = GetCursorSelectionMonId();
+        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
+        gPostMenuFieldCallback = SetUpPuzzleEffectRegirock;
+        return TRUE;
+    }
+    else if (RandolockeFlashOpensRegice())
+    {
+        gSpecialVar_Result = GetCursorSelectionMonId();
+        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
+        gPostMenuFieldCallback = RandolockeOpenRegiceWall;
+        return TRUE;
+    }
+    else if (RandolockeFlashOpensSealedOuter())
+    {
+        gSpecialVar_Result = GetCursorSelectionMonId();
+        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
+        gPostMenuFieldCallback = DoBrailleDigEffect;
+        return TRUE;
+    }
+    else if (RandolockeFlashOpensRegiDoors())
+    {
+        gSpecialVar_Result = GetCursorSelectionMonId();
+        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
+        gPostMenuFieldCallback = RandolockeOpenRegiDoors;
+        return TRUE;
+    }
+    #endif
     else if (gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_USE_FLASH))
     {
         gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;

@@ -46,4 +46,17 @@
 // Frames SELECT must be held before the second item fires, at 60fps.
 #define RANDOLOCKE_SELECT_HOLD_FRAMES     20
 
+// --- Regi caves -------------------------------------------------------------
+
+// If TRUE, Flash replaces the Braille puzzles that gate the Regis. Used anywhere in the
+// relevant room rather than only on the Braille tile:
+//   Sealed Chamber outer room -> opens the door to the inner room (was Dig)
+//   Sealed Chamber inner room -> opens the three Regi caves (was Relicanth + Wailord)
+//   Desert Ruins              -> opens Regirock's wall (was Rock Smash)
+//   Island Cave               -> opens Regice's wall (was the walk-the-perimeter puzzle)
+//   Ancient Tomb              -> already Flash in vanilla Emerald, left alone
+// The Braille puzzles still work; this is an additional way in. A randomized run cannot
+// rely on having a Relicanth or a Wailord, which is what makes the vanilla gate unfair.
+#define RANDOLOCKE_FLASH_OPENS_REGI_CAVES   TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "field_camera.h"
@@ -163,6 +164,70 @@ static void Task_SealedChamberShakingEffect(u8 taskId)
 #undef tVerticalPan
 #undef tDelay
 #undef tNumShakes
+
+#if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
+
+// --- Flash as a substitute for the Braille puzzles --------------------------
+// A randomized run cannot count on owning a Relicanth or a Wailord, and Rock Smash may not
+// be on the team either, so Flash opens these instead. Anywhere in the room, not just on
+// the Braille tile. sIsRegisteelPuzzle has to be set here because FldEff_UsePuzzleEffect
+// branches on it and it is file-static.
+
+static bool8 OnMapRandolocke(u16 map)
+{
+    return gSaveBlock1Ptr->location.mapGroup == (map >> 8)
+        && gSaveBlock1Ptr->location.mapNum == (map & 0xFF);
+}
+
+bool8 RandolockeFlashOpensRegirock(void)
+{
+    if (FlagGet(FLAG_SYS_REGIROCK_PUZZLE_COMPLETED) || !OnMapRandolocke(MAP_DESERT_RUINS))
+        return FALSE;
+    sIsRegisteelPuzzle = FALSE;
+    return TRUE;
+}
+
+bool8 RandolockeFlashOpensRegice(void)
+{
+    return !FlagGet(FLAG_SYS_BRAILLE_REGICE_COMPLETED) && OnMapRandolocke(MAP_ISLAND_CAVE);
+}
+
+bool8 RandolockeFlashOpensSealedOuter(void)
+{
+    return !FlagGet(FLAG_SYS_BRAILLE_DIG)
+        && OnMapRandolocke(MAP_SEALED_CHAMBER_OUTER_ROOM);
+}
+
+bool8 RandolockeFlashOpensRegiDoors(void)
+{
+    return !FlagGet(FLAG_REGI_DOORS_OPENED)
+        && OnMapRandolocke(MAP_SEALED_CHAMBER_INNER_ROOM);
+}
+
+// Regice's wall, mirroring what IslandCave_EventScript does on puzzle completion.
+void RandolockeOpenRegiceWall(void)
+{
+    // Coordinates and impassability copied from IslandCave_EventScript_OpenRegiEntrance:
+    // x 7-9, y 19-20, with only the bottom-middle tile walkable.
+    FlagSet(FLAG_SYS_BRAILLE_REGICE_COMPLETED);
+    MapGridSetMetatileIdAt(7 + MAP_OFFSET, 19 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_TopLeft | MAPGRID_IMPASSABLE);
+    MapGridSetMetatileIdAt(8 + MAP_OFFSET, 19 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_TopMid | MAPGRID_IMPASSABLE);
+    MapGridSetMetatileIdAt(9 + MAP_OFFSET, 19 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_TopRight | MAPGRID_IMPASSABLE);
+    MapGridSetMetatileIdAt(7 + MAP_OFFSET, 20 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_BottomLeft | MAPGRID_IMPASSABLE);
+    MapGridSetMetatileIdAt(8 + MAP_OFFSET, 20 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_BottomMid);
+    MapGridSetMetatileIdAt(9 + MAP_OFFSET, 20 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_BottomRight | MAPGRID_IMPASSABLE);
+    DrawWholeMapView();
+    PlaySE(SE_BANG);
+}
+
+// The three Regi caves, which vanilla gates behind Relicanth + Wailord.
+void RandolockeOpenRegiDoors(void)
+{
+    FlagSet(FLAG_REGI_DOORS_OPENED);
+    DoSealedChamberShakingEffect_Short();
+}
+
+#endif // RANDOLOCKE_FLASH_OPENS_REGI_CAVES
 
 bool8 ShouldDoBrailleRegirockEffect(void)
 {
