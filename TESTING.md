@@ -853,6 +853,26 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 
 ---
 
+## Phase 14 — New game defaults
+
+`RANDOLOCKE_RANDOMIZE_ON_NEW_GAME` in `include/config/randolocke.h`. See
+`docs/SETTINGS.md` §1.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T14.1 | **A new game is already randomized** | New game, walk into the first patch of grass | A randomized species — no debug menu needed |
+| T14.2 | All ten flags are set | New game, then debug → Flags, read 0x20–0x2A | 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x28, 0x29, 0x2A all **set**; 0x27 (infinite repel) **clear** |
+| T14.3 | Species mode var | Debug → Vars, read `0x404E` | 0 (`MON_RANDOM`) |
+| T14.4 | **An existing save is untouched** | Load a save made before this change | Its flags are whatever they were — no silent re-randomization |
+| T14.5 | Flags remain switchable | Clear 0x20, walk into grass | Vanilla encounters again |
+| T14.6 | The change survives a save/reload | Set defaults, save, soft reset, load | Flags still set |
+| T14.7 | Per-feature opt-out | Set `RANDOLOCKE_DEFAULT_ABILITIES` to `FALSE`, rebuild, new game | 0x26 clear, the other nine set |
+| T14.8 | Master switch | Set `RANDOLOCKE_RANDOMIZE_ON_NEW_GAME` to `FALSE`, rebuild, new game | No flags set — stock tertu behaviour |
+| T14.9 | **Release build has no debug menu** | `make release`, boot, hold R + START | Nothing opens — and T14.1 must still pass, which is the whole point of this phase |
+| T14.10 | Seed still drives everything | Two new games with the same Trainer ID | Identical starters, identical Route 101 |
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed
