@@ -23,6 +23,7 @@ ALIASES = {
     "MAGMA_VEIL": "MAGMA_ARMOR",      # no such ability; the icon is Slugma's
     "AS_ONE": "AS_ONE_ICE_RIDER",     # split into two constants; Ice Rider stands in
     "GRASSY_PELT": "GRASS_PELT",      # the ability is Grass Pelt
+    "X_SCIZZOR": "X_SCISSOR",         # misspelled on the moves list
 }
 
 # Never rolled: Wonder Guard trivialises or bricks a randomized fight; NONE is not an
@@ -46,17 +47,27 @@ def normalise(name: str) -> str:
 def parse(worksheet: Path) -> dict[str, list[str]]:
     out = {}
     text = worksheet.read_text()
-    for m in re.finditer(r"^## (\w[\w ]*)\n(.*?)(?=\n## |\Z)", text, re.S | re.M):
+    for m in re.finditer(r"^## (.+?)\n(.*?)(?=\n## |\Z)", text, re.S | re.M):
         tier = m.group(1).strip()
         names = [x.strip() for x in m.group(2).replace("\n", " ").split(",") if x.strip()]
         out[tier] = names
     return out
 
 
+POOLS = {
+    "abilities": ("include/constants/abilities.h", "ABILITY_",
+                  "docs/tiering/ABILITIES_BY_TIER.md"),
+    "moves": ("include/constants/moves.h", "MOVE_",
+              "docs/tiering/MOVES_BY_TIER_RANDOLOCKE.md"),
+}
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
-    valid = constants("include/constants/abilities.h", "ABILITY_")
-    tiers = parse(ROOT / "docs/tiering/ABILITIES_BY_TIER.md")
+    which = "moves" if "--moves" in sys.argv else "abilities"
+    header, prefix, sheet = POOLS[which]
+    valid = constants(header, prefix)
+    tiers = parse(ROOT / sheet)
 
     bad, seen, total = [], {}, 0
     for tier, names in tiers.items():
@@ -74,13 +85,13 @@ def main() -> int:
         for tier in tiers:
             print(f"  {tier:<10} {len(tiers[tier]):>3}")
         print(f"  {'TOTAL':<10} {total:>3}   resolved {len(seen)}   unresolved {len(bad)}")
-        print(f"  coverage: {len(seen)}/{len(valid)} abilities in this ROM "
+        print(f"  coverage: {len(seen)}/{len(valid)} {which} in this ROM "
               f"({100*len(seen)//max(1,len(valid))}%)")
 
     if bad:
         print("\nUNRESOLVED — fix the worksheet or add an alias:")
         for tier, name, c in bad:
-            print(f"  [{tier}] {name!r} -> ABILITY_{c}")
+            print(f"  [{tier}] {name!r} -> {prefix}{c}")
         return 1
     print("\nAll names resolved.")
     return 0
