@@ -18,7 +18,7 @@ from validate_tiers import ROOT, constants, normalise, parse, EXCLUDED  # noqa: 
 ORDER = ["S", "A", "B", "C", "D", "F", "Negative"]
 
 # Weight 0 means never rolled.
-DEFAULT_WEIGHTS = {"S": 11, "A": 20, "B": 32, "C": 23, "D": 10, "F": 4, "Negative": 0}
+DEFAULT_WEIGHTS = {"S": 9, "A": 20, "B": 32, "C": 24, "D": 11, "F": 4, "Negative": 0}
 
 
 def counts() -> dict[str, int]:

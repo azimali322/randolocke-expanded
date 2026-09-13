@@ -35,17 +35,20 @@ python3 tools/randolocke/tier_report.py                      # odds these weight
 python3 tools/randolocke/tier_report.py --weights=S=12,A=20  # try different ones
 ```
 
-Current: **S 11 / A 20 / B 32 / C 23 / D 10 / F 4 / Negative 0**, over a 308-ability pool.
+Current: **S 9 / A 20 / B 32 / C 24 / D 11 / F 4 / Negative 0**, over a 308-ability pool.
 
 | Tier | Count | Weight | Per ability | vs uniform |
 | --- | --- | --- | --- | --- |
-| S | 12 | 11% | 0.9167% | **2.82x** |
+| S | 12 | 9% | 0.7500% | **2.31x** |
 | A | 31 | 20% | 0.6452% | 1.99x |
 | B | 78 | 32% | 0.4103% | 1.26x |
-| C | 87 | 23% | 0.2644% | 0.81x |
-| D | 64 | 10% | 0.1562% | 0.48x |
+| C | 87 | 24% | 0.2759% | 0.85x |
+| D | 64 | 11% | 0.1719% | 0.53x |
 | F | 36 | 4% | 0.1111% | 0.34x |
 | Negative | 7 | 0 | never | — |
+
+S is deliberately held close to A (1.16x apart, not the 1.4x an earlier draft had): the point
+is that good abilities are *more likely*, not that S becomes the expected outcome.
 
 A tier's weight is **split across its members**, so a large tier dilutes itself. The first
 weights tried here (S 8 / A 22) made an A ability *more* likely than an S one — S had 12
