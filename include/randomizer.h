@@ -44,6 +44,8 @@ enum RandomizerFeature
     RANDOMIZE_ABILITIES,
     // Randomization of the berry found on a berry tree.
     RANDOMIZE_BERRY_TREES,
+    // Randomization of which move each TM teaches.
+    RANDOMIZE_TM_MOVES,
 };
 
 enum RandomizerReason
@@ -133,6 +135,12 @@ enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability 
 
 // Given a berry tree and what is planted in it, returns the berry it actually bears.
 u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry);
+
+// Which move a TM teaches. Returns MOVE_NONE when the feature is off or the item is not a
+// randomizable TM, in which case the caller keeps the vanilla mapping.
+enum Move RandomizeTMMove(u16 tmIndex);
+// Reverse of the above: which TM item teaches this move, or ITEM_NONE.
+u16 RandomizeTMMoveReverse(enum Move move);
 
 // Returns the randomized 21-move level-up learnset, or NULL if the feature is off.
 const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species);

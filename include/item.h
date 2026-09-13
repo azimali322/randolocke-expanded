@@ -114,6 +114,10 @@ extern const struct TmHmIndexKey gTMHMItemMoveIds[];
 #define UNPACK_TM_MOVE_TO_ITEM_ID(_move) case CAT(MOVE_, _move): return CAT(ITEM_TM_, _move);
 #define UNPACK_HM_MOVE_TO_ITEM_ID(_move) case CAT(MOVE_, _move): return CAT(ITEM_HM_, _move);
 
+// Declared here rather than including randomizer.h, which would be circular.
+enum Move RandomizeTMMove(u16 tmIndex);
+u16 RandomizeTMMoveReverse(enum Move move);
+
 static inline enum TMHMIndex GetItemTMHMIndex(enum Item item)
 {
     switch (item)
@@ -133,6 +137,17 @@ static inline enum TMHMIndex GetItemTMHMIndex(enum Item item)
 
 static inline enum Move GetItemTMHMMoveId(enum Item item)
 {
+    {
+        // Single choke point for what a TM teaches, so the bag, the relearner, the party
+        // menu and the teaching flow all agree. Returns MOVE_NONE for HMs, when the
+        // randomizer is compiled out, and when the feature is off; the switch below then
+        // gives the vanilla mapping.
+        enum Move randomized = RandomizeTMMove(GetItemTMHMIndex(item));
+
+        if (randomized != MOVE_NONE)
+            return randomized;
+    }
+
     switch (item)
     {
     /* Expands to:
@@ -150,6 +165,15 @@ static inline enum Move GetItemTMHMMoveId(enum Item item)
 
 static inline enum Item GetTMHMItemIdFromMoveId(enum Move move)
 {
+    {
+        // Must mirror GetItemTMHMMoveId exactly: scanning the vanilla table while the
+        // forward mapping is randomized would hand back a TM that no longer teaches it.
+        u16 item = RandomizeTMMoveReverse(move);
+
+        if (item != ITEM_NONE)
+            return item;
+    }
+
     switch (move)
     {
     /* Expands to:

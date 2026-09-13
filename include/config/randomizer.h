@@ -125,6 +125,13 @@
 #define RZ_BERRY_W_T4              441
 #define RZ_BERRY_W_T5              809
 
+// --- TM moves ---------------------------------------------------------------
+
+// Reassigns what each TM teaches, drawn from the tier-weighted move pool with no
+// duplicates. Safe here because Phase 6 set ALL_TEACHABLES globally, so no Pokemon's
+// compatibility depends on which move a given TM carries. HMs are never touched.
+#define RZ_TM_MOVES_TIER_MODE       RZ_TIER_MODE_MOVES
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
@@ -202,6 +209,10 @@
 
 #ifndef FORCE_RANDOMIZE_BERRY_TREES
 #define RANDOMIZER_FLAG_BERRY_TREES                   FLAG_UNUSED_0x029
+#endif
+
+#ifndef FORCE_RANDOMIZE_TM_MOVES
+#define RANDOMIZER_FLAG_TM_MOVES                      FLAG_UNUSED_0x02A
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

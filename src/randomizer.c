@@ -111,6 +111,12 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
             #else
                 return FlagGet(RANDOMIZER_FLAG_BERRY_TREES);
             #endif
+        case RANDOMIZE_TM_MOVES:
+            #ifdef FORCE_RANDOMIZE_TM_MOVES
+                return FORCE_RANDOMIZE_TM_MOVES;
+            #else
+                return FlagGet(RANDOMIZER_FLAG_TM_MOVES);
+            #endif
         case RANDOMIZE_LEARNSET:
             #ifdef FORCE_RANDOMIZE_LEARNSET
                 return FORCE_RANDOMIZE_LEARNSET;
@@ -409,6 +415,82 @@ u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry)
         return plantedBerry;
 
     return ItemIdToBerryType(result);
+}
+
+static bool32 IsMoveIllegalForLearnset(enum Move move);
+
+// --- TM move reassignment ---------------------------------------------------
+// Which move each TM teaches, drawn from the tier-weighted pool with no duplicates: a
+// duplicate TM would be dead weight under I_REUSABLE_TMS. Safe because Phase 6 set
+// ALL_TEACHABLES globally, so no Pokemon's compatibility depends on a TM's move.
+// HMs are never touched - randomizing Surf or Strength would soft-lock a run.
+
+static EWRAM_DATA u16 sRzTmMoves[NUM_TECHNICAL_MACHINES] = {0};
+static EWRAM_DATA bool8 sRzTmMovesBuilt = FALSE;
+
+static void RzBuildTmMoveTable(void)
+{
+    struct Sfc32State state;
+    u32 i, j;
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, 0x7C5EED, GetRandomizerSeed());
+
+    for (i = 0; i < NUM_TECHNICAL_MACHINES; i++)
+    {
+        u32 attempts;
+
+        sRzTmMoves[i] = MOVE_NONE;
+        for (attempts = 0; attempts < 128 && sRzTmMoves[i] == MOVE_NONE; attempts++)
+        {
+            u16 move = RzWeightedPickMode(&state, sMoveTiers, ARRAY_COUNT(sMoveTiers),
+                                          NULL, 0, RZ_TM_MOVES_TIER_MODE);
+            bool32 dupe = FALSE;
+
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+                continue;
+            for (j = 0; j < i; j++)
+            {
+                if (sRzTmMoves[j] == move)
+                    dupe = TRUE;
+            }
+            if (!dupe)
+                sRzTmMoves[i] = move;
+        }
+        // If the pool could not produce a fresh move, leave MOVE_NONE and the caller
+        // falls back to the vanilla mapping for that slot.
+    }
+    sRzTmMovesBuilt = TRUE;
+}
+
+enum Move RandomizeTMMove(u16 tmIndex)
+{
+    if (tmIndex == 0 || tmIndex > NUM_TECHNICAL_MACHINES)
+        return MOVE_NONE;                       // HM or not a machine
+    if (!RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
+        return MOVE_NONE;
+
+    if (!sRzTmMovesBuilt)
+        RzBuildTmMoveTable();
+
+    return sRzTmMoves[tmIndex - 1];
+}
+
+u16 RandomizeTMMoveReverse(enum Move move)
+{
+    u32 i;
+
+    if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
+        return ITEM_NONE;
+
+    if (!sRzTmMovesBuilt)
+        RzBuildTmMoveTable();
+
+    for (i = 0; i < NUM_TECHNICAL_MACHINES; i++)
+    {
+        if (sRzTmMoves[i] == move)
+            return GetTMHMItemId(i + 1);
+    }
+    return ITEM_NONE;
 }
 
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)
@@ -1426,5 +1508,12 @@ enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability 
 
     return originalAbility;
 }
+
+#else // RANDOMIZER_AVAILABLE
+
+// item.h calls these unconditionally, so they must exist even with the randomizer compiled
+// out. Returning nothing here makes every caller fall back to the vanilla TM mapping.
+enum Move RandomizeTMMove(u16 tmIndex)      { return MOVE_NONE; }
+u16 RandomizeTMMoveReverse(enum Move move)  { return ITEM_NONE; }
 
 #endif // RANDOMIZER_AVAILABLE
