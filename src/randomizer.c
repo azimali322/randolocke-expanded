@@ -137,12 +137,16 @@ struct RzTier
 // Picks a tier in proportion to weight, then an entry uniformly inside it. `accept` may
 // reject an entry (wrong type, already dealt, and so on); on repeated rejection the caller
 // falls back to its own uniform path, so a filter that matches nothing cannot hang.
-static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
-                          bool32 (*accept)(u16, u32), u32 arg)
+static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tiers,
+                              u32 tierCount, bool32 (*accept)(u16, u32), u32 arg, u32 mode)
 {
     u32 attempts;
     u32 total = 0;
     u32 i;
+
+    // Strict ignores everything below the top bands, so a run draws only from the best.
+    if (mode == RZ_TIER_STRICT && tierCount > RZ_STRICT_TIERS)
+        tierCount = RZ_STRICT_TIERS;
 
     for (i = 0; i < tierCount; i++)
     {
@@ -173,6 +177,12 @@ static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, 
         }
     }
     return 0;   // caller falls back
+}
+
+static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
+                          bool32 (*accept)(u16, u32), u32 arg)
+{
+    return RzWeightedPickMode(state, tiers, tierCount, accept, arg, RZ_TIER_WEIGHTED);
 }
 
 #define RZ_TIER(arr, w) { (arr), ARRAY_COUNT(arr), (w) }
@@ -393,7 +403,8 @@ u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry)
     state = RandomizerRandSeed(RANDOMIZER_REASON_FIELD_ITEM,
                                ((u32)treeId << 8) | plantedBerry, plantedBerry);
 
-    result = RzWeightedPick(&state, sBerryTiers, ARRAY_COUNT(sBerryTiers), NULL, 0);
+    result = RzWeightedPickMode(&state, sBerryTiers, ARRAY_COUNT(sBerryTiers), NULL, 0,
+                                RZ_TIER_MODE_BERRIES);
     if (result == ITEM_NONE)
         return plantedBerry;
 
@@ -422,7 +433,8 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
     if (IsItemTMHM(itemId))
     {
         #if RZ_TIER_WEIGHTED_ITEMS == TRUE
-            result = RzWeightedPick(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0);
+            result = RzWeightedPickMode(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0,
+                                        RZ_TIER_MODE_TMS);
             if (result != ITEM_NONE)
                 return result;
         #endif
@@ -442,13 +454,15 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
 
             if (RandomizerNextRange(&state, total) < RZ_ITEM_W_TM_BAND)
             {
-                result = RzWeightedPick(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0);
+                result = RzWeightedPickMode(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0,
+                                        RZ_TIER_MODE_TMS);
                 if (result != ITEM_NONE)
                     return result;
                 continue;
             }
 
-            result = RzWeightedPick(&state, sItemTiers, ARRAY_COUNT(sItemTiers), NULL, 0);
+            result = RzWeightedPickMode(&state, sItemTiers, ARRAY_COUNT(sItemTiers), NULL, 0,
+                                        RZ_TIER_MODE_ITEMS);
             if (result != ITEM_NONE && ShouldRandomizeItem(result) && !IsItemTMHM(result))
                 return result;
         }
@@ -1211,7 +1225,8 @@ static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
         #if RZ_TIER_WEIGHTED_MOVES == TRUE
             // Weighted draw first; a filtered category (STAB of one type, say) can exhaust
             // the tier attempts, so fall back to a uniform roll rather than spin.
-            move = RzWeightedPick(state, sMoveTiers, ARRAY_COUNT(sMoveTiers), NULL, 0);
+            move = RzWeightedPickMode(state, sMoveTiers, ARRAY_COUNT(sMoveTiers), NULL, 0,
+                                      RZ_TIER_MODE_MOVES);
             if (move == MOVE_NONE)
                 move = RandomizerNextRange(state, MOVES_COUNT - 1) + 1;
         #else
@@ -1394,8 +1409,8 @@ enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability 
 
         // Randomize abilities
         #if RZ_TIER_WEIGHTED_ABILITIES == TRUE
-            result = RzWeightedPick(&state, sAbilityTiers, ARRAY_COUNT(sAbilityTiers),
-                                    NULL, 0);
+            result = RzWeightedPickMode(&state, sAbilityTiers, ARRAY_COUNT(sAbilityTiers),
+                                        NULL, 0, RZ_TIER_MODE_ABILITIES);
             if (result != ABILITY_NONE && !IsAbilityIllegal(result))
                 return result;
             // fall through to the flat whitelist if the tiers could not produce one

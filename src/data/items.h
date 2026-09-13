@@ -15063,7 +15063,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_GIMMIGHOUL_COIN] =
     {
         .name = ITEM_NAME("Gimmighoul Coin"),
-        .price = 200,
+        .price = 1,   // randolocke: Gholdengo needs 999 of them
         .description = COMPOUND_STRING(
             "A dropped material\n"
             "Gimmighoul hoard\n"

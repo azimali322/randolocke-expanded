@@ -59,4 +59,10 @@
 // rely on having a Relicanth or a Wailord, which is what makes the vanilla gate unfair.
 #define RANDOLOCKE_FLASH_OPENS_REGI_CAVES   TRUE
 
+// --- Nuzlocke options -------------------------------------------------------
+
+// If TRUE, catching a Pokemon goes straight to the naming screen instead of asking. A
+// nuzlocke convention: naming a Pokemon is what makes losing it mean something.
+#define RANDOLOCKE_FORCE_NICKNAME       TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

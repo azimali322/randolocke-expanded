@@ -45,8 +45,27 @@
 // Re-run tools/randolocke/tier_report.py after changing any weight: a tier's weight is
 // split across its members, so a large tier dilutes itself and it is easy to make a lower
 // tier out-draw a higher one by accident.
-#define RZ_TIER_WEIGHTED_MOVES      TRUE
-#define RZ_TIER_WEIGHTED_ABILITIES  TRUE
+// Selection modes, matching pokeemerald_rando_enh:
+//   RZ_TIER_OFF      every entry equally likely
+//   RZ_TIER_WEIGHTED good entries come up more often, but anything can still appear
+//   RZ_TIER_STRICT   draw only from the top RZ_STRICT_TIERS bands. Expect heavy
+//                    repetition - a six-Pokemon party will duplicate moves.
+#define RZ_TIER_OFF                 0
+#define RZ_TIER_WEIGHTED            1
+#define RZ_TIER_STRICT              2
+
+// How many top bands Strict draws from.
+#define RZ_STRICT_TIERS             2
+
+#define RZ_TIER_MODE_MOVES          RZ_TIER_WEIGHTED
+#define RZ_TIER_MODE_ABILITIES      RZ_TIER_WEIGHTED
+#define RZ_TIER_MODE_ITEMS          RZ_TIER_WEIGHTED
+#define RZ_TIER_MODE_TMS            RZ_TIER_WEIGHTED
+#define RZ_TIER_MODE_BERRIES        RZ_TIER_WEIGHTED
+
+// Kept so existing checks still read naturally.
+#define RZ_TIER_WEIGHTED_MOVES      (RZ_TIER_MODE_MOVES != RZ_TIER_OFF)
+#define RZ_TIER_WEIGHTED_ABILITIES  (RZ_TIER_MODE_ABILITIES != RZ_TIER_OFF)
 
 // Ability weights, x100 so they stay integers. Pool of 308; 2.31x down to 0.34x uniform.
 #define RZ_ABILITY_W_S              900
@@ -73,7 +92,7 @@
 // Tier 4 is Poke Balls and evolution items - both sold cheaply in the Phase 11 shop, so
 // finding one is not a reward. Tier 5 is healing, vitamins, X items and the mega/Z/Tera
 // gear Phase 6 disabled; at 0.10x it is effectively off.
-#define RZ_TIER_WEIGHTED_ITEMS     TRUE
+#define RZ_TIER_WEIGHTED_ITEMS     (RZ_TIER_MODE_ITEMS != RZ_TIER_OFF)
 #define RZ_ITEM_W_T1             118
 #define RZ_ITEM_W_T2             4792
 #define RZ_ITEM_W_T3             4146

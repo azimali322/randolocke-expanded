@@ -770,6 +770,38 @@ python3 tools/randolocke/gen_berry_tiers.py
 
 ---
 
+## v1.1 options and Strict mode
+
+### Strict mode
+
+`RZ_TIER_MODE_{MOVES,ABILITIES,ITEMS,TMS,BERRIES}` each take `RZ_TIER_OFF`,
+`RZ_TIER_WEIGHTED` (default) or `RZ_TIER_STRICT`. Strict draws only from the top
+`RZ_STRICT_TIERS` (2) bands.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| S.1 | Weighted is the default | Build unchanged | Behaves as Phase 10 describes |
+| S.2 | **Strict narrows the pool** | Set `RZ_TIER_MODE_ABILITIES` to `RZ_TIER_STRICT`, rebuild, give 10 Pokémon | Only S and A abilities — 43 of them, so expect repeats |
+| S.3 | Strict on moves | Same for `RZ_TIER_MODE_MOVES` | Only Meta Defining and Staples — 50 moves, heavy repetition |
+| S.4 | Off restores uniform | Set a pool to `RZ_TIER_OFF` | Every entry equally likely again |
+| S.5 | Modes are independent | Strict abilities, Weighted moves | Each behaves per its own setting |
+
+### v1.1 options
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| V.1 | **Forced nickname** | Catch a Pokémon | Goes **straight to the naming screen** — no "Do you want to nickname?" prompt |
+| V.2 | Naming still cancellable | Press B on the naming screen | Keeps the species name, no crash |
+| V.3 | **Bag disabled in trainer battles** | Debug → Vars, set `VAR_UNUSED_0x40F7` to 1. Enter a trainer battle | The Bag is unusable |
+| V.4 | Wild battles unaffected at 1 | Same var at 1, enter a wild battle | Bag still usable |
+| V.5 | Value 2 disables both | Set the var to 2 | Bag unusable in wild battles too |
+| V.6 | Default is off | Leave the var at 0 | Bag works everywhere |
+| V.7 | **Gholdengo is reachable** | Buy 999 Gimmighoul Coins (₽1 each = ₽999), level a Gimmighoul | Evolves into Gholdengo |
+| V.8 | **Shelmet / Karrablast evolve** | Buy a Linking Cord, use it on each | Karrablast → Escavalier, Shelmet → Accelgor. The trade still works too |
+| V.9 | Kyogre / Groudon caves | After the Rayquaza scene at Sky Pillar, check the abnormal weather routes | Available — `FLAG_SYS_WEATHER_CTRL` is set there in vanilla, so this needed no change |
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed

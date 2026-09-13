@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "battle.h"
 #include "battle_hold_effects.h"
 #include "battle_message.h"
@@ -8574,6 +8575,13 @@ static void Cmd_trygivecaughtmonnick(void)
     switch (gBattleCommunication[MULTIUSE_STATE])
     {
     case 0:
+        #if RANDOLOCKE_FORCE_NICKNAME == TRUE
+            // Skip the prompt and go straight to naming: in a nuzlocke, naming a Pokemon
+            // is what makes losing it mean something.
+            gBattleCommunication[MULTIUSE_STATE] = 2;
+            BeginFastPaletteFade(3);
+            break;
+        #endif
         HandleBattleWindow(YESNOBOX_X_Y, 0);
         BattlePutTextOnWindow(gText_BattleYesNoChoice, B_WIN_YESNO);
         gBattleCommunication[MULTIUSE_STATE]++;

@@ -655,9 +655,8 @@ than hand-edits:
 - [x] `RzWeightedPick()` wired into `RzPickMoves`, `RandomizeAbility`, `RandomizeFoundItem`,
       the TM band and `RandomizeBerryTree`
 - [x] Weights exposed as `RZ_{ABILITY,MOVE,ITEM,TM,BERRY}_W_*` (x100) in `include/config/randomizer.h`
-- [ ] **Needs a decision:** an Off / Weighted / Strict mode per pool, as the fork has.
-      Off and Weighted exist already (`RZ_TIER_WEIGHTED_*`); Strict — draw only from the top
-      tiers — is not implemented. It causes heavy repetition, so it may not be wanted.
+- [x] Off / Weighted / Strict per pool — `RZ_TIER_MODE_*`, Strict draws from the top
+      `RZ_STRICT_TIERS` (2) bands
 - [x] Tests in [TESTING.md](TESTING.md) — Phase 10, 21 cases
 
 #### 10.9 How TM pickups randomize
@@ -704,6 +703,28 @@ teachables pipeline.
 2. Whether to ship **Strict** mode (top tiers only) as well as Weighted.
 3. Which additional moves/abilities the **nuzlocke heuristics** should push down.
 4. Whether the 33 MB moves PNG stays in git history or gets downscaled first.
+
+### v1.1 items — done
+
+- [x] **Strict mode** per pool
+- [x] **Gimmighoul Coin at ₽1**, so Gholdengo's 999-coin requirement costs ₽999
+- [x] **Shelmet / Karrablast** gained a Linking Cord evolution alongside the trade
+- [x] **Forced nickname on catch** (`RANDOLOCKE_FORCE_NICKNAME`)
+- [x] **Bag disabled in trainer battles** — `B_VAR_NO_BAG_USE` points at `VAR_UNUSED_0x40F7`;
+      set it to 1 for trainer battles, 2 to include wild
+- [x] **Kyogre / Groudon after Sootopolis** — needed no change. `FLAG_SYS_WEATHER_CTRL` is
+      already set during the Rayquaza scene at Sky Pillar, which is exactly the point
+      Randolocke describes
+- [x] **Regi caves after Sootopolis** — done better, via Flash (see the Regi section)
+- [x] Increased catch rates, reusable TMs, level caps, key items — earlier phases
+
+#### Still not done, and why
+
+- **Slateport legendary-location map seller** — needs new map items and an NPC placed in the
+  ferry building. Object placement is a map-editor job.
+- **Oldale ₽999,999 NPC** — needs a new NPC. Debug → Give → Max Money already does this, so
+  the NPC is convenience rather than capability.
+- **Terrain**: water in Littleroot, grass in Oldale, the relocated Old Rod sailor. Porymap.
 
 ### Later — v1.1
 - [ ] TM / tutor / move randomization against the build-time teachables pipeline (§5.1)
