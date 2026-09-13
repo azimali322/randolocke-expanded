@@ -140,6 +140,7 @@ simply switched off, not broken.
 | Egg Pokémon | `RANDOMIZER_FLAG_EGG_MON` | `0x25` |
 | Abilities | `RANDOMIZER_FLAG_ABILITIES` | `0x26` |
 | Learnsets (21 moves) | `RANDOMIZER_FLAG_LEARNSET` | `0x28` |
+| Berry trees | `RANDOMIZER_FLAG_BERRY_TREES` | `0x29` |
 
 **To turn them on for a test session:** Debug menu → Flags & Vars → Flags, and set the hex
 values above.
@@ -621,6 +622,151 @@ A new one: **`0x28` = learnset randomization**. Set it alongside `0x20`–`0x26`
 - **7c.18** matters because the learnset is rebuilt whenever the queried species changes.
   In a battle with many distinct species the cache turns over; if you feel lag, that single
   -species cache is the thing to enlarge.
+
+---
+
+## Phase 8 — Map and data edits
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 8.1 | Full regression | Run §R1–R7 | All pass |
+| 8.2 | **Scorched Slab has encounters** | Walk in Scorched Slab | Wild battles occur — the map had no encounter table before |
+| 8.3 | Scorched Slab levels | Note the levels | 26–31 (randomized species if flag `0x20` is set) |
+| 8.4 | **Zweilous evolves before the E4** | Get a Zweilous to level 63 | Evolves into Hydreigon. It needed 64 before, which is above the 8-badge cap of 63 |
+| 8.5 | Dark Void on any species | Teach Dark Void to something that is not Darkrai, use it | It works rather than failing |
+
+### Not done, do not test for
+
+Water in Littleroot, grass in Oldale, and the relocated Old Rod sailor need Porymap. The
+Slateport legendary-map seller and the Kyogre/Groudon Weather Institute events are also not
+implemented.
+
+---
+
+## Phase 10 — Tier-weighted randomization
+
+**Prerequisite:** flags `0x21` (items), `0x26` (abilities), `0x28` (learnsets), and a real
+New Game. See §F.
+
+Tier data is generated, so re-run the tools after editing any worksheet:
+
+```
+python3 tools/randolocke/validate_tiers.py [--moves]
+python3 tools/randolocke/tier_report.py [--moves]
+python3 tools/randolocke/gen_ability_tiers.py
+python3 tools/randolocke/gen_move_tiers.py
+python3 tools/randolocke/gen_item_tiers.py
+python3 tools/randolocke/gen_tm_tiers.py
+python3 tools/randolocke/gen_berry_tiers.py
+```
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 10.1 | Full regression | Run §R1–R7 | All pass |
+| 10.2 | **Abilities skew good** | Debug-give 10 Pokémon, note abilities | Noticeably more S/A/B abilities than D/F. An S ability is 2.31x uniform, an F 0.34x |
+| 10.3 | **Negative abilities never appear** | Check many Pokémon | No Truant, Slow Start, Defeatist, Stall, Wimp Out, Ball Fetch, Honey Gather — that tier is weight 0 |
+| 10.4 | Wonder Guard never appears | Check many Pokémon | Never — excluded by policy |
+| 10.5 | **Moves skew good** | Check several randomized learnsets | More Staples/Filler than Bad/Homeless. A Meta Defining move is 2.26x uniform, a Homeless one 0.15x |
+| 10.6 | No Z/Max/G-Max moves | Scan learnsets | None — 87 are excluded structurally |
+| 10.7 | No Struggle in a learnset | Scan learnsets | Never |
+| 10.8 | **Self-KO moves are rare** | Look for Explosion, Self-Destruct, Memento, Final Gambit | Very rare (0.15x) — the community list had Explosion in *Niche*, the nuzlocke pushdown moved it |
+| 10.9 | No OHKO moves in learnsets | Look for Fissure, Guillotine, Horn Drill, Sheer Cold | Very rare — same pushdown |
+| 10.10 | **STAB matches the category** | Debug-give a strong physical attacker (e.g. a Machamp-like) and check its STAB moves | Physical. A special attacker should get special STAB |
+| 10.11 | Mixed attackers get both | Give a species with near-equal Atk and Sp. Atk | STAB moves from both categories |
+| 10.12 | STAB power grows with level | Compare the level-1 STAB move with the level-70 one | The later one hits harder — picks are sorted ascending by Base Power |
+| 10.13 | Coverage moves are off-type | Check the level 7/16/28/… slots | Not the mon's own types |
+| 10.14 | **Items skew to held items** | Set flag `0x21`, pick up several field items | Mostly held items or TMs |
+| 10.15 | Consumables are rare | Same | Potions, vitamins and X items almost never — tier 5 is 0.10x |
+| 10.16 | **Ordinary pickups can be TMs** | Pick up several non-TM item balls | Some are TMs — a 30% band |
+| 10.17 | TM drops skew good | Note which TMs appear | Staples and Filler mostly; Niche rarely (0.27x) |
+| 10.18 | **No bad TMs at all** | Watch for Water Pulse, Hail, Hidden Power, Psychic, Double Team, Shock Wave, Sludge Bomb, Attract, Skill Swap, Snatch | None ever — those 10 are removed from the TM pool |
+| 10.19 | Balls and evolution items are rare finds | Pick up many items | Rare (0.30x) because the mart sells them |
+| 10.20 | **No berries from field items** | Pick up many items | Never a berry — they come from trees instead (Phase 12) |
+| 10.21 | No AI slowdown | Full 6v6 battle | No stutter |
+
+---
+
+## Phase 11 — Cheap mart
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 11.1 | Full regression | Run §R1–R7 | All pass |
+| 11.2 | **Balls on sale cheaply** | Visit any Poké Mart | Ultra Ball, Fast Ball and Timer Ball at ₽200 each |
+| 11.3 | **Every evolution item on sale** | Same shop list | All 54 — stones, Linking Cord, Scrolls of Darkness/Waters, Leader's Crest, Metal Alloy, the Sweets, Galarica items… at ₽200 |
+| 11.4 | Available from the start | Check Oldale Town Mart before any badge | Already stocked |
+| 11.5 | All 12 general marts | Spot-check three different towns | Same extra stock everywhere |
+| 11.6 | An item evolution works | Buy a Fire Stone, use it on an eligible Pokémon | Evolves |
+| 11.7 | **A trade evolution works without trading** | Buy a Linking Cord, use it on e.g. a Machoke | Evolves — this is what replaces Randolocke's trade NPCs |
+| 11.8 | Specialty shops untouched | Visit the Lilycove Dept. Store and the Lavaridge Herb Shop | Normal stock, no injected list |
+
+### Known gaps
+
+- **Gholdengo** needs 999 Gimmighoul Coins in the bag. At ₽200 each that is ~₽199,800 —
+  possible but a grind. Not yet solved.
+- **Shelmet and Karrablast** evolve by trading with *each other* specifically, which the
+  Linking Cord does not satisfy. Still unevolvable.
+
+---
+
+## Phase 12 — Berry tree randomization
+
+**Prerequisite:** flag **`0x29`**.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| 12.1 | Full regression | Run §R1–R7 | All pass |
+| 12.2 | **Berries randomize** | Find a berry tree and pick it | A different berry than vanilla planted there |
+| 12.3 | The name matches the yield | Read the tree's message, then check the bag | Same berry in both — the hook is the single read point, so they cannot disagree |
+| 12.4 | **A tree is stable** | Pick a tree, leave, come back, plant and grow again | Same berry each time for the same planted berry |
+| 12.5 | Replanting differs | Plant a *different* berry in the same plot | Different result — the seed uses both tree and planted berry |
+| 12.6 | Berries skew useful | Check several trees | Lum, Sitrus, Salac, Liechi, Petaya more often; no-hold-effect berries rarely (0.25x) |
+| 12.7 | Flag off = vanilla | Clear `0x29` | Trees give what was planted |
+
+---
+
+## F5 — Two registered key items
+
+⚠️ **This changed the save layout.** Start a **new game**; an older save is invalid.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| F5.1 | Full regression | Run §R1–R7 | All pass |
+| F5.2 | Register one item | Bag → a key item → Register. Tap SELECT in the overworld | It is used |
+| F5.3 | **Register a second** | Register a different key item, then tap SELECT | The **new** item is used; the old one moved to slot two |
+| F5.4 | **Hold SELECT uses slot two** | Hold SELECT for about a third of a second | The older item is used |
+| F5.5 | A hold does not also tap | Hold SELECT once | **Only** the second item fires, not both — the tap fires on release |
+| F5.6 | Unregister | Register an already-registered item again | It is cleared from whichever slot it was in |
+| F5.7 | Both survive a save | Save, reset, reload, try tap and hold | Both still registered |
+| F5.8 | Empty slot two | Register only one item, hold SELECT | Nothing happens, no crash |
+
+---
+
+## F6 — EVs in the move relearner
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| F6.1 | **EVs shown** | Open the move relearner on a party Pokémon, battle-moves page | The top line reads `Atk EV nnn  SpA EV nnn` instead of "BATTLE MOVES" |
+| F6.2 | Values are right | Compare against Debug → Party → Check EVs | Identical |
+| F6.3 | ⚠️ **Nothing is clipped** | Look at the whole panel | The EV line fits, and the type/power/accuracy rows and the description below are unaffected. This replaced the heading's row because the panel had no spare line — **the one test here that needs a careful look** |
+| F6.4 | Updates per Pokémon | Open the relearner on a different party member | Shows that Pokémon's EVs |
+| F6.5 | Contest page unaffected | Switch to contest moves | Normal |
+
+---
+
+## Regi caves via Flash
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| RG.1 | **Sealed Chamber outer** | Reach the Sealed Chamber outer room, use Flash anywhere in it | The door to the inner room opens |
+| RG.2 | Works away from the Braille | Use Flash from across the room, not on the Braille tile | Still works |
+| RG.3 | **Sealed Chamber inner opens all three** | In the inner room, use Flash | The shake plays and `FLAG_REGI_DOORS_OPENED` is set |
+| RG.4 | Cave entrances appear | Leave, then visit Route 111, 105 and 120 | All three cave entrances are open. *You must leave and re-enter the route — the check runs on map transition, same as vanilla* |
+| RG.5 | Desert Ruins | Inside Desert Ruins, use Flash | Regirock's wall opens |
+| RG.6 | **Island Cave** | Inside Island Cave, use Flash | Regice's wall opens **at the right place** — x 7–9, y 19–20, with only the middle bottom tile walkable. *I had these coordinates wrong at first; worth a careful look* |
+| RG.7 | Ancient Tomb still works | Use Flash in Ancient Tomb | Registeel's wall opens (this was vanilla behaviour) |
+| RG.8 | Braille puzzles still work | Solve one the old way instead | Also works — Flash is an additional route, not a replacement |
+| RG.9 | No double-open | Use Flash again in an already-opened room | Nothing happens, no crash |
+| RG.10 | Flash still lights caves | Use Flash in an ordinary dark cave | Lights the cave as normal |
 
 ---
 
