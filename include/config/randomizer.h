@@ -58,13 +58,23 @@
 #define RZ_ABILITY_W_NEGATIVE         0   // never rolled
 
 // Move weights, x100. Pool of 846 (every rollable move is tiered). Compressed at the
-// top, steep at the bottom: 1.82x / 1.74x / 1.64x / 0.99x / 0.24x / 0.15x against uniform.
-#define RZ_MOVE_W_META_DEFINING      86
-#define RZ_MOVE_W_STAPLES           946
-#define RZ_MOVE_W_FILLER           3936
-#define RZ_MOVE_W_NICHE            4474
-#define RZ_MOVE_W_BAD               507
-#define RZ_MOVE_W_HOMELESS           51
+// top: 2.50x / 2.00x / 1.75x / 0.89x / 0.24x / 0.15x against uniform.
+#define RZ_MOVE_W_META_DEFINING  118
+#define RZ_MOVE_W_STAPLES        1087
+#define RZ_MOVE_W_FILLER         4199
+#define RZ_MOVE_W_NICHE          4030
+#define RZ_MOVE_W_BAD            513
+#define RZ_MOVE_W_HOMELESS       51
+
+// Item weights, x100. Pool of 475. No community list exists for items, so tiers 1-2 are
+// hand-graded from pokeemerald_rando_enh and the rest are placed by heuristic; see
+// tools/randolocke/gen_item_tiers.py. 2.49x / 1.65x / 1.00x / 0.50x / 0.30x vs uniform.
+#define RZ_TIER_WEIGHTED_ITEMS     TRUE
+#define RZ_ITEM_W_T1                105
+#define RZ_ITEM_W_T2               6756
+#define RZ_ITEM_W_T3               1684
+#define RZ_ITEM_W_T4                495
+#define RZ_ITEM_W_T5                960
 
 // --- Learnset randomization -------------------------------------------------
 

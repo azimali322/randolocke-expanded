@@ -27,9 +27,9 @@ DEFAULTS = {
     "abilities": {"S": 9, "A": 20, "B": 32, "C": 24, "D": 11, "F": 4, "Negative": 0},
     # Deliberately compressed at the top (1.5x down to 1.2x) and steep at the bottom:
     # good moves should be a little more likely, bad ones markedly rarer.
-    "moves": {"Meta Defining": 0.86, "Staples": 9.46,
-              "Filler/Outclassed": 39.36, "Niche": 44.74,
-              "Bad": 5.07, "Pokemon Homeless": 0.51},
+    "moves": {"Meta Defining": 1.18, "Staples": 10.87,
+              "Filler/Outclassed": 41.99, "Niche": 40.32,
+              "Bad": 5.13, "Pokemon Homeless": 0.51},
 }
 
 

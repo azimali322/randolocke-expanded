@@ -16,6 +16,7 @@
 #include "data/randomizer/ability_whitelist.h"
 #include "data/randomizer/ability_tiers.h"
 #include "data/randomizer/move_tiers.h"
+#include "data/randomizer/item_tiers.h"
 #include "constants/abilities.h"
 
 // Add the mons you wish to be randomized when given as starter/gift mon to this list
@@ -112,6 +113,91 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
             return FALSE;
     }
 }
+
+// --- Tier-weighted selection ------------------------------------------------
+// A tier's weight is shared by its members, so the per-entry rate is weight/count. Picking
+// proportionally to weight (not to size) is what makes a small top tier actually favoured.
+// tools/randolocke/tier_report.py prints the resulting odds.
+
+struct RzTier
+{
+    const u16 *entries;
+    u16 count;
+    u16 weight;     // x100
+};
+
+// Picks a tier in proportion to weight, then an entry uniformly inside it. `accept` may
+// reject an entry (wrong type, already dealt, and so on); on repeated rejection the caller
+// falls back to its own uniform path, so a filter that matches nothing cannot hang.
+static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
+                          bool32 (*accept)(u16, u32), u32 arg)
+{
+    u32 attempts;
+    u32 total = 0;
+    u32 i;
+
+    for (i = 0; i < tierCount; i++)
+    {
+        if (tiers[i].count != 0)
+            total += tiers[i].weight;
+    }
+    if (total == 0)
+        return 0;
+
+    for (attempts = 0; attempts < 64; attempts++)
+    {
+        u32 roll = RandomizerNextRange(state, total);
+        u32 acc = 0;
+
+        for (i = 0; i < tierCount; i++)
+        {
+            if (tiers[i].count == 0)
+                continue;
+            acc += tiers[i].weight;
+            if (roll < acc)
+            {
+                u16 pick = tiers[i].entries[RandomizerNextRange(state, tiers[i].count)];
+
+                if (accept == NULL || accept(pick, arg))
+                    return pick;
+                break;
+            }
+        }
+    }
+    return 0;   // caller falls back
+}
+
+#define RZ_TIER(arr, w) { (arr), ARRAY_COUNT(arr), (w) }
+
+static const struct RzTier sAbilityTiers[] =
+{
+    RZ_TIER(sAbilityTierS,        RZ_ABILITY_W_S),
+    RZ_TIER(sAbilityTierA,        RZ_ABILITY_W_A),
+    RZ_TIER(sAbilityTierB,        RZ_ABILITY_W_B),
+    RZ_TIER(sAbilityTierC,        RZ_ABILITY_W_C),
+    RZ_TIER(sAbilityTierD,        RZ_ABILITY_W_D),
+    RZ_TIER(sAbilityTierF,        RZ_ABILITY_W_F),
+    RZ_TIER(sAbilityTierNegative, RZ_ABILITY_W_NEGATIVE),
+};
+
+static const struct RzTier sItemTiers[] =
+{
+    RZ_TIER(sItemTier1, RZ_ITEM_W_T1),
+    RZ_TIER(sItemTier2, RZ_ITEM_W_T2),
+    RZ_TIER(sItemTier3, RZ_ITEM_W_T3),
+    RZ_TIER(sItemTier4, RZ_ITEM_W_T4),
+    RZ_TIER(sItemTier5, RZ_ITEM_W_T5),
+};
+
+static const struct RzTier sMoveTiers[] =
+{
+    RZ_TIER(sMoveTierMetaDefining, RZ_MOVE_W_META_DEFINING),
+    RZ_TIER(sMoveTierStaples,      RZ_MOVE_W_STAPLES),
+    RZ_TIER(sMoveTierFiller,       RZ_MOVE_W_FILLER),
+    RZ_TIER(sMoveTierNiche,        RZ_MOVE_W_NICHE),
+    RZ_TIER(sMoveTierBad,          RZ_MOVE_W_BAD),
+    RZ_TIER(sMoveTierHomeless,     RZ_MOVE_W_HOMELESS),
+};
 
 u32 GetRandomizerSeed(void)
 {
@@ -289,6 +375,20 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
         return RandomizerNextRange(&state, RANDOMIZER_MAX_TM - ITEM_TM01 + 1) + ITEM_TM01;
 
     // Randomize everything else to everything else.
+    #if RZ_TIER_WEIGHTED_ITEMS == TRUE
+    {
+        u32 attempts;
+
+        for (attempts = 0; attempts < 32; attempts++)
+        {
+            result = RzWeightedPick(&state, sItemTiers, ARRAY_COUNT(sItemTiers), NULL, 0);
+            if (result != ITEM_NONE && ShouldRandomizeItem(result) && !IsItemTMHM(result))
+                return result;
+        }
+        // fall through to the flat whitelist
+    }
+    #endif
+
     do {
         result = sRandomizerItemWhitelist[RandomizerNextRange(&state, ITEM_WHITELIST_SIZE)];
     } while(!ShouldRandomizeItem(result) || IsItemTMHM(result));
@@ -999,82 +1099,6 @@ static enum Species GetAbilityFamilyRoot(enum Species species)
 }
 
 #endif // RZ_ABILITY_STABLE_ACROSS_EVOLUTION
-
-// --- Tier-weighted selection ------------------------------------------------
-// A tier's weight is shared by its members, so the per-entry rate is weight/count. Picking
-// proportionally to weight (not to size) is what makes a small top tier actually favoured.
-// tools/randolocke/tier_report.py prints the resulting odds.
-
-struct RzTier
-{
-    const u16 *entries;
-    u16 count;
-    u16 weight;     // x100
-};
-
-// Picks a tier in proportion to weight, then an entry uniformly inside it. `accept` may
-// reject an entry (wrong type, already dealt, and so on); on repeated rejection the caller
-// falls back to its own uniform path, so a filter that matches nothing cannot hang.
-static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
-                          bool32 (*accept)(u16, u32), u32 arg)
-{
-    u32 attempts;
-    u32 total = 0;
-    u32 i;
-
-    for (i = 0; i < tierCount; i++)
-    {
-        if (tiers[i].count != 0)
-            total += tiers[i].weight;
-    }
-    if (total == 0)
-        return 0;
-
-    for (attempts = 0; attempts < 64; attempts++)
-    {
-        u32 roll = RandomizerNextRange(state, total);
-        u32 acc = 0;
-
-        for (i = 0; i < tierCount; i++)
-        {
-            if (tiers[i].count == 0)
-                continue;
-            acc += tiers[i].weight;
-            if (roll < acc)
-            {
-                u16 pick = tiers[i].entries[RandomizerNextRange(state, tiers[i].count)];
-
-                if (accept == NULL || accept(pick, arg))
-                    return pick;
-                break;
-            }
-        }
-    }
-    return 0;   // caller falls back
-}
-
-#define RZ_TIER(arr, w) { (arr), ARRAY_COUNT(arr), (w) }
-
-static const struct RzTier sAbilityTiers[] =
-{
-    RZ_TIER(sAbilityTierS,        RZ_ABILITY_W_S),
-    RZ_TIER(sAbilityTierA,        RZ_ABILITY_W_A),
-    RZ_TIER(sAbilityTierB,        RZ_ABILITY_W_B),
-    RZ_TIER(sAbilityTierC,        RZ_ABILITY_W_C),
-    RZ_TIER(sAbilityTierD,        RZ_ABILITY_W_D),
-    RZ_TIER(sAbilityTierF,        RZ_ABILITY_W_F),
-    RZ_TIER(sAbilityTierNegative, RZ_ABILITY_W_NEGATIVE),
-};
-
-static const struct RzTier sMoveTiers[] =
-{
-    RZ_TIER(sMoveTierMetaDefining, RZ_MOVE_W_META_DEFINING),
-    RZ_TIER(sMoveTierStaples,      RZ_MOVE_W_STAPLES),
-    RZ_TIER(sMoveTierFiller,       RZ_MOVE_W_FILLER),
-    RZ_TIER(sMoveTierNiche,        RZ_MOVE_W_NICHE),
-    RZ_TIER(sMoveTierBad,          RZ_MOVE_W_BAD),
-    RZ_TIER(sMoveTierHomeless,     RZ_MOVE_W_HOMELESS),
-};
 
 // --- Learnset randomization -------------------------------------------------
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
