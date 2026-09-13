@@ -93,6 +93,19 @@
 #define RZ_TM_W_FILLER             5000
 #define RZ_TM_W_NICHE              1000
 
+// --- Berry trees ------------------------------------------------------------
+
+// Berries are randomized where they are found, at berry trees, rather than in the field
+// item pool. Weights x100 over 68 berries: 2.20x / 1.90x / 1.24x / 0.60x / 0.25x uniform.
+// Nuzlocke logic as elsewhere: in-battle HP restoration is near-worthless when the run
+// carries a cheat heal item, so pinch-berry stat boosts and status cures rank above it,
+// and the berries with no hold effect at all sit at the bottom.
+#define RZ_BERRY_W_T1              1618
+#define RZ_BERRY_W_T2              1676
+#define RZ_BERRY_W_T3              5456
+#define RZ_BERRY_W_T4              441
+#define RZ_BERRY_W_T5              809
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
@@ -156,6 +169,10 @@
 
 #ifndef FORCE_RANDOMIZE_LEARNSET
 #define RANDOMIZER_FLAG_LEARNSET                      FLAG_UNUSED_0x028
+#endif
+
+#ifndef FORCE_RANDOMIZE_BERRY_TREES
+#define RANDOMIZER_FLAG_BERRY_TREES                   FLAG_UNUSED_0x029
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

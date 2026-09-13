@@ -1,5 +1,6 @@
 #include "global.h"
 #include "berry.h"
+#include "randomizer.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
@@ -2613,7 +2614,13 @@ void RemoveBerryTree(u8 id)
 
 u8 GetBerryTypeByBerryTreeId(u8 id)
 {
-    return gSaveBlock1Ptr->berryTrees[id].berry;
+    #if RANDOMIZER_AVAILABLE == TRUE
+        // The one place a tree's berry is read, so the name shown, the count message and
+        // what lands in the bag all agree.
+        return RandomizeBerryTree(id, gSaveBlock1Ptr->berryTrees[id].berry);
+    #else
+        return gSaveBlock1Ptr->berryTrees[id].berry;
+    #endif
 }
 
 u8 GetStageByBerryTreeId(u8 id)

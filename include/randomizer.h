@@ -42,6 +42,8 @@ enum RandomizerFeature
     RANDOMIZE_EGG_MON,
     // Randomization of Pokémon abilities.
     RANDOMIZE_ABILITIES,
+    // Randomization of the berry found on a berry tree.
+    RANDOMIZE_BERRY_TREES,
 };
 
 enum RandomizerReason
@@ -128,6 +130,9 @@ enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMo
 
 // Given a species and an abilityNum, returns a replacement for that ability.
 enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability originalAbility);
+
+// Given a berry tree and what is planted in it, returns the berry it actually bears.
+u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry);
 
 // Returns the randomized 21-move level-up learnset, or NULL if the feature is off.
 const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species);

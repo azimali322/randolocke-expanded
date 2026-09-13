@@ -18,6 +18,7 @@
 #include "data/randomizer/move_tiers.h"
 #include "data/randomizer/item_tiers.h"
 #include "data/randomizer/tm_tiers.h"
+#include "data/randomizer/berry_tiers.h"
 #include "constants/abilities.h"
 
 // Add the mons you wish to be randomized when given as starter/gift mon to this list
@@ -103,6 +104,12 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
                 return FORCE_RANDOMIZE_ABILITIES;
             #else
                 return FlagGet(RANDOMIZER_FLAG_ABILITIES);
+            #endif
+        case RANDOMIZE_BERRY_TREES:
+            #ifdef FORCE_RANDOMIZE_BERRY_TREES
+                return FORCE_RANDOMIZE_BERRY_TREES;
+            #else
+                return FlagGet(RANDOMIZER_FLAG_BERRY_TREES);
             #endif
         case RANDOMIZE_LEARNSET:
             #ifdef FORCE_RANDOMIZE_LEARNSET
@@ -192,6 +199,15 @@ static const struct RzTier sItemTiers[] =
 
 // TMs grouped by the tier of the move they teach, weighted with the move weights so a
 // good TM is about as likely as a good move would be.
+static const struct RzTier sBerryTiers[] =
+{
+    RZ_TIER(sBerryTier1, RZ_BERRY_W_T1),
+    RZ_TIER(sBerryTier2, RZ_BERRY_W_T2),
+    RZ_TIER(sBerryTier3, RZ_BERRY_W_T3),
+    RZ_TIER(sBerryTier4, RZ_BERRY_W_T4),
+    RZ_TIER(sBerryTier5, RZ_BERRY_W_T5),
+};
+
 static const struct RzTier sTmTiers[] =
 {
     RZ_TIER(sTmTierMetaDefining, RZ_TM_W_META_DEFINING),
@@ -363,6 +379,27 @@ static inline bool32 ShouldRandomizeItem(u16 itemId)
 #include "data/randomizer/item_whitelist.h"
 
 // Given a found item and its location in the game, returns a replacement for that item.
+// Given a berry tree and the berry planted in it, returns the berry it actually bears.
+// Seeded on both, so a tree is stable across visits while two plantings of different
+// berries in the same plot still differ.
+u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry)
+{
+    struct Sfc32State state;
+    u16 result;
+
+    if (plantedBerry == 0 || !RandomizerFeatureEnabled(RANDOMIZE_BERRY_TREES))
+        return plantedBerry;
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_FIELD_ITEM,
+                               ((u32)treeId << 8) | plantedBerry, plantedBerry);
+
+    result = RzWeightedPick(&state, sBerryTiers, ARRAY_COUNT(sBerryTiers), NULL, 0);
+    if (result == ITEM_NONE)
+        return plantedBerry;
+
+    return ItemIdToBerryType(result);
+}
+
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)
 {
     struct Sfc32State state;

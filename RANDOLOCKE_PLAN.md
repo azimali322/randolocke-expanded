@@ -492,24 +492,27 @@ Already covered natively by 1.17 or by earlier phases: modern typings, Fairy, be
 extra legendaries, legendary abilities, new moves, nature mints, reusable TMs, opponent type
 display, free TM/HM use, the Level Cap Candy and level caps.
 
-### Phase 12 — Berry tree randomization
+### Phase 12 — Berry tree randomization ✅ code complete
 
-Berries are **excluded from field-item randomization** (Phase 10), on the basis that they
-are randomized where they are actually found: at berry trees. That second half does not
-exist yet, so right now berries are simply never randomized.
+Berries are excluded from field-item randomization (Phase 10) and randomized where they are
+actually found instead: at berry trees.
 
-pokeemerald_rando_enh has this: `src/berry.c` plus `src/data/pokemon/berry_tiers.h`, 43
-berries in 5 bands split on whether the berry does anything when held (22 have a hold
-effect, 21 do not), graded by how much that effect is worth in a fight.
+- [x] Berry tiers for all **68** of 1.17's berries — `tools/randolocke/gen_berry_tiers.py`.
+      The 43 hand-graded in pokeemerald_rando_enh are authoritative; the other 25 are placed
+      by hold effect, the line the item data itself draws.
+- [x] Hooked at `GetBerryTypeByBerryTreeId()` (`src/berry.c`), the single place a tree's
+      berry is read, so the name shown, the count message and what lands in the bag agree.
+- [x] Nuzlocke logic applied: in-battle HP restoration is near-worthless when the run carries
+      a cheat heal item, so pinch-berry stat boosts (Salac, Liechi, Petaya) and Lum rank top,
+      and the 22 berries with no hold effect at all sit at the bottom.
+- [x] Gated by `RANDOMIZER_FLAG_BERRY_TREES` (`0x29`).
+- [ ] **Verify in emulator** — a tree should be stable across visits, and two plots planted
+      with different berries should differ.
 
-- [ ] Port the berry tier table, extending it to 1.17's 68 berries
-- [ ] Hook berry tree generation to a weighted pick
-- [ ] Decide whether tree berries should respect the same nuzlocke logic — in-battle healing
-      berries are near-worthless here, so Lum and the stat-boost berries should dominate
+Weights over 68 berries: 2.20x / 1.90x / 1.24x / 0.60x / 0.25x uniform.
 
-⚠️ **Until this lands, berries are unrandomized.** If that is worse than the double-dipping
-it was meant to avoid, re-enable them in `gen_item_tiers.py` by removing the
-`POCKET_BERRIES` skip.
+Seeded on the tree id **and** what is planted in it, so a tree does not change when you
+revisit, while replanting a different berry in the same plot gives a different result.
 
 ### Phase 10 — Tier-weighted randomization (ported from pokeemerald_rando_enh)
 
