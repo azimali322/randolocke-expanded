@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-7 code complete except F5/F6. All four enhancements implemented. Phase 8 (maps & events) and Phase 9 (ship) outstanding; Phases 3-7 awaiting in-game verification
+**Status:** Phases 0-7 code complete except F5/F6. Phase 10 (tier-weighted randomization) specced. All four enhancements implemented. Phase 8 (maps & events) and Phase 9 (ship) outstanding; Phases 3-7 awaiting in-game verification
 
 ---
 
@@ -451,6 +451,113 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] Save/reload stability testing (randomization must be stable)
 - [ ] Produce distribution patch against `baserom.gba`
 - [ ] Credits: RHH, pret, tertu-m, Zetraphes, Istorian, PChal/Pointcrow
+
+### Phase 10 — Tier-weighted randomization (ported from pokeemerald_rando_enh)
+
+Port the tier systems from azim's other fork,
+[`pokeemerald_rando_enh`](https://github.com/azimali322/pokeemerald_rando_enh) — a fork of
+resetes12's **Modern Emerald** — so good moves, abilities and items come up more often
+without eliminating variety.
+
+#### 10.1 Why this is a port, not a copy
+
+The two projects use **different randomizers**:
+
+| | pokeemerald_rando_enh | randolocke-expanded |
+| --- | --- | --- |
+| Base | vanilla pokeemerald + Modern Emerald | pokeemerald-expansion 1.17 |
+| Randomizer | TheXaman `tx_randomizer_and_challenges` | tertu `src/randomizer.c` |
+| Species | 495 | **1,679** |
+| Moves | 370 | **961** |
+| Abilities | 82 | **319** |
+| Items | 428 | **955** |
+
+Fairy type and per-move physical/special `category` exist in both, so the *type model* is
+compatible and the STAB-with-category-matching logic transfers. What does not transfer is
+the integration: the tier code hooks tx_randomizer functions that do not exist here.
+
+#### 10.2 Source of truth: the community tier list images
+
+Copied into `docs/tiering/`:
+
+| File | Size | Covers |
+| --- | --- | --- |
+| `community-moves-tierlist.png` | 2391x13271 | community-voted "All Pokemon Moves Tier List", ~19 submitted lists averaged |
+| `community-abilities-tierlist.png` | 2353x4218 | community abilities list, tiers S/A/B/C/D/F/Negative |
+
+**These images cover far more than the fork's C tables**, because those tables were capped
+by Modern Emerald's content. Estimated coverage against *this* repo:
+
+| Pool | Fork's C table | Community image (est.) | Against 1.17 |
+| --- | --- | --- | --- |
+| Moves | 349 | ~840 | 36% -> **~87%** |
+| Abilities | 79 | ~258 | 25% -> **~81%** |
+
+So the images, not the ported tables, are the right baseline. The fork's tables remain
+useful as a cross-check for the Gen 1-3 overlap and for the nuzlocke overrides already
+baked into them.
+
+Items and berries have **no** community image; the fork's `ITEMS_BY_TIER.md` (122 items)
+and `BERRIES.md` (43 berries) are the only source, covering 13% of 1.17's items.
+
+#### 10.3 Transcription must be validated, not trusted
+
+Reading ~840 move names and ~258 ability names out of two PNGs is error-prone. The method:
+
+1. Transcribe band by band into `docs/tiering/*.md` worksheets.
+2. **Validate every name against `include/constants/moves.h` / `abilities.h`** with a
+   script that reports unmatched names, so a misread becomes a build-time list rather than
+   a silently missing move.
+3. Generate the C tables from the validated worksheets, never by hand.
+
+#### 10.4 Injection points (all already exist)
+
+| Tier system | Hook |
+| --- | --- |
+| Move tiers + STAB category matching | **`RzPickMoves()`** in `src/randomizer.c` — already filters by an `accept` callback and sorts by Base Power. A tier-weighted pick replaces the uniform `RandomizerNextRange` roll. |
+| Ability tiers | **`RandomizeAbility()`** — currently uniform over `sRandomizerAbilityWhitelist[]`. |
+| Item tiers + TM band | **`RandomizeFoundItem()`** — currently uniform over `sRandomizerItemWhitelist[]`. |
+| Berry tiers | No berry-tree randomizer here yet — new work, lowest priority. |
+
+Keep the fork's weighting maths: it computes a **per-entry rate** (`weight * 1000 / count`)
+so a fat tier does not swamp a thin one, and exposes the weights as `#define`s.
+
+#### 10.5 Coverage fallback (decide before implementing)
+
+Whatever the images cover, some entries will fall outside every tier. With the fork's
+current logic an untiered entry is **never rolled**, which would silently delete content.
+
+Options: (a) extend the lists, (b) heuristic tier from Base Power / category / price,
+(c) catch-all middle tier. Recommendation: (b) for moves and items, (a) for abilities —
+ability quality has no numeric proxy.
+
+#### 10.6 Nuzlocke heuristics to carry over
+
+Already baked into the fork's tables and worth preserving as explicit overrides rather
+than hand-edits:
+
+- **Self-KO moves pushed to the bottom** (Explosion, Self-Destruct, Memento, Perish Song) —
+  in a nuzlocke that is a permanently lost Pokemon, not a bad turn.
+- **OHKO moves forced to the lowest move tier.**
+- **Consumables devalued** — healing items, battle items and vitamins sit at the bottom,
+  because the run uses a cheat heal item and sets EVs manually.
+
+#### 10.7 Steps
+
+- [ ] Transcribe the abilities image (~258, smaller and higher value) with validation
+- [ ] Transcribe the moves image (~840) band by band with validation
+- [ ] Extend the item tiers from 122 toward 1.17's 955, or adopt a price/hold-effect heuristic
+- [ ] Port the weighted-pick maths into `RzPickMoves` / `RandomizeAbility` / `RandomizeFoundItem`
+- [ ] Expose `RZ_*_WEIGHT_T*` knobs in `include/config/randomizer.h`
+- [ ] Add an Off / Weighted / Strict mode per pool, matching the fork
+- [ ] Tests in [TESTING.md](TESTING.md)
+
+#### 10.8 Open decisions for azim
+
+1. Tier **weights** per pool (the fork's: moves 4/24/38/27/6, abilities 40/30/22/6).
+2. Whether to ship **Strict** mode (top tiers only) as well as Weighted.
+3. Which additional moves/abilities the **nuzlocke heuristics** should push down.
+4. Whether the 33 MB moves PNG stays in git history or gets downscaled first.
 
 ### Later — v1.1
 - [ ] TM / tutor / move randomization against the build-time teachables pipeline (§5.1)
