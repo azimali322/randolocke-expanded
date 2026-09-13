@@ -439,8 +439,8 @@ Cheapest parity items first (§4, Tier 1):
 - [x] Custom key items (infinite Repellant, Porta Heal, Endless Candy, Cap Candy) ✅
 - [x] Field/gift item randomization wiring ✅ (done in Phase 3)
 - [x] **F4** always-run ✅ `OW_AUTO_RUN`; holding B walks
-- [ ] **F5** second registered key item (⚠️ save-layout change — batch with other save work)
-- [ ] **F6** show EVs in the move-learning screen
+- [x] **F5** second registered key item ✅ tap/hold SELECT (⚠️ save-layout change)
+- [x] **F6** EVs in the move relearner ✅
 
 ### Phase 8 — Randolocke parity: maps & events — mostly superseded
 
@@ -510,11 +510,11 @@ Modern Emerald puts ₽1 Ultra Balls plus evolution stones and trade-evolution i
 Lilycove Dept. Store 3F. That overlaps Randolocke's own planned Lilycove evolution-item
 sellers (§4, Phase 8), so the two should be designed as one shop rather than two.
 
-- [ ] Decide location — ordinary Poke Marts, so it is available from the start
-- [ ] Stock Ultra / Fast / Timer Balls at a low price
-- [ ] Stock every evolution item and evolution stone at a low price
-- [ ] Confirm Fast Ball and Timer Ball exist and behave in 1.17 (they are not vanilla Emerald)
-- [ ] Retire the Phase 8 Lilycove evolution-item sellers if the mart covers them
+- [x] Location — all 12 general Poké Marts, available from the start
+- [x] Ultra / Fast / Timer Balls at ₽200
+- [x] All 54 evolution items and stones at ₽200
+- [x] Fast Ball and Timer Ball confirmed present in 1.17
+- [x] Lilycove sellers retired — the mart covers them
 
 #### Explicitly declined from Modern Emerald
 
@@ -649,13 +649,16 @@ than hand-edits:
 
 #### 10.7 Steps
 
-- [ ] Transcribe the abilities image (~258, smaller and higher value) with validation
-- [ ] Transcribe the moves image (~840) band by band with validation
-- [ ] Extend the item tiers from 122 toward 1.17's 955, or adopt a price/hold-effect heuristic
-- [ ] Port the weighted-pick maths into `RzPickMoves` / `RandomizeAbility` / `RandomizeFoundItem`
-- [ ] Expose `RZ_*_WEIGHT_T*` knobs in `include/config/randomizer.h`
-- [ ] Add an Off / Weighted / Strict mode per pool, matching the fork
-- [ ] Tests in [TESTING.md](TESTING.md)
+- [x] Transcribe the abilities image — 316 abilities, 100% of the ROM's rollable set
+- [x] Transcribe the moves image — 934 entries, 846 rollable, all tiered
+- [x] Item tiers — 118 hand-graded plus 290 by `sortType` heuristic; berries split out to Phase 12
+- [x] `RzWeightedPick()` wired into `RzPickMoves`, `RandomizeAbility`, `RandomizeFoundItem`,
+      the TM band and `RandomizeBerryTree`
+- [x] Weights exposed as `RZ_{ABILITY,MOVE,ITEM,TM,BERRY}_W_*` (x100) in `include/config/randomizer.h`
+- [ ] **Needs a decision:** an Off / Weighted / Strict mode per pool, as the fork has.
+      Off and Weighted exist already (`RZ_TIER_WEIGHTED_*`); Strict — draw only from the top
+      tiers — is not implemented. It causes heavy repetition, so it may not be wanted.
+- [x] Tests in [TESTING.md](TESTING.md) — Phase 10, 21 cases
 
 #### 10.9 How TM pickups randomize
 
