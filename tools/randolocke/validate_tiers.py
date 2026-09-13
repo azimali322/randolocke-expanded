@@ -37,6 +37,7 @@ def constants(header: str, prefix: str) -> set[str]:
 
 def normalise(name: str) -> str:
     n = name.strip().upper()
+    n = n.replace("(", "").replace(")", "")   # "As One (Shadow Rider)"
     n = n.replace("'", "").replace("-", "_").replace(".", "")
     n = re.sub(r"\s+", "_", n)
     return ALIASES.get(n, n)

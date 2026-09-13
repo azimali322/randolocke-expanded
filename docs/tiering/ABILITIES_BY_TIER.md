@@ -17,14 +17,52 @@ constants and report anything that does not match, so a misreading fails loudly.
 **Excluded regardless of tier:** Wonder Guard (a randomized Shedinja ability trivialises or
 bricks fights) — carried over from the pokeemerald_rando_enh tables.
 
+**The Negative tier is never rolled.** It carries weight 0, so those abilities stay listed
+and auditable here but cannot be selected. Give it a non-zero weight to re-enable it.
+
+**Randolocke-specific placements**, where config or format matters more than competitive
+strength:
+- `P_TERA_FORMS` is `FALSE`, so Tera Shift and all four Embody Aspect masks cannot trigger.
+- Commander, Costar and Hospitality are doubles-only, and this is a singles run.
+- Supreme Overlord scales with fainted teammates, which a nuzlocke is played to avoid, and
+  Anger Shell drops defences at half HP — both pushed below their competitive placement.
+- Sharpness and other move-dependent boosts are worth less when movesets are randomized.
+
+## Weights
+
+```
+python3 tools/randolocke/tier_report.py                      # odds these weights produce
+python3 tools/randolocke/tier_report.py --weights=S=12,A=20  # try different ones
+```
+
+Current: **S 11 / A 20 / B 32 / C 23 / D 10 / F 4 / Negative 0**, over a 308-ability pool.
+
+| Tier | Count | Weight | Per ability | vs uniform |
+| --- | --- | --- | --- | --- |
+| S | 12 | 11% | 0.9167% | **2.82x** |
+| A | 31 | 20% | 0.6452% | 1.99x |
+| B | 78 | 32% | 0.4103% | 1.26x |
+| C | 87 | 23% | 0.2644% | 0.81x |
+| D | 64 | 10% | 0.1562% | 0.48x |
+| F | 36 | 4% | 0.1111% | 0.34x |
+| Negative | 7 | 0 | never | — |
+
+A tier's weight is **split across its members**, so a large tier dilutes itself. The first
+weights tried here (S 8 / A 22) made an A ability *more* likely than an S one — S had 12
+members against A's 31. `tier_report.py` fails if a lower tier out-draws a higher one, so
+that class of mistake cannot ship silently.
+
 ## S
-Drizzle, Huge Power, Drought, Intimidate, Levitate, Arena Trap, Adaptability, Speed Boost
+Drizzle, Huge Power, Drought, Intimidate, Levitate, Arena Trap, Adaptability, Speed Boost,
+Orichalcum Pulse, Hadron Engine, Good as Gold, Eelevate
 
 ## A
 Guts, Wonder Guard, Pure Power, Shadow Tag, Sand Stream, Magic Bounce, Compound Eyes,
 Serene Grace, Prankster, Magic Guard, Desolate Land, Contrary,
 Download, Beast Boost, Clear Body, Gorilla Tactics, Flash Fire, Poison Heal, Chlorophyll,
-Disguise, Delta Stream, Defiant, Regenerator, Libero
+Disguise, Delta Stream, Defiant, Regenerator, Libero,
+Protosynthesis, Sword of Ruin, Beads of Ruin, Tablets of Ruin, Vessel of Ruin,
+Tera Shell, Purifying Salt, Earth Eater
 
 ## B
 Moxie, Natural Cure, No Guard, Fur Coat, Technician, Protean, Primordial Sea, Lightning Rod,
@@ -38,7 +76,9 @@ Psychic Surge, Illusion, Dauntless Shield, Scrappy,
 Trace, Dragon's Maw, Misty Surge, Blaze, Hustle, Chilling Neigh, Static, Refrigerate,
 Immunity, Dark Aura, Rock Head, Unburden,
 Inner Focus, Water Bubble, Cursed Body, Iron Fist, Fairy Aura, Harvest, Storm Drain,
-Tough Claws
+Tough Claws,
+Quark Drive, Sharpness, Well-Baked Body, Thermal Exchange, Toxic Chain, Rocky Payload,
+As One (Shadow Rider), Dragonize, Fire Mane, Mega Sol
 
 ## C
 Infiltrator, Motor Drive, Comatose, Heatproof, Insomnia, Synchronize, Cloud Nine,
@@ -53,7 +93,9 @@ Solar Power, Sniper, Early Bird, Punk Rock, Frisk, Oblivious, Liquid Ooze, Trans
 Flare Boost, Cute Charm, Damp, Poison Touch,
 Unseen Fist, Queenly Majesty, Sand Force, Swarm, Aftermath, Own Tempo, Quick Feet, Teravolt,
 Gooey, Vital Spirit, Liquid Voice, Turboblaze,
-Justified, Steely Spirit, Innards Out, Slush Rush, Toxic Boost
+Justified, Steely Spirit, Innards Out, Slush Rush, Toxic Boost,
+Wind Rider, Electromorphosis, Toxic Debris, Armor Tail, Guard Dog, Mind's Eye,
+Opportunist, Seed Sower, Piercing Drill, Spicy Spray
 
 ## D
 Water Veil, Overcoat, Prism Armor, Quick Draw, Ice Body, Anger Point, Keen Eye, Victory Star,
@@ -64,14 +106,19 @@ Suction Cups, WonderSkin, Unnerve, Weak Armor, Magma Veil, Color Change, Flower 
 Perish Body, Steam Engine, Magician, Sand Spit,
 Pastel Veil, Power Construct, Tangling Hair, Wandering Spirit, Ripen, Steadfast, Forewarn,
 Screen Cleaner, Rattled, Forecast, Anticipation, Water Compaction,
-Ice Face, Heavy Metal, Sweet Veil, Big Pecks, Grassy Pelt, Normalize
+Ice Face, Heavy Metal, Sweet Veil, Big Pecks, Grassy Pelt, Normalize,
+Wind Power, Anger Shell, Cud Chew, Lingering Aroma, Mycelium Might, Poison Puppeteer,
+Supersweet Syrup, Teraform Zero, Supreme Overlord, Zero to Hero
 
 ## F
 Light Metal, Aura Break, Telepathy, Pickup, Healer, Rivalry, RKS System, Battery,
 Tangled Feet, Flower Veil, Curious Medicine, Power Spot,
 Minus, Plus, Emergency Exit, Propeller Tail, Hunger Switch, Power of Alchemy, Shields Down,
 Mimicry, Receiver, Stalwart, Run Away, Symbiosis,
-Zen Mode, Schooling, Illuminate, Klutz
+Zen Mode, Schooling, Illuminate, Klutz,
+Commander, Costar, Hospitality, Tera Shift, Embody Aspect Teal Mask,
+Embody Aspect Wellspring Mask, Embody Aspect Hearthflame Mask,
+Embody Aspect Cornerstone Mask
 
 ## Negative
 Wimp Out, Ball Fetch, Honey Gather, Truant, Stall, Defeatist, Slow Start
