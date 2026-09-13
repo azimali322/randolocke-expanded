@@ -22,27 +22,37 @@ python3 tools/randolocke/tier_report.py --moves
 python3 tools/randolocke/tier_report.py --moves --weights="Niche=50,Bad=8"
 ```
 
-Pool of 846 rollable moves; uniform draw is 0.1182% each.
+Pool of 844 rollable moves; uniform draw is 0.1185% each.
 
 | Tier | Count | Weight | Per move | vs uniform | Share of pool |
 | --- | --- | --- | --- | --- | --- |
-| Meta Defining | 4 | 0.86% | 0.2150% | 1.82x | 0.5% |
-| Staples | 46 | 9.46% | 0.2057% | 1.74x | 5.4% |
-| Filler/Outclassed | 203 | 39.36% | 0.1939% | 1.64x | 24.0% |
-| Niche | 383 | 44.74% | 0.1168% | **0.99x** | 45.3% |
-| Bad | 181 | 5.07% | 0.0280% | **0.24x** | 21.4% |
-| Pokemon Homeless | 29 | 0.51% | 0.0176% | **0.15x** | 3.4% |
+| Meta Defining | 4 | 1.18% | 0.2950% | **2.49x** | 0.5% |
+| Staples | 46 | 10.90% | 0.2370% | **2.00x** | 5.5% |
+| Filler/Outclassed | 203 | 42.09% | 0.2073% | **1.75x** | 24.1% |
+| Niche | 383 | 40.15% | 0.1048% | 0.88x | 45.4% |
+| Bad | 186 | 5.29% | 0.0284% | 0.24x | 22.0% |
+| Pokemon Homeless | 22 | 0.39% | 0.0177% | 0.15x | 2.6% |
 
-**Niche is pinned to uniform** and the bottom two are steep. Because weights must sum to
-100, holding Niche at 1.00x while keeping Bad low pushes the released weight into the bands
-above, so the top three sit at 1.82x / 1.74x / 1.64x rather than the ~1.4-1.5x of an earlier
-draft. That trade is unavoidable: Niche is 45% of the pool.
+Niche lands at 0.88x rather than at uniform because the count-weighted average multiplier
+must equal 1.0: raising the top three necessarily pulls the 383-move Niche band below
+uniform. Any three of those four numbers can be held, not all four.
 
-Meta Defining holds only 4 moves, so its weight is very sensitive — 1% would already put it
-above 2x. Tune it in steps of 0.1.
+Meta Defining holds only 4 moves, so its weight is very sensitive. Tune it in steps of 0.1.
 
-Re-run `tier_report.py --moves` after **any** change to the worksheet: adding moves changes
-the counts, and the per-move rate is weight/count.
+Re-run `tier_report.py --moves` after **any** worksheet change: the per-move rate is
+weight/count, so adding moves to a tier silently dilutes it.
+
+## "Pokemon Homeless" is the list's leftovers bin, not its worst tier
+
+The band's own contents gave it away: it held Thunder Punch, Trick, Spirit Shackle, Roar of
+Time and High Jump Kick, which are all perfectly good moves. On a list aggregated from 19
+submissions, entries few people ranked sink to the bottom by default, so the bottom band is
+closer to "unranked" than to "terrible".
+
+Those five were moved up to **Bad**. Spacial Rend and Strength Sap were **excluded**
+outright. What remains in the band is moves that genuinely do little, plus the nuzlocke
+pushdowns.
+
 
 ## Exclusions applied
 
@@ -248,17 +258,8 @@ Attract, Max Phantasm, Razor Wind, Catastropika, Psywave, Sludge Bomb, Hypnosis,
 Struggle, Play Rough, Max Geyser, Ice Punch
 ,
 Power Whip, G-Max Malodor,
-Dragon Cheer
+Dragon Cheer,
+Thunder Punch, Trick, Spirit Shackle, Roar of Time, High Jump Kick
 
 ## Pokemon Homeless
-Double Team, Spirit Shackle, Pulverizing Pancake, Power Shift, Thunder Punch, Trick,
-G-Max Meltdown, Continental Crush, Max Darkness, Double Kick, Submission, Shattered Psyche,
-G-Max Drum Solo, G-Max Fireball, G-Max Hydrosnipe, Max Guard, G-Max Wind Rage,
-G-Max Gravitas, Max Overgrowth, Max Strike, Max Rockfall, G-Max Stonesurge, Max Lightning,
-G-Max Volcalith,
-G-Max Tartness, G-Max Sweetness, G-Max Sandblast, Max Ooze, G-Max Stun Shock, Max Flare,
-G-Max Centiferno, G-Max Smite, G-Max Snooze, Max Steelspike, Max Knuckle, Max Quake,
-G-Max Finale, Max Flutterby, Max Hailstorm, G-Max Steelsurge, G-Max Depletion, Max Wyrmwind,
-G-Max One Blow, G-Max Rapid Flow, Black Hole Eclipse, Mud Bomb, Roar of Time, Spacial Rend,
-Steamroller, Fairy Lock, Smokescreen, High Jump Kick, Strength Sap, Smog, Power Trick,
-Hold Hands
+Double Team, Pulverizing Pancake, Power Shift, G-Max Meltdown, Continental Crush, Max Darkness, Double Kick, Submission, Shattered Psyche, G-Max Drum Solo, G-Max Fireball, G-Max Hydrosnipe, Max Guard, G-Max Wind Rage, G-Max Gravitas, Max Overgrowth, Max Strike, Max Rockfall, G-Max Stonesurge, Max Lightning, G-Max Volcalith, G-Max Tartness, G-Max Sweetness, G-Max Sandblast, Max Ooze, G-Max Stun Shock, Max Flare, G-Max Centiferno, G-Max Smite, G-Max Snooze, Max Steelspike, Max Knuckle, Max Quake, G-Max Finale, Max Flutterby, Max Hailstorm, G-Max Steelsurge, G-Max Depletion, Max Wyrmwind, G-Max One Blow, G-Max Rapid Flow, Black Hole Eclipse, Mud Bomb, Steamroller, Fairy Lock, Smokescreen, Smog, Power Trick, Hold Hands

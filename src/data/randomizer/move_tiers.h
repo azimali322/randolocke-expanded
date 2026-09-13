@@ -2,7 +2,7 @@
 // docs/tiering/MOVES_BY_TIER_RANDOLOCKE.md. Do not edit by hand.
 //
 // Source: docs/tiering/community-moves-tierlist.png (community-voted).
-// 846 rollable moves tiered; 89 excluded
+// 844 rollable moves tiered; 91 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
 // 11 self-KO and OHKO moves were pushed to the bottom band for nuzlocke
@@ -664,7 +664,7 @@ static const u16 sMoveTierNiche[] =
     MOVE_MISTY_TERRAIN,
 };
 
-// Bad -- 181 moves
+// Bad -- 186 moves
 static const u16 sMoveTierBad[] =
 {
     MOVE_FREEZY_FROST,
@@ -848,9 +848,14 @@ static const u16 sMoveTierBad[] =
     MOVE_ICE_PUNCH,
     MOVE_POWER_WHIP,
     MOVE_DRAGON_CHEER,
+    MOVE_THUNDER_PUNCH,
+    MOVE_TRICK,
+    MOVE_SPIRIT_SHACKLE,
+    MOVE_ROAR_OF_TIME,
+    MOVE_HIGH_JUMP_KICK,
 };
 
-// Pokemon Homeless -- 29 moves
+// Pokemon Homeless -- 22 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
@@ -865,20 +870,13 @@ static const u16 sMoveTierHomeless[] =
     MOVE_HEALING_WISH,
     MOVE_LUNAR_DANCE,
     MOVE_DOUBLE_TEAM,
-    MOVE_SPIRIT_SHACKLE,
     MOVE_POWER_SHIFT,
-    MOVE_THUNDER_PUNCH,
-    MOVE_TRICK,
     MOVE_DOUBLE_KICK,
     MOVE_SUBMISSION,
     MOVE_MUD_BOMB,
-    MOVE_ROAR_OF_TIME,
-    MOVE_SPACIAL_REND,
     MOVE_STEAMROLLER,
     MOVE_FAIRY_LOCK,
     MOVE_SMOKESCREEN,
-    MOVE_HIGH_JUMP_KICK,
-    MOVE_STRENGTH_SAP,
     MOVE_SMOG,
     MOVE_POWER_TRICK,
     MOVE_HOLD_HANDS,

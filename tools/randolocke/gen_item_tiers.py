@@ -37,7 +37,7 @@ def item_data() -> dict[str, dict]:
         def f(field):
             m = re.search(rf"\.{field}\s*=\s*([A-Za-z0-9_]+)", body)
             return m.group(1) if m else None
-        out[name] = {"hold": f("holdEffect"), "pocket": f("pocket"),
+        out[name] = {"hold": f("holdEffect"), "pocket": f("pocket"), "sort": f("sortType"),
                      "importance": f("importance"), "price": f("price")}
     return out
 
@@ -58,20 +58,60 @@ def hand_tiers() -> dict[str, int]:
     return out
 
 
-def heuristic(name: str, d: dict) -> int:
-    """Tier index 0..4 for an item with no hand grade."""
-    hold, pocket = d.get("hold"), d.get("pocket")
+# Never worth rolling in this run, whatever else the data says. In-battle stat boosters
+# (X Attack and friends) and vitamins go to the floor because azim does not use them, and
+# Poke Balls are cheap to buy from the Phase 11 shop so finding them is not a reward.
+FLOOR_SORT_TYPES = {
+    "ITEM_TYPE_X_ITEM",             # X Attack, X Defend, Dire Hit, Guard Spec
+    "ITEM_TYPE_BATTLE_ITEM",
+    "ITEM_TYPE_STAT_BOOST_DRINK",   # vitamins
+    "ITEM_TYPE_STAT_BOOST_FEATHER",
+    "ITEM_TYPE_STAT_BOOST_MOCHI",
+    "ITEM_TYPE_HEALTH_RECOVERY",
+    "ITEM_TYPE_STATUS_RECOVERY",
+    "ITEM_TYPE_PP_RECOVERY",
+    "ITEM_TYPE_MAIL",
+    "ITEM_TYPE_SELLABLE",
+    "ITEM_TYPE_RELIC",
+    "ITEM_TYPE_SHARD",
+    "ITEM_TYPE_FOSSIL",
+    "ITEM_TYPE_CONTEST_HELD_ITEM",
+    "ITEM_TYPE_FLUTE",
+}
 
-    # A battle hold effect is the clearest signal of worth in a run that ignores consumables.
+# Held items that do nothing without a gimmick this romhack has switched off.
+DEAD_SORT_TYPES = {
+    "ITEM_TYPE_MEGA_STONE",   # P_MEGA_EVOLUTIONS is FALSE
+    "ITEM_TYPE_Z_CRYSTAL",    # Z-moves unavailable
+    "ITEM_TYPE_TERA_SHARD",   # P_TERA_FORMS is FALSE
+}
+
+
+def heuristic(name: str, d: dict) -> int:
+    """Tier index 0..4 for an item with no hand grade.
+
+    The target is "good to hold on a Pokemon in a randomized nuzlocke", so a battle hold
+    effect is the signal of worth and anything consumable is near-worthless.
+    """
+    hold, pocket, sort = d.get("hold"), d.get("pocket"), d.get("sort")
+
+    if sort in DEAD_SORT_TYPES or sort in FLOOR_SORT_TYPES:
+        return 4
+    if pocket == "POCKET_POKE_BALLS":
+        return 3                          # cheap to buy, so not a find worth rewarding
     if hold and hold != "HOLD_EFFECT_NONE":
         if pocket == "POCKET_BERRIES":
             return 2                      # held berries: useful, rarely decisive
-        return 1                          # other battle hold items
-    if pocket == "POCKET_POKE_BALLS":
-        return 2                          # balls matter in a nuzlocke
+        if sort in ("ITEM_TYPE_HELD_ITEM", "ITEM_TYPE_SPECIAL_HELD_ITEM",
+                    "ITEM_TYPE_TYPE_BOOST_HELD_ITEM", "ITEM_TYPE_EV_BOOST_HELD_ITEM"):
+            return 1                      # the good stuff: real battle hold items
+        return 2
+    if sort in ("ITEM_TYPE_EVOLUTION_ITEM", "ITEM_TYPE_EVOLUTION_STONE",
+                "ITEM_TYPE_LEVEL_UP_ITEM"):
+        return 2                          # evolution access matters in a randomizer
     if pocket == "POCKET_BERRIES":
         return 3                          # inert berries
-    return 4                              # healing, vitamins, battle items, junk
+    return 4
 
 
 def main() -> int:

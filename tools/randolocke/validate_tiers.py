@@ -33,7 +33,7 @@ EXCLUDED = {"WONDER_GUARD", "NONE", "314", "317"}
 # Moves never rolled. STRUGGLE is the game's fallback move, not a real option; everything
 # from FIRST_Z_MOVE onward is a Z, Max or G-Max move, and Phase 6 disabled Gigantamax while
 # Randolocke lists Z-moves as unavailable, so those are inert here.
-MOVES_EXCLUDED = {"STRUGGLE", "NONE"}
+MOVES_EXCLUDED = {"STRUGGLE", "NONE", "SPACIAL_REND", "STRENGTH_SAP"}
 
 # Pushed to the bottom tier for nuzlocke play regardless of community placement: a move that
 # KOs its own user costs a permanently dead Pokemon, not a turn. Carried over from the
