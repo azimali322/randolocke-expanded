@@ -3,7 +3,7 @@
 **Owner:** azimali322
 **Repo:** `randolocke-expanded` (fork of RHH pokeemerald-expansion)
 **Plan created:** 2026-09-09
-**Status:** Phases 0-7 code complete except F5/F6. Phase 10 (tier-weighted randomization) specced. All four enhancements implemented. Phase 8 (maps & events) and Phase 9 (ship) outstanding; Phases 3-7 awaiting in-game verification
+**Status:** Phases 0-7 and 10-12 code complete. Phase 8 largely superseded by Phase 11; its terrain edits need Porymap. Nothing verified in-game yet. All four enhancements implemented. Phase 8 (maps & events) and Phase 9 (ship) outstanding; Phases 3-7 awaiting in-game verification
 
 ---
 
@@ -442,9 +442,52 @@ Cheapest parity items first (§4, Tier 1):
 - [ ] **F5** second registered key item (⚠️ save-layout change — batch with other save work)
 - [ ] **F6** show EVs in the move-learning screen
 
-### Phase 8 — Randolocke parity: maps & events
-- [ ] All map changes and NPC/event additions from §4
-- [ ] v1.1 NPC additions and legendary unlocks
+### Phase 8 — Randolocke parity: maps & events — mostly superseded
+
+**Most of this phase turned out to be unnecessary.** Randolocke's map and event additions
+exist almost entirely to make every evolution reachable without trading. Phase 11's cheap
+mart does that directly, and more completely, by stocking all 54 evolution items in every
+Poke Mart:
+
+| Randolocke did this | Covered by |
+| --- | --- |
+| Lilycove Dept. Store evolution-item sellers | ✅ the mart stocks all of them |
+| Scroll of Darkness / Waters from the Mossdeep rock | ✅ both in the mart |
+| Route 123 Bisharp event for the Leader's Crest | ✅ Leader's Crest in the mart |
+| Mauville Game Corner Gimmighoul coins | ⚠️ partly — see below |
+| Tutor Mansion in Lilycove | ✅ Phase 6's move relearner configs |
+| Verdanturf Shelmet / Karrablast trades | ❌ still needed — see below |
+
+- [x] Scorched Slab populated — 12 land slots (Numel / Slugma / Torkoal / Magcargo,
+      levels 26-31) in `src/data/wild_encounters.json`; the map had no encounter table at all
+- [x] Zweilous evolves at 63 rather than 64, which was above the 8-badge cap
+- [x] Dark Void usable by every species (`B_DARK_VOID_FAIL = GEN_6`)
+- [x] Evolution-item access, via Phase 11 rather than via new maps
+
+#### Still genuinely outstanding
+
+**Two real evolution gaps:**
+
+1. **Gholdengo** needs 999 Gimmighoul Coins *in the bag*
+   (`CONDITIONS({IF_BAG_ITEM_COUNT, ITEM_GIMMIGHOUL_COIN, 999})`). The mart sells them at
+   200 each, so that is ~₽199,800 — reachable but a grind. Randolocke gave 999 free from an
+   NPC. Options: drop the coin's price to 1, or add the NPC.
+2. **Shelmet and Karrablast** use `EVO_TRADE` with each other specifically
+   (`IF_TRADE_PARTNER_SPECIES`). Linking Cord does **not** satisfy that, so they remain
+   unevolvable. This needs either the in-game trade NPCs Randolocke added, or a data change
+   to give them an item-based evolution.
+
+**Terrain changes need Porymap and are not done:**
+
+- Water added to Littleroot Town, grass added to Oldale Town
+- Old Rod sailor moved to Route 103 (an object move in the map JSON, doable, not yet done)
+
+These edit map layouts and object placement, which are binary/editor artefacts rather than
+code. They are the one part of this project that genuinely needs the map editor.
+
+**v1.1 NPC additions not done:** the Oldale 999-Ultra-Balls and ₽999,999 NPCs (the balls are
+largely covered by the cheap mart), the Slateport legendary-location map seller, and the
+post-Sootopolis Regi / Kyogre / Groudon unlocks.
 
 ### Phase 9 — Ship
 - [ ] Full playthrough test to at least Gym 3
