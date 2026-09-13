@@ -12352,7 +12352,7 @@ const struct SpeciesInfo gSpeciesInfoGen5[] =
         )
         .levelUpLearnset = sZweilousLevelUpLearnset,
         .teachableLearnset = sZweilousTeachableLearnset,
-        .evolutions = EVOLUTION({EVO_LEVEL, 64, SPECIES_HYDREIGON}),
+        .evolutions = EVOLUTION({EVO_LEVEL, 63, SPECIES_HYDREIGON}),   // randolocke: 64 was above the 8-badge cap
     },
 
     [SPECIES_HYDREIGON] =

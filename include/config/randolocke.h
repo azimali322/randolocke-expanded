@@ -27,4 +27,23 @@
 // "moderately increased wild catch rates".
 #define RANDOLOCKE_CATCH_RATE_PERCENT        150
 
+// --- Move relearner ---------------------------------------------------------
+
+// If TRUE, the move relearner's battle-move panel shows the Pokemon's Attack and Sp. Atk
+// EVs in place of the "BATTLE MOVES" heading, so a physical/special choice can be made
+// without leaving the screen. The panel has no spare row, hence the swap rather than an
+// extra line; the heading is redundant when you are already looking at the move list.
+#define RANDOLOCKE_RELEARNER_SHOW_EVS   TRUE
+
+// --- Registered key items ---------------------------------------------------
+
+// If TRUE, a second key item can be registered and used by *holding* SELECT, while a tap
+// still uses the first. Registering pushes the previous first item into the second slot,
+// so two registrations fill both without any new bag UI.
+// WARNING: this adds a field to SaveBlock1 and therefore changes the save layout.
+#define RANDOLOCKE_DUAL_REGISTERED_ITEMS  TRUE
+
+// Frames SELECT must be held before the second item fires, at 60fps.
+#define RANDOLOCKE_SELECT_HOLD_FRAMES     20
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

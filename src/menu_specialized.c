@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "malloc.h"
 #include "battle_main.h"
 #include "contest.h"
@@ -758,9 +759,30 @@ static void MoveRelearnerLoadBattleMoveDescription(u32 chosenMove)
         MoveRelearnerShowHideCategoryIcon(chosenMove);
 
     FillWindowPixelBuffer(RELEARNERWIN_DESC_BATTLE, PIXEL_FILL(1));
+
+    #if RANDOLOCKE_RELEARNER_SHOW_EVS == TRUE
+    {
+        // The panel is full, so this takes the heading's row rather than adding one.
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
+        u8 evText[32];
+        u8 num[8];
+
+        StringCopy(evText, COMPOUND_STRING("Atk EV "));
+        ConvertIntToDecimalStringN(num, GetMonData(mon, MON_DATA_ATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringAppend(evText, num);
+        StringAppend(evText, COMPOUND_STRING("  SpA EV "));
+        ConvertIntToDecimalStringN(num, GetMonData(mon, MON_DATA_SPATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringAppend(evText, num);
+
+        x = GetStringCenterAlignXOffset(FONT_SMALL, evText, 128);
+        AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_SMALL, evText, x, 1,
+                                    TEXT_SKIP_DRAW, NULL);
+    }
+    #else
     str = gText_MoveRelearnerBattleMoves;
     x = GetStringCenterAlignXOffset(FONT_NORMAL, str, 128);
     AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_NORMAL, str, x, 1, TEXT_SKIP_DRAW, NULL);
+    #endif
 
     str = gText_MoveRelearnerPP;
     AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_NORMAL, str, 4, 41, TEXT_SKIP_DRAW, NULL);

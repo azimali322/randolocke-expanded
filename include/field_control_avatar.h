@@ -7,6 +7,7 @@ struct FieldInput
     bool8 checkStandardWildEncounter:1;
     bool8 pressedStartButton:1;
     bool8 pressedSelectButton:1;
+    bool8 heldSelectButton:1;   // randolocke: SELECT held long enough for the second item
     bool8 heldDirection:1;
     bool8 heldDirection2:1;
     bool8 tookStep:1;

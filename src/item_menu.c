@@ -2026,10 +2026,24 @@ static void ItemMenu_Register(u8 taskId)
     u16 *scrollPos = &gBagPosition.scrollPosition[gBagPosition.pocket];
     u16 *cursorPos = &gBagPosition.cursorPosition[gBagPosition.pocket];
 
-    if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
-        gSaveBlock1Ptr->registeredItem = ITEM_NONE;
-    else
-        gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
+    #if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+        // Registering pushes the previous first item into the second slot, so two
+        // registrations fill both without needing a second menu entry.
+        if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+            gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+        else if (gSaveBlock1Ptr->registeredItemHold == gSpecialVar_ItemId)
+            gSaveBlock1Ptr->registeredItemHold = ITEM_NONE;
+        else
+        {
+            gSaveBlock1Ptr->registeredItemHold = gSaveBlock1Ptr->registeredItem;
+            gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
+        }
+    #else
+        if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+            gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+        else
+            gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
+    #endif
     DestroyListMenuTask(tListTaskId, scrollPos, cursorPos);
     LoadBagItemListBuffers(gBagPosition.pocket);
     tListTaskId = ListMenuInit(&gMultiuseListMenuTemplate, *scrollPos, *cursorPos);
@@ -2157,7 +2171,24 @@ static void Task_ItemContext_GiveToPC(u8 taskId)
 
 #define tUsingRegisteredKeyItem data[3] // See usage in item_use.c
 
+static bool8 UseRegisteredSlot(u16 item);
+
 bool8 UseRegisteredKeyItemOnField(void)
+{
+    return UseRegisteredSlot(gSaveBlock1Ptr->registeredItem);
+}
+
+// Second slot, fired by holding SELECT.
+bool8 UseHeldRegisteredKeyItemOnField(void)
+{
+    #if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+        return UseRegisteredSlot(gSaveBlock1Ptr->registeredItemHold);
+    #else
+        return FALSE;
+    #endif
+}
+
+static bool8 UseRegisteredSlot(u16 registered)
 {
     u8 taskId;
 
@@ -2165,16 +2196,16 @@ bool8 UseRegisteredKeyItemOnField(void)
         return FALSE;
     HideMapNamePopUpWindow();
     ChangeBgY_ScreenOff(0, 0, BG_COORD_SET);
-    if (gSaveBlock1Ptr->registeredItem != ITEM_NONE)
+    if (registered != ITEM_NONE)
     {
-        if (CheckBagHasItem(gSaveBlock1Ptr->registeredItem, 1) == TRUE)
+        if (CheckBagHasItem(registered, 1) == TRUE)
         {
             LockPlayerFieldControls();
             FreezeObjectEvents();
             PlayerFreeze();
             StopPlayerAvatar();
-            gSpecialVar_ItemId = gSaveBlock1Ptr->registeredItem;
-            taskId = CreateTask(GetItemFieldFunc(gSaveBlock1Ptr->registeredItem), 8);
+            gSpecialVar_ItemId = registered;
+            taskId = CreateTask(GetItemFieldFunc(registered), 8);
             gTasks[taskId].tUsingRegisteredKeyItem = TRUE;
             return TRUE;
         }

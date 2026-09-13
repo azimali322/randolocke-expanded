@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "battle_setup.h"
 #include "bike.h"
 #include "coord_event_weather.h"
@@ -91,6 +92,7 @@ void FieldClearPlayerInput(struct FieldInput *input)
     input->checkStandardWildEncounter = FALSE;
     input->pressedStartButton = FALSE;
     input->pressedSelectButton = FALSE;
+    input->heldSelectButton = FALSE;
     input->heldDirection = FALSE;
     input->heldDirection2 = FALSE;
     input->tookStep = FALSE;
@@ -114,8 +116,30 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         {
             if (newKeys & START_BUTTON)
                 input->pressedStartButton = TRUE;
+            #if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+            {
+                // Tap SELECT for the first registered item, hold it for the second. The
+                // tap only fires on release, so a hold does not also trigger slot one.
+                static u8 sSelectHeld = 0;
+
+                if (heldKeys & SELECT_BUTTON)
+                {
+                    if (sSelectHeld < 255)
+                        sSelectHeld++;
+                    if (sSelectHeld == RANDOLOCKE_SELECT_HOLD_FRAMES)
+                        input->heldSelectButton = TRUE;
+                }
+                else
+                {
+                    if (sSelectHeld > 0 && sSelectHeld < RANDOLOCKE_SELECT_HOLD_FRAMES)
+                        input->pressedSelectButton = TRUE;
+                    sSelectHeld = 0;
+                }
+            }
+            #else
             if (newKeys & SELECT_BUTTON)
                 input->pressedSelectButton = TRUE;
+            #endif
             if (newKeys & A_BUTTON)
                 input->pressedAButton = TRUE;
             if (newKeys & B_BUTTON)
@@ -234,6 +258,8 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (input->tookStep && TryFindHiddenPokemon())
         return TRUE;
 
+    if (input->heldSelectButton && UseHeldRegisteredKeyItemOnField() == TRUE)
+        return TRUE;
     if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
         return TRUE;
 
