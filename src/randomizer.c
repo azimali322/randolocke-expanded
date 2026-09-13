@@ -17,6 +17,7 @@
 #include "data/randomizer/ability_tiers.h"
 #include "data/randomizer/move_tiers.h"
 #include "data/randomizer/item_tiers.h"
+#include "data/randomizer/tm_tiers.h"
 #include "constants/abilities.h"
 
 // Add the mons you wish to be randomized when given as starter/gift mon to this list
@@ -187,6 +188,18 @@ static const struct RzTier sItemTiers[] =
     RZ_TIER(sItemTier3, RZ_ITEM_W_T3),
     RZ_TIER(sItemTier4, RZ_ITEM_W_T4),
     RZ_TIER(sItemTier5, RZ_ITEM_W_T5),
+};
+
+// TMs grouped by the tier of the move they teach, weighted with the move weights so a
+// good TM is about as likely as a good move would be.
+static const struct RzTier sTmTiers[] =
+{
+    RZ_TIER(sTmTierMetaDefining, RZ_MOVE_W_META_DEFINING),
+    RZ_TIER(sTmTierStaples,      RZ_MOVE_W_STAPLES),
+    RZ_TIER(sTmTierFiller,       RZ_MOVE_W_FILLER),
+    RZ_TIER(sTmTierNiche,        RZ_MOVE_W_NICHE),
+    RZ_TIER(sTmTierBad,          RZ_MOVE_W_BAD),
+    RZ_TIER(sTmTierHomeless,     RZ_MOVE_W_HOMELESS),
 };
 
 static const struct RzTier sMoveTiers[] =
@@ -369,18 +382,37 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
 
     state = RandomizerRandSeed(RANDOMIZER_REASON_FIELD_ITEM, mapSeed, itemId);
 
-    // Randomize TMs to TMs. Because HMs shouldn't be randomized, we can assume
-    // this is a TM.
+    // A TM pickup stays a TM, but which one is weighted by the tier of the move it
+    // teaches. HMs never reach here: ShouldRandomizeItem() rejects them above.
     if (IsItemTMHM(itemId))
+    {
+        #if RZ_TIER_WEIGHTED_ITEMS == TRUE
+            result = RzWeightedPick(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0);
+            if (result != ITEM_NONE)
+                return result;
+        #endif
         return RandomizerNextRange(&state, RANDOMIZER_MAX_TM - ITEM_TM01 + 1) + ITEM_TM01;
+    }
 
-    // Randomize everything else to everything else.
+    // Everything else becomes either an item or a TM. Randolocke wants TMs to be a common
+    // find, so an ordinary pickup can roll into the TM band as well.
     #if RZ_TIER_WEIGHTED_ITEMS == TRUE
     {
         u32 attempts;
 
         for (attempts = 0; attempts < 32; attempts++)
         {
+            u32 total = RZ_ITEM_W_TM_BAND + RZ_ITEM_W_T1 + RZ_ITEM_W_T2 + RZ_ITEM_W_T3
+                      + RZ_ITEM_W_T4 + RZ_ITEM_W_T5;
+
+            if (RandomizerNextRange(&state, total) < RZ_ITEM_W_TM_BAND)
+            {
+                result = RzWeightedPick(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0);
+                if (result != ITEM_NONE)
+                    return result;
+                continue;
+            }
+
             result = RzWeightedPick(&state, sItemTiers, ARRAY_COUNT(sItemTiers), NULL, 0);
             if (result != ITEM_NONE && ShouldRandomizeItem(result) && !IsItemTMHM(result))
                 return result;

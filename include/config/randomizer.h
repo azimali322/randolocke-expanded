@@ -68,14 +68,19 @@
 
 // Item weights, x100. Pool of 475. No community list exists for items, so tiers 1-2 are
 // hand-graded from pokeemerald_rando_enh and the rest are placed by heuristic; see
-// tools/randolocke/gen_item_tiers.py. 1.71x / 1.65x / 1.52x / 0.45x / 0.35x vs uniform:
-// compressed at the top because tiers 4-5 hold 48% of the pool at the floor.
+// tools/randolocke/gen_item_tiers.py. 1.90x / 1.85x / 1.72x / 0.30x / 0.10x vs uniform.
+// Tier 5 (healing, vitamins, X items, and mega/Z/Tera gear that Phase 6 disabled) is at
+// 0.10x: azim does not use consumables in a nuzlocke, so finding one is a wasted pickup.
 #define RZ_TIER_WEIGHTED_ITEMS     TRUE
-#define RZ_ITEM_W_T1             72
-#define RZ_ITEM_W_T2             2953
-#define RZ_ITEM_W_T3             5184
-#define RZ_ITEM_W_T4             568
-#define RZ_ITEM_W_T5             1223
+#define RZ_ITEM_W_T1             80
+#define RZ_ITEM_W_T2             3311
+#define RZ_ITEM_W_T3             5881
+#define RZ_ITEM_W_T4             379
+#define RZ_ITEM_W_T5             349
+
+// Share of ordinary field-item pickups that become a TM instead of an item, x100.
+// Randolocke wants TMs to be a common find; with I_REUSABLE_TMS on they are permanent.
+#define RZ_ITEM_W_TM_BAND          3000
 
 // --- Learnset randomization -------------------------------------------------
 

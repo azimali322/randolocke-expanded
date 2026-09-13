@@ -603,14 +603,21 @@ if (IsItemTMHM(itemId))
   each location rolls **independently**, so the same TM can appear in several places.
   This is already **with replacement**, which is what azim wants given `I_REUSABLE_TMS`.
 
-**Two limitations worth deciding on:**
+**On raising the TM cap:** investigated and **deliberately not done**. `ITEM_TM100` exists
+as a constant, but `FOREACH_TM` in `include/constants/tms_hms.h` defines only **50 real
+TMs**. `ITEM_TM51`..`ITEM_TM100` are unassigned placeholders - `.name = "TM51"`,
+`.description = "?????" // Todo` - with no move attached. Raising `RANDOMIZER_MAX_TM` would
+hand the player 51 TMs that teach nothing. It stays at `ITEM_TM50`.
 
-1. **`RANDOMIZER_MAX_TM` is `ITEM_TM50`, but 1.17 has 100 TMs.** TM51-TM100 are never
-   rolled, so half the TM pool is unreachable. Raising it to `ITEM_TM100` is a one-line
-   change; it was presumably set for vanilla Emerald's 50.
-2. **TM drops are uniform, not tier-weighted.** pokeemerald_rando_enh weighted which TM
-   appears by the tier of the move it teaches. Now that `sMoveTier*` exists, that is
-   straightforward: map each TM to its move, look up the tier, and weight accordingly.
+**Implemented since:**
+
+- **TM drops are tier-weighted.** `tools/randolocke/gen_tm_tiers.py` groups the 50 TMs by
+  the tier of the move each teaches (1 Meta Defining, 5 Staples, 19 Filler, 15 Niche,
+  9 Bad, 1 Homeless) and the drop reuses the move weights, so a good TM is about as likely
+  as a good move.
+- **Ordinary pickups can now become TMs.** Previously TMs and items were closed sets - a
+  TM became a TM, and nothing else ever became one. A non-TM pickup now rolls into the TM
+  band `RZ_ITEM_W_TM_BAND` (30%) or the item tiers.
 
 **Not implemented:** randomizing *what each TM teaches*. TM26 still teaches Earthquake.
 That is the deferred v1.1 item in 10.1, and it is the piece that needs the build-time
