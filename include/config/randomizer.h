@@ -38,6 +38,34 @@
 // otherwise randomized game.
 #define RZ_RANDOMIZE_BOSS_TRAINERS           TRUE
 
+// --- Tier-weighted selection ------------------------------------------------
+
+// When TRUE, randomized moves and abilities are drawn from community tier lists with the
+// weights below rather than uniformly. See docs/tiering/ and RANDOLOCKE_PLAN.md Phase 10.
+// Re-run tools/randolocke/tier_report.py after changing any weight: a tier's weight is
+// split across its members, so a large tier dilutes itself and it is easy to make a lower
+// tier out-draw a higher one by accident.
+#define RZ_TIER_WEIGHTED_MOVES      TRUE
+#define RZ_TIER_WEIGHTED_ABILITIES  TRUE
+
+// Ability weights, x100 so they stay integers. Pool of 308; 2.31x down to 0.34x uniform.
+#define RZ_ABILITY_W_S              900
+#define RZ_ABILITY_W_A             2000
+#define RZ_ABILITY_W_B             3200
+#define RZ_ABILITY_W_C             2400
+#define RZ_ABILITY_W_D             1100
+#define RZ_ABILITY_W_F              400
+#define RZ_ABILITY_W_NEGATIVE         0   // never rolled
+
+// Move weights, x100. Pool of 818. Compressed at the top, steep at the bottom:
+// 1.84x / 1.76x / 1.66x / 1.00x / 0.24x / 0.15x against uniform.
+#define RZ_MOVE_W_META_DEFINING      90
+#define RZ_MOVE_W_STAPLES           905
+#define RZ_MOVE_W_FILLER           3840
+#define RZ_MOVE_W_NICHE            4585
+#define RZ_MOVE_W_BAD               530
+#define RZ_MOVE_W_HOMELESS           50
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
