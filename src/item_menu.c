@@ -1,5 +1,6 @@
 #include "global.h"
 #include "item_menu.h"
+#include "config/randolocke.h"
 #include "battle.h"
 #include "battle_controllers.h"
 #include "battle_pyramid.h"
@@ -99,7 +100,6 @@ enum {
     WIN_ITEM_LIST,
     WIN_DESCRIPTION,
     WIN_POCKET_NAME,
-    WIN_TMHM_INFO_ICONS,
     WIN_TMHM_INFO,
     WIN_MESSAGE, // Identical to ITEMWIN_MESSAGE. Unused?
 };
@@ -160,6 +160,10 @@ static void Task_HandleSwappingItemsInput(u8);
 static void DoItemSwap(u8);
 static void CancelItemSwap(u8);
 static void PrintTMHMMoveData(enum Item itemId);
+static void PrintTMHMMoveValue(u32 value, bool8 hasValue, u8 row);
+static void RoundTMHMBoxCorners(void);
+static void ShowTMHMMoveWindow(enum Item itemId);
+static void HideTMHMMoveWindow(void);
 static void PrintContextMenuItems(u8);
 static void PrintContextMenuItemGrid(u8, u8, u8);
 static void Task_ItemContext_SingleRow(u8);
@@ -406,6 +410,24 @@ static const struct ScrollArrowsTemplate sBagScrollArrowsTemplate = {
 
 static const u8 sRegisteredSelect_Gfx[] = INCGFX_U8("graphics/bag/select_button.png", ".4bpp");
 
+// Layout of the TM/HM move-info box (WIN_TMHM_INFO), in window-local pixels.
+// The box is 8x8 tiles; the labels are 42px wide and a right-aligned 3-digit
+// value is 18px, which is what fixes the value column at 44.
+#define TMHM_BOX_WIDTH     64
+#define TMHM_BOX_HEIGHT    64
+#define TMHM_BOX_BG_COLOR  15  // white in the menu-info palette loaded at slot 12
+#define TMHM_ROW_TYPE       8
+#define TMHM_ROW_POWER     20
+#define TMHM_ROW_ACCURACY  32
+#define TMHM_ROW_PP        44
+#define TMHM_LABEL_X        1
+#define TMHM_VALUE_X       44
+// Type icon (32px) centred over the label column, damage category (14px) centred over
+// the value column, so the type row reads as the same two columns as the rows below it.
+#define TMHM_TYPE_ICON_X    6
+#define TMHM_CATEGORY_X    46
+#define TMHM_CATEGORY_Y     9
+
 enum {
     COLORID_NORMAL,
     COLORID_POCKET_NAME,
@@ -420,7 +442,9 @@ static const u8 sFontColorTable[][3] = {
     [COLORID_POCKET_NAME] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE,      TEXT_COLOR_RED},
     [COLORID_GRAY_CURSOR] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_GREEN},
     [COLORID_UNUSED]      = {TEXT_COLOR_DARK_GRAY,   TEXT_COLOR_WHITE,      TEXT_COLOR_LIGHT_GRAY},
-    [COLORID_TMHM_INFO]   = {TEXT_COLOR_TRANSPARENT, TEXT_DYNAMIC_COLOR_5,  TEXT_DYNAMIC_COLOR_1}
+    // The move-info box is an opaque white panel drawn over the bag sprite, so the
+    // text needs a matching opaque background rather than the usual transparent one.
+    [COLORID_TMHM_INFO]   = {TMHM_BOX_BG_COLOR,      TEXT_DYNAMIC_COLOR_5,  TEXT_DYNAMIC_COLOR_1}
 };
 
 static const struct WindowTemplate sDefaultBagWindows[] =
@@ -452,23 +476,17 @@ static const struct WindowTemplate sDefaultBagWindows[] =
         .paletteNum = 1,
         .baseBlock = 0x1A1,
     },
-    [WIN_TMHM_INFO_ICONS] = {
-        .bg = 0,
-        .tilemapLeft = 1,
-        .tilemapTop = 13,
-        .width = 5,
-        .height = 6,
-        .paletteNum = 12,
-        .baseBlock = 0x16B,
-    },
+    // Move info for the TM pocket. Sits on BG1 (priority 0) so it draws over the bag
+    // sprite (priority 1) instead of behind it, and clear of the description box, the
+    // item icon and the item list.
     [WIN_TMHM_INFO] = {
-        .bg = 0,
-        .tilemapLeft = 7,
-        .tilemapTop = 13,
-        .width = 4,
-        .height = 6,
+        .bg = 1,
+        .tilemapLeft = 5,
+        .tilemapTop = 4,
+        .width = 8,
+        .height = 8,
         .paletteNum = 12,
-        .baseBlock = 0x189,
+        .baseBlock = 0x271,
     },
     [WIN_MESSAGE] = {
         .bg = 1,
@@ -1035,7 +1053,17 @@ static void PrintItemDescription(int itemIndex)
     const u8 *str;
     if (itemIndex != LIST_CANCEL)
     {
-        str = GetItemDescription(GetBagItemId(gBagPosition.pocket, itemIndex));
+        enum Item itemId = GetBagItemId(gBagPosition.pocket, itemIndex);
+
+        str = GetItemDescription(itemId);
+        #if RANDOLOCKE_TM_HOVER_INFO == TRUE
+            // Show the hovered TM's move at a glance, rather than only once it is
+            // selected. Randomized TMs make this close to essential.
+            if (gBagPosition.pocket == POCKET_TM_HM)
+                ShowTMHMMoveWindow(itemId);
+            else
+                HideTMHMMoveWindow();
+        #endif
     }
     else
     {
@@ -1043,6 +1071,9 @@ static void PrintItemDescription(int itemIndex)
         StringCopy(gStringVar1, gBagMenu_ReturnToStrings[gBagPosition.location]);
         StringExpandPlaceholders(gStringVar4, gText_ReturnToVar1);
         str = gStringVar4;
+        #if RANDOLOCKE_TM_HOVER_INFO == TRUE
+            HideTMHMMoveWindow();
+        #endif
     }
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(0));
     BagMenu_Print(WIN_DESCRIPTION, FONT_NORMAL, str, 3, 1, 0, 0, 0, COLORID_NORMAL);
@@ -1360,8 +1391,9 @@ static void ReturnToItemList(u8 taskId)
 {
     CreatePocketScrollArrowPair();
     CreatePocketSwitchArrowPair();
-    ClearWindowTilemap(WIN_TMHM_INFO_ICONS);
-    ClearWindowTilemap(WIN_TMHM_INFO);
+    #if RANDOLOCKE_TM_HOVER_INFO == FALSE
+        HideTMHMMoveWindow();
+    #endif
     PutWindowTilemap(WIN_DESCRIPTION);
     ScheduleBgCopyTilemapToVram(0);
     gTasks[taskId].func = Task_BagMenu_HandleInput;
@@ -1408,6 +1440,7 @@ static void SwitchBagPocket(u8 taskId, s16 deltaBagPocketId, bool16 skipEraseLis
     tPocketSwitchState = 0;
     tPocketSwitchTimer = 0;
     tPocketSwitchDir = deltaBagPocketId;
+    HideTMHMMoveWindow();
     if (!skipEraseList)
     {
         ClearWindowTilemap(WIN_ITEM_LIST);
@@ -1731,15 +1764,14 @@ static void OpenContextMenu(u8 taskId)
             }
         }
     }
+    #if RANDOLOCKE_TM_HOVER_INFO == FALSE
     if (gBagPosition.pocket == POCKET_TM_HM)
     {
         ClearWindowTilemap(WIN_DESCRIPTION);
-        PrintTMHMMoveData(gSpecialVar_ItemId);
-        PutWindowTilemap(WIN_TMHM_INFO_ICONS);
-        PutWindowTilemap(WIN_TMHM_INFO);
-        ScheduleBgCopyTilemapToVram(0);
+        ShowTMHMMoveWindow(gSpecialVar_ItemId);
     }
     else
+    #endif
     {
         u8 *end = CopyItemName(gSpecialVar_ItemId, gStringVar1);
         WrapFontIdToFit(gStringVar1, end, FONT_NORMAL, WindowWidthPx(WIN_DESCRIPTION) - 10 - 6);
@@ -2707,66 +2739,91 @@ static void RemoveMoneyWindow(void)
     RemoveMoneyLabelObject();
 }
 
+// Rounds the four corners of the move-info panel by punching the pixels back out to
+// the transparent index, so the box matches the other white panels in the bag.
+static void RoundTMHMBoxCorners(void)
+{
+    static const u8 sCornerInset[] = { 3, 2, 1 };
+    u8 row;
+
+    for (row = 0; row < ARRAY_COUNT(sCornerInset); row++)
+    {
+        u8 inset = sCornerInset[row];
+        u8 top = row;
+        u8 bottom = TMHM_BOX_HEIGHT - 1 - row;
+
+        FillWindowPixelRect(WIN_TMHM_INFO, PIXEL_FILL(0), 0, top, inset, 1);
+        FillWindowPixelRect(WIN_TMHM_INFO, PIXEL_FILL(0), TMHM_BOX_WIDTH - inset, top, inset, 1);
+        FillWindowPixelRect(WIN_TMHM_INFO, PIXEL_FILL(0), 0, bottom, inset, 1);
+        FillWindowPixelRect(WIN_TMHM_INFO, PIXEL_FILL(0), TMHM_BOX_WIDTH - inset, bottom, inset, 1);
+    }
+}
+
+// Paints the empty panel: white background, rounded corners, and the three static
+// labels. The type row carries no label - the type icon names its own type.
 static void PrepareTMHMMoveWindow(void)
 {
-    FillWindowPixelBuffer(WIN_TMHM_INFO_ICONS, PIXEL_FILL(0));
-    BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_TYPE, 0, 0);
-    BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_POWER, 0, 12);
-    BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_ACCURACY, 0, 24);
-    BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_PP, 0, 36);
-    CopyWindowToVram(WIN_TMHM_INFO_ICONS, COPYWIN_GFX);
+    FillWindowPixelBuffer(WIN_TMHM_INFO, PIXEL_FILL(TMHM_BOX_BG_COLOR));
+    RoundTMHMBoxCorners();
+    BlitMenuInfoIcon(WIN_TMHM_INFO, MENU_INFO_ICON_POWER, TMHM_LABEL_X, TMHM_ROW_POWER);
+    BlitMenuInfoIcon(WIN_TMHM_INFO, MENU_INFO_ICON_ACCURACY, TMHM_LABEL_X, TMHM_ROW_ACCURACY);
+    BlitMenuInfoIcon(WIN_TMHM_INFO, MENU_INFO_ICON_PP, TMHM_LABEL_X, TMHM_ROW_PP);
+}
+
+static void PrintTMHMMoveValue(u32 value, bool8 hasValue, u8 row)
+{
+    const u8 *text;
+
+    if (!hasValue)
+    {
+        text = gText_ThreeDashes;
+    }
+    else
+    {
+        ConvertIntToDecimalStringN(gStringVar1, value, STR_CONV_MODE_RIGHT_ALIGN, 3);
+        text = gStringVar1;
+    }
+    BagMenu_Print(WIN_TMHM_INFO, FONT_NORMAL, text, TMHM_VALUE_X, row, 0, 0, TEXT_SKIP_DRAW, COLORID_TMHM_INFO);
 }
 
 static void PrintTMHMMoveData(enum Item itemId)
 {
-    u8 i;
     enum Move move;
-    const u8 *text;
 
-    FillWindowPixelBuffer(WIN_TMHM_INFO, PIXEL_FILL(0));
-    if (itemId == ITEM_NONE)
+    PrepareTMHMMoveWindow();
+    if (itemId != ITEM_NONE)
     {
-        for (i = 0; i < 4; i++)
-            BagMenu_Print(WIN_TMHM_INFO, FONT_NORMAL, gText_ThreeDashes, 7, i * 12, 0, 0, TEXT_SKIP_DRAW, COLORID_TMHM_INFO);
-        CopyWindowToVram(WIN_TMHM_INFO, COPYWIN_GFX);
+        move = ItemIdToBattleMoveId(itemId);
+        BlitMenuInfoIcon(WIN_TMHM_INFO, GetMoveType(move) + 1, TMHM_TYPE_ICON_X, TMHM_ROW_TYPE);
+        // Status moves get no category icon - the column simply stays empty
+        if (GetMoveCategory(move) == DAMAGE_CATEGORY_PHYSICAL)
+            BlitMenuInfoIcon(WIN_TMHM_INFO, MENU_INFO_ICON_PHYSICAL, TMHM_CATEGORY_X, TMHM_CATEGORY_Y);
+        else if (GetMoveCategory(move) == DAMAGE_CATEGORY_SPECIAL)
+            BlitMenuInfoIcon(WIN_TMHM_INFO, MENU_INFO_ICON_SPECIAL, TMHM_CATEGORY_X, TMHM_CATEGORY_Y);
+        PrintTMHMMoveValue(GetMovePower(move), GetMovePower(move) > 1, TMHM_ROW_POWER);
+        PrintTMHMMoveValue(GetMoveAccuracy(move), GetMoveAccuracy(move) != 0, TMHM_ROW_ACCURACY);
+        PrintTMHMMoveValue(GetMovePP(move), TRUE, TMHM_ROW_PP);
     }
     else
     {
-        move = ItemIdToBattleMoveId(itemId);
-        BlitMenuInfoIcon(WIN_TMHM_INFO, GetMoveType(move) + 1, 0, 0);
-
-        // Print TMHM power
-        u32 power = GetMovePower(move);
-        if (power <= 1)
-        {
-            text = gText_ThreeDashes;
-        }
-        else
-        {
-            ConvertIntToDecimalStringN(gStringVar1, power, STR_CONV_MODE_RIGHT_ALIGN, 3);
-            text = gStringVar1;
-        }
-        BagMenu_Print(WIN_TMHM_INFO, FONT_NORMAL, text, 7, 12, 0, 0, TEXT_SKIP_DRAW, COLORID_TMHM_INFO);
-
-        u32 accuracy = GetMoveAccuracy(move);
-        // Print TMHM accuracy
-        if (accuracy == 0)
-        {
-            text = gText_ThreeDashes;
-        }
-        else
-        {
-            ConvertIntToDecimalStringN(gStringVar1, accuracy, STR_CONV_MODE_RIGHT_ALIGN, 3);
-            text = gStringVar1;
-        }
-        BagMenu_Print(WIN_TMHM_INFO, FONT_NORMAL, text, 7, 24, 0, 0, TEXT_SKIP_DRAW, COLORID_TMHM_INFO);
-
-        // Print TMHM pp
-        ConvertIntToDecimalStringN(gStringVar1, GetMovePP(move), STR_CONV_MODE_RIGHT_ALIGN, 3);
-        BagMenu_Print(WIN_TMHM_INFO, FONT_NORMAL, gStringVar1, 7, 36, 0, 0, TEXT_SKIP_DRAW, COLORID_TMHM_INFO);
-
-        CopyWindowToVram(WIN_TMHM_INFO, COPYWIN_GFX);
+        PrintTMHMMoveValue(0, FALSE, TMHM_ROW_POWER);
+        PrintTMHMMoveValue(0, FALSE, TMHM_ROW_ACCURACY);
+        PrintTMHMMoveValue(0, FALSE, TMHM_ROW_PP);
     }
+    CopyWindowToVram(WIN_TMHM_INFO, COPYWIN_GFX);
+}
+
+static void ShowTMHMMoveWindow(enum Item itemId)
+{
+    PrintTMHMMoveData(itemId);
+    PutWindowTilemap(WIN_TMHM_INFO);
+    ScheduleBgCopyTilemapToVram(1);
+}
+
+static void HideTMHMMoveWindow(void)
+{
+    ClearWindowTilemap(WIN_TMHM_INFO);
+    ScheduleBgCopyTilemapToVram(1);
 }
 
 static const u8 sText_SortItemsHow[] = _("Sort items how?");

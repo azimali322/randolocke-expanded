@@ -65,4 +65,12 @@
 // nuzlocke convention: naming a Pokemon is what makes losing it mean something.
 #define RANDOLOCKE_FORCE_NICKNAME       TRUE
 
+// --- Bag TM panel -----------------------------------------------------------
+
+// 1.17 already shows a TM's type, power, accuracy and PP, but only once the item is
+// selected. If TRUE the panel follows the cursor instead, so you can compare TMs by
+// scrolling, and a physical/special icon is drawn beside the type. Ported from
+// pokeemerald_rando_enh, where randomized TMs made this close to essential.
+#define RANDOLOCKE_TM_HOVER_INFO        TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

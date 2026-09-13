@@ -802,6 +802,57 @@ python3 tools/randolocke/gen_berry_tiers.py
 
 ---
 
+## Phase 13 — TM to move randomization and the bag move panel
+
+`RANDOMIZER_FLAG_TM_MOVES` (0x2A) re-points every TM at a different move, tier-weighted
+through the TM bands. The bag panel is the companion feature: with the TM's move no longer
+predictable from its number, the only way to shop your own bag is to read the move.
+
+### TM to move randomization
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T13.1 | **Flag off is vanilla** | New game, leave flag 0x2A clear. Check TM01 in the bag | Focus Punch, as in vanilla |
+| T13.2 | **Flag on re-points TMs** | Debug → Flags, set 0x2A. Check TM01 | Some other move |
+| T13.3 | Same seed, same TMs | Note TM01–TM10, soft reset, reload | Identical list |
+| T13.4 | Different seed, different TMs | New game with a different Trainer ID | A different mapping |
+| T13.5 | The mapping is a bijection | Read TM01–TM50 | No move appears twice — every TM is a distinct move |
+| T13.6 | **Teaching matches the panel** | Teach a TM to a Pokémon | The move learnt is the one the panel showed, not the vanilla move |
+| T13.7 | Move tutors are unaffected | Talk to any move tutor | Vanilla moves |
+| T13.8 | HMs are untouched | Check HM01–HM08 | Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall, Dive |
+| T13.9 | Marts sell the re-pointed move | Buy a TM from any mart | The bag shows the randomized move |
+| T13.10 | Bands are respected | With 0x2A set, survey 20 TMs | No Bad or Pokemon Homeless moves; mostly Meta Defining / Staples / Good |
+| T13.11 | Reverse lookup is consistent | Use a move-relearner or a battle that names the TM's move | Names agree with the bag panel |
+
+### The bag move panel
+
+`RANDOLOCKE_TM_HOVER_INFO` (TRUE) in `include/config/randolocke.h`. The panel is an 8x8
+white box on BG1 at tile (5, 4), drawn over the bag sprite.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T13.12 | **Panel follows the cursor** | Open the bag, go to the TM pocket, scroll | The panel updates on **every** cursor move — no need to press A |
+| T13.13 | Type icon | Hover a TM | Its move's type icon in the top-left of the panel |
+| T13.14 | **Damage category icon** | Hover a physical TM, then a special one | PHYSICAL / SPECIAL icon to the right of the type icon |
+| T13.15 | Status moves show no category | Hover a status TM (e.g. Toxic) | Type icon only; the category column stays empty |
+| T13.16 | Power, accuracy, PP | Hover any damaging TM | Three right-aligned values matching the move |
+| T13.17 | Dashes where a value is absent | Hover a status move, and a never-miss move | `---` for power, `---` for accuracy |
+| T13.18 | **Description stays visible** | Hover a TM | The description box at the bottom still shows the item description — the panel does not replace it |
+| T13.19 | Panel draws over the bag sprite | Look at the bag graphic behind the panel | The panel is on top and fully opaque, with rounded corners |
+| T13.20 | **Hidden outside the TM pocket** | Scroll to Items, Poké Balls, Berries, Key Items | No panel |
+| T13.21 | Hidden on Cancel | Scroll to the CANCEL row of the TM pocket | No panel |
+| T13.22 | Survives a pocket round trip | TM pocket → Items → back to TM pocket | Panel returns, correct for the hovered TM |
+| T13.23 | Panel while the context menu is open | Hover a TM, press A | Panel stays; "USE / GIVE / …" appears; description reads "TM01 is selected" |
+| T13.24 | Returning from the context menu | Press B | Panel still correct, description restored |
+| T13.25 | Panel during item swap | Press SELECT to start a swap, move the item | No graphical corruption |
+| T13.26 | Empty TM pocket | Toss every TM | No panel, no crash |
+| T13.27 | Battle bag | Open the bag mid-battle, TM pocket is absent | No regression |
+| T13.28 | Wally's tutorial bag | Play the Wally catching tutorial | No regression |
+| T13.29 | **Sell / deposit screens** | Sell a TM at a mart; deposit one in the PC | Panel behaves, money window does not overlap it |
+| T13.30 | Config off | Set `RANDOLOCKE_TM_HOVER_INFO` to `FALSE`, rebuild | Panel appears only after pressing A, as in stock 1.17 |
+
+---
+
 ## §P — Patching and distribution
 
 ### To play your own build: no patching needed

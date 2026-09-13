@@ -136,6 +136,10 @@ static const struct MenuInfoIcon sMenuInfoIcons[] =
     [MENU_INFO_ICON_EFFECT]    = { 42, 12, 0xE8 }, // Unused
     [MENU_INFO_ICON_BALL_RED]  = {  8,  8, 0xAE }, // For placed decorations in Secret Base
     [MENU_INFO_ICON_BALL_BLUE] = {  8,  8, 0xAF }, // For placed decorations in player's room
+    // Damage category, drawn beside a move's type in the bag's TM info panel. Recoloured
+    // from graphics/interface/split_icons.png into this sheet's own palette indices.
+    [MENU_INFO_ICON_PHYSICAL]  = { 14, 11, 0x08 },
+    [MENU_INFO_ICON_SPECIAL]   = { 14, 11, 0x0A },
 };
 
 void InitStandardTextBoxWindows(void)
