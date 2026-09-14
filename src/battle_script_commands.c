@@ -1,5 +1,6 @@
 #include "global.h"
 #include "config/randolocke.h"
+#include "randolocke_nuzlocke.h"
 #include "battle.h"
 #include "battle_hold_effects.h"
 #include "battle_message.h"

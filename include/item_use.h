@@ -61,6 +61,8 @@ enum {
     BALL_THROW_UNABLE_SEMI_INVULNERABLE,
     BALL_THROW_ABLE,
     BALL_THROW_UNABLE_DISABLED_FLAG,
+    BALL_THROW_UNABLE_NUZLOCKE_AREA,   // randolocke: already caught something here
+    BALL_THROW_UNABLE_NUZLOCKE_DUPE,   // randolocke: this family is already caught
 };
 
 bool32 CanThrowBall(void);

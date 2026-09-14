@@ -135,6 +135,32 @@ cannot disagree about who is who.
 Set this to `FALSE` and each site rolls independently through the ordinary species mode —
 duplicates possible, and non-legendaries possible.
 
+### Nuzlocke rules
+
+```c
+#define RANDOLOCKE_NUZLOCKE_RULES       TRUE
+#define RANDOLOCKE_FLAG_NUZLOCKE_OFF    FLAG_UNUSED_0x02D
+```
+
+Enforced in-game rather than left to the player:
+
+| Rule | Behaviour |
+| --- | --- |
+| **One per area** | One catch per wild-encounter area. After that, balls are refused there |
+| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, so you can keep looking |
+| **Shiny clause** | A shiny is always catchable and never uses the area up |
+
+An *area* is one entry in the wild encounter tables, which is one map. Land, surfing and
+fishing on the same map share an area. Places with no wild table — the legendary sites,
+gift Pokémon, scripted battles, Wally's tutorial — are never restricted.
+
+The flag is **inverted**: clear means the rules are on. That way a save made before the
+rules existed gets them without a new game. Set `0x2D` in the debug menu to switch them
+off for that save.
+
+The per-area bits live in `SaveBlock1.caughtInArea`, carved out of the old dex-flag
+filler at 0x988 rather than appended — so the save layout did not change.
+
 ### The seed
 
 ```c

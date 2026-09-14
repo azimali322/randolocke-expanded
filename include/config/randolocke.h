@@ -87,6 +87,27 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// --- Nuzlocke rules ----------------------------------------------------------
+
+// If TRUE the classic rules are enforced in-game rather than left to the player:
+//
+//   One per area   You may catch one Pokemon per wild-encounter area. After that, balls
+//                  are refused there.
+//   Dupes clause   A species whose evolution family you have already caught cannot be
+//                  caught again -- and meeting one does not use up the area, so you can
+//                  keep looking for something new.
+//   Shiny clause   A shiny is always catchable and never uses up the area.
+//
+// "Area" is one entry in the wild encounter tables, which is one map. Places with no
+// wild table -- the legendary sites, gift Pokemon, scripted battles -- are not areas and
+// are never restricted.
+//
+// Set RANDOLOCKE_FLAG_NUZLOCKE_OFF in the debug menu to switch the rules off for a save.
+// The flag is inverted deliberately: a save made before this existed has it clear, so the
+// rules are on there too, with no new game needed.
+#define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+#define RANDOLOCKE_FLAG_NUZLOCKE_OFF        FLAG_UNUSED_0x02D
+
 // --- Key item delivery -------------------------------------------------------
 
 // The four key items are fully implemented but nothing in the game ever handed them out.

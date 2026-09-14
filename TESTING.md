@@ -856,6 +856,42 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 
 ---
 
+## Phase 18 — Nuzlocke rules
+
+`RANDOLOCKE_NUZLOCKE_RULES` (TRUE). `RANDOLOCKE_FLAG_NUZLOCKE_OFF` (0x2D) switches them
+off for a save — clear means **on**, so a save made before this existed gets the rules
+with no new game needed.
+
+An "area" is one entry in the wild encounter tables, which is one map. Places with no
+wild table — the legendary sites, gift Pokémon, scripted battles — are never restricted.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T18.1 | **One catch per area** | Catch something on Route 101, then meet another wild Pokémon there and open the bag | Balls refused: "You already caught a Pokémon in this area!" |
+| T18.2 | A different area is free | Go to Route 103 and catch something | Allowed |
+| T18.3 | The mark survives a reload | Catch on Route 101, save, reset, reload, try again there | Still refused |
+| T18.4 | **Dupes are refused** | Meet a species whose family you already own | "You've already caught this Pokémon's family!" |
+| T18.5 | **A dupe does not use the area up** | On a fresh route, meet a dupe and run. Then meet something new there | The new one is catchable — the dupe did not count |
+| T18.6 | Dupes work across the family | Catch a Zigzagoon, then meet a Linoone | Refused — the whole evolution family counts |
+| T18.7 | …and in the other direction | Catch a Linoone first, then meet a Zigzagoon | Refused |
+| T18.8 | **Shinies are always catchable** | Meet a shiny on an area you have already used | Allowed |
+| T18.9 | A shiny does not use the area up | Catch a shiny on a fresh area, then meet something new there | Still catchable |
+| T18.10 | A shiny dupe is catchable | Meet a shiny of a family you own | Allowed |
+| T18.11 | Fishing shares the area | Catch on land on Route 103, then fish there | Refused — one map is one area |
+| T18.12 | Surfing shares the area | Same, but surf | Refused |
+| T18.13 | **Legendary sites are exempt** | Reach Sky Pillar and throw a ball | Allowed — no wild table, so not an area |
+| T18.14 | Gift Pokémon are exempt | Take a gift Pokémon on a used-up area | Given normally |
+| T18.15 | **Wally's tutorial still works** | Play the Petalburg catching tutorial | Wally catches the Zigzagoon; the story continues |
+| T18.16 | Trainer battles unaffected | Try a ball in a trainer battle | The usual "trainer blocked it" |
+| T18.17 | **Off switch** | Debug → Flags, set 0x2D | Balls work everywhere again |
+| T18.18 | On by default for an old save | Load a save made before this build | Rules apply, no new game needed |
+| T18.19 | Areas start clear on a new game | New game, catch on Route 101 | Allowed |
+| T18.20 | No false positives from the starter | New game; your starter is registered caught. Meet an unrelated species | Catchable |
+| T18.21 | Safari Zone | Catch one there, then try again | Refused — the Safari Zone map is one area |
+| T18.22 | Box-full still reports correctly | Fill the box, then throw | The box-full message, not a nuzlocke one |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.

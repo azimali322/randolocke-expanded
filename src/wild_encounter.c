@@ -1,4 +1,5 @@
 #include "global.h"
+#include "constants/randolocke.h"
 #include "battle_setup.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -418,6 +419,11 @@ u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, en
             return wildPokemon[wildMonIndex].maxLevel + 1;
     }
 }
+
+// The nuzlocke's per-area bits are indexed by header id, so the table has to fit.
+// Without this the tracking would just stop working for areas past the end, silently.
+STATIC_ASSERT(ARRAY_COUNT(gWildMonHeaders) <= RANDOLOCKE_MAX_AREAS,
+              RandolockeAreaBitfieldTooSmall);
 
 u16 GetCurrentMapWildMonHeaderId(void)
 {
