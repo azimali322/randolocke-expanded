@@ -223,9 +223,10 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 
 ### v1.1 additions
 - [ ] Oldale NPC gifting 999 Ultra Balls
-- [ ] Oldale NPC gifting $999,999
+- [x] Oldale NPC gifting $999,999 ✅ one-time, `RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN`
 - [x] Increased wild catch rates ✅
-- [ ] Slateport NPC selling legendary location maps (Latios/Latias, Mew, Deoxys, Ho-oh/Lugia)
+- [x] Slateport NPC selling legendary location maps ✅ the four event tickets at ₽1, from the
+      8th badge. Sets `FLAG_ENABLE_SHIP_*` as well as giving the item
 - [ ] Regi caves unlocked post-Sootopolis
 - [ ] Kyogre/Groudon Weather Institute events post-Sootopolis
 - [ ] Zweilous evolves at 63 (before E4)
@@ -720,10 +721,13 @@ teachables pipeline.
 
 #### Still not done, and why
 
-- **Slateport legendary-location map seller** — needs new map items and an NPC placed in the
-  ferry building. Object placement is a map-editor job.
-- **Oldale ₽999,999 NPC** — needs a new NPC. Debug → Give → Max Money already does this, so
-  the NPC is convenience rather than capability.
+- ~~**Slateport legendary-location map seller**~~ — **done.** No new items were needed: the
+  "maps" are the four event tickets (Eon → Southern Island, Old Sea Map → Faraway Island,
+  Aurora → Birth Island, Mystic → Navel Rock), which already exist and are otherwise
+  Mystery-Gift-only. Object placement turned out not to need Porymap — `map.json` is plain
+  text and the free tiles were read out of the layout's collision data.
+- ~~**Oldale ₽999,999 NPC**~~ — **done**, one-time.
+- **Oldale 999 Ultra Balls NPC** — not done, and not wanted: the Phase 11 cheap mart covers it.
 - **Terrain**: water in Littleroot, grass in Oldale, the relocated Old Rod sailor. Porymap.
 
 ### Later — v1.1
