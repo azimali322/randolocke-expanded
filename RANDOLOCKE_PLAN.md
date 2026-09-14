@@ -744,6 +744,111 @@ teachables pipeline.
 
 ---
 
+## 7b. Phase 20 — the remaining Randolocke feature list
+
+Audited against the feature list on 2026-09-13. Most of it is already in; what follows is
+what is not, and how to do it.
+
+### Already done — no work needed
+
+| Feature | Where it lives | Evidence |
+| --- | --- | --- |
+| Level cap 100 after the Elite Four | `src/caps.c` | `sLevelCapFlagMap` ends at `{FLAG_IS_CHAMPION, 63}` and falls through to `MAX_LEVEL` |
+| Every Pokémon to Gen 9 | `config/species_enabled.h` | `P_GEN_1_POKEMON` … `P_GEN_9_POKEMON` all `TRUE` |
+| HMs usable with no knower | `RANDOLOCKE_FIELD_MOVES_NEED_NO_USER` | |
+| HMs forgettable | `P_CAN_FORGET_HIDDEN_MOVE` | |
+| IVs on the summary screen | `P_SUMMARY_SCREEN_IV_EV_INFO`, `..._VALUES` | |
+| Expanded bag | Phase 6 | |
+| The four key items | Phase 7b + Phase 20 sources | Oldale old man, Littleroot boy |
+| Trainers scaled to the level caps | Phase 7c | cap == next boss's ace at every badge |
+| Option: don't randomize abilities | flag `0x26` | clear it |
+| Option: don't randomize movesets | flag `0x28` | clear it — vanilla learnsets, nothing forgotten |
+| Higher Base Power learned later | `RzPickMoves(..., sortByPower)` | already the default |
+| Option: enforce nicknaming | `RANDOLOCKE_FORCE_NICKNAME` | |
+| Nuzlocke wild encounters | Phase 18 | one catch per area, dupes + shiny clauses |
+| Option: disable the bag in trainer battles | `B_VAR_NO_BAG_USE` = var `0x40F7` | 1 = trainer, 2 = all |
+| Porta Heal does not revive by default | `RANDOLOCKE_PORTA_HEAL_REVIVES FALSE` | |
+
+### 20.1 — Similar-BST randomization *(small)*
+
+Randolocke randomizes to a Pokémon of **similar base stat total**. The mode exists
+(`MON_RANDOM_BST`); the default is `MON_RANDOM`.
+
+- Change `RANDOLOCKE_DEFAULT_SPECIES_MODE` to `MON_RANDOM_BST`
+- Legendary sites are unaffected: Phase 16 forces `MON_RANDOM_LEGEND_AWARE` for those
+  twelve regardless of the mode
+- Consequence worth stating: a Route 101 Zigzagoon can no longer become Rayquaza. That is
+  what "similar BST" means, and it is what the feature list asks for
+
+### 20.2 — Perfect IVs *(small)*
+
+Two options, the first on by default:
+
+- **All player-caught Pokémon have 31 across the board.** Applies to catches, gifts,
+  starters and hatched eggs; trainer Pokémon are untouched
+- Or: 3 perfect IVs for starters and gifts, random for everything else (Randolocke's own
+  behaviour)
+
+`SetBoxMonPerfectIVs(mon, numPerfect)` already exists and already handles "all six".
+The work is choosing the seam that catches the player's Pokémon and not trainers', and
+`CreateBoxMon` is not it — trainer parties go through the same function. The candidates
+are the points where a Pokémon *becomes the player's*: the catch path (`FinalizeCapture`),
+the gift path, the starter, and egg hatching.
+
+### 20.3 — Randomized tutor moves *(medium)*
+
+TMs are done (flag `0x2A`); tutors are not. Same shape: a permutation table built once per
+seed, no duplicates, drawn through the TM bands.
+
+The seam is the `move_tutor` macro in `asm/macros/event.inc`, which does
+`setvar VAR_0x8005, \moveId`. A `callnative` after it can rewrite the var, which covers
+every tutor in one edit.
+
+**The catch:** each tutor's "want me to teach Swagger?" message is a hardcoded string, so
+the tutor would offer one move and teach another. Fixing that means buffering the
+randomized move name and replacing ~30 per-tutor strings with one generic line. That is
+the bulk of the work, not the randomization.
+
+### 20.4 — Upgraded opponent AI *(medium, highest impact)*
+
+Measured from `trainers.party`: **640 trainers run `Check Bad Move` and 173 run
+`Basic Trainer`** — and the bosses are in the second group. Matt, Shelly, Archie and the
+gym leaders all use the weakest AI in the game. This is the single largest difficulty gap
+left.
+
+No public documentation of Randolocke's exact AI settings was found, so the plan follows
+`pokeemerald_rando_enh`'s difficulty scaling: a flag set that grows with the trainer's
+importance rather than one blanket setting.
+
+| Tier | Flags |
+| --- | --- |
+| Ordinary trainers | `CHECK_BAD_MOVE`, `TRY_TO_FAINT`, `CHECK_VIABILITY` |
+| Rivals, admins, ace trainers | above + `HP_AWARE`, `SMART_MON_CHOICES`, `TRY_TO_2HKO` |
+| Bosses (`Boss: Yes`) | above + `SMART_SWITCHING`, `ACE_POKEMON`, `WEIGH_ABILITY_PREDICTION`, and `OMNISCIENT` for the Champion only |
+
+Applied by a script over `trainers.party`, the same way Phase 7c scaled the levels, so it
+is reproducible and reviewable as a diff. `RZ_TRAINER_AI_TIER` gates it.
+
+### 20.5 — Fully-random learnsets as an option *(small)*
+
+Base-Power ordering is already the default. Add `RZ_LEARNSET_SORT_BY_POWER FALSE` to get
+the older behaviour, where the 21 slots are filled in whatever order they roll.
+
+### 20.6 — Nuzlocke areas: map or region? *(decision needed)*
+
+Phase 18 counts an *area* as one wild-encounter table, which is one map. Randolocke's own
+notes call this out: "some testing is required in locations with many sub-locations (e.g.
+Magma Hideout or other places with many floors)". Under the current rule, every floor of
+Magma Hideout is a separate catch.
+
+`pokeemerald_rando_enh` keys off the **region map section** instead, so a whole cave is one
+area. That is the stricter and more conventional reading.
+
+Switching means re-indexing `SaveBlock1.caughtInArea` from header id to `MAPSEC`, which is
+a data change but not a layout change — the bitfield stays the same 50 bytes.
+
+**This one needs a decision before implementing.**
+
 ## 8. Credits to carry
 
 Per RHH and Randolocke conventions:
