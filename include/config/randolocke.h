@@ -88,6 +88,17 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// --- Summary screen stat editor ----------------------------------------------
+
+// If TRUE, the summary screen's IV and EV pages can be edited in place: press SELECT to
+// start, A to move between stats, and the D-pad to change the one you are on --
+//   Up    jump to the maximum        Left   one lower
+//   Down  jump to zero               Right  one higher
+// EVs are held to 252 per stat and 510 in total, IVs to 31; a change that would break
+// either is simply refused. Party Pokemon only, since a boxed one has no stats to
+// recalculate. This is the readable version of the debug menu's stat editors.
+#define RANDOLOCKE_SUMMARY_STAT_EDITOR  TRUE
+
 // --- Player Pokemon quality ---------------------------------------------------
 
 // How good the IVs are on a Pokemon that becomes yours -- caught, gifted, a starter or

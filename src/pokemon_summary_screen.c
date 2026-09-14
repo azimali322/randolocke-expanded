@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "main.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -168,6 +169,8 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         u8 mintNature;
     } summary;
     u8 natureSuffix[16]; // randolocke: " (Modest)" when a hidden nature differs
+    bool8 statEditActive; // randolocke: editing the IV/EV page in place
+    u8 statEditSlot;      // which of the six stats, in display order
     u16 bgTilemapBuffers[PSS_PAGE_COUNT][2][0x400];
     u8 mode;
     u8 skillsPageMode;
@@ -338,6 +341,18 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
+static bool32 RandolockeStatEditInput(u8 taskId);
+static bool32 RandolockeStatEditAvailable(void);
+
+// Display order, which is not enum Stat order: the left column is HP/Attack/Defense and
+// the right is Sp. Atk/Sp. Def/Speed, while the enum runs HP, Attack, Defense, Speed,
+// Sp. Atk, Sp. Def. Walking the stats in reading order is the whole point of this table.
+static const u8 sRandolockeStatEditOrder[NUM_STATS] =
+{
+    STAT_HP, STAT_ATK, STAT_DEF, STAT_SPATK, STAT_SPDEF, STAT_SPEED,
+};
+#endif
 
 #define IS_MOVE_PAGE(page) (page == PSS_PAGE_BATTLE_MOVES || page == PSS_PAGE_CONTEST_MOVES)
 
@@ -1741,6 +1756,13 @@ static void Task_HandleInput(u8 taskId)
 {
     if (MenuHelpers_ShouldWaitForLinkRecv() != TRUE && !gPaletteFade.active)
     {
+        #if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
+            // Takes the whole D-pad while editing, so page and party navigation cannot
+            // fire underneath it.
+            if (RandolockeStatEditInput(taskId))
+                return;
+        #endif
+
         if (JOY_NEW(DPAD_UP))
         {
             ChangeSummaryPokemon(taskId, -1);
@@ -1851,6 +1873,136 @@ static u8 IncrementSkillsStatsMode(u8 mode)
     }
 
 }
+
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
+
+// Editing writes through to the real party Pokemon, not the screen's copy, and needs to
+// recalculate stats afterwards -- neither of which works for a boxed Pokemon, so those are
+// left alone.
+static bool32 RandolockeStatEditAvailable(void)
+{
+    return !sMonSummaryScreen->isBoxMon
+        && sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS
+        && (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS
+         || sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_EVS)
+        && !sMonSummaryScreen->summary.isEgg;
+}
+
+static struct Pokemon *RandolockeEditTarget(void)
+{
+    return &sMonSummaryScreen->monList.mons[sMonSummaryScreen->curMonIndex];
+}
+
+static u32 RandolockeTotalEVs(struct Pokemon *mon)
+{
+    u32 i, total = 0;
+
+    for (i = 0; i < NUM_STATS; i++)
+        total += GetMonData(mon, MON_DATA_HP_EV + i);
+    return total;
+}
+
+// `wanted` is what the player asked for; the return value is what the rules allow. An EV
+// change that would break the 510 budget is refused outright rather than partially
+// applied, so pressing Up on a full spread does nothing instead of quietly landing on
+// some number nobody chose.
+static u32 RandolockeClampStat(struct Pokemon *mon, u32 stat, u32 wanted, bool32 isEV)
+{
+    u32 current, total;
+
+    if (!isEV)
+        return wanted > MAX_PER_STAT_IVS ? MAX_PER_STAT_IVS : wanted;
+
+    if (wanted > MAX_PER_STAT_EVS)
+        wanted = MAX_PER_STAT_EVS;
+
+    current = GetMonData(mon, MON_DATA_HP_EV + stat);
+    if (wanted <= current)
+        return wanted;
+
+    total = RandolockeTotalEVs(mon) - current;
+    if (total + wanted > MAX_TOTAL_EVS)
+        wanted = MAX_TOTAL_EVS - total;
+    return wanted;
+}
+
+static bool32 RandolockeStatEditInput(u8 taskId)
+{
+    struct Pokemon *mon;
+    bool32 isEV;
+    u32 stat, value, wanted, max;
+
+    if (!RandolockeStatEditAvailable())
+    {
+        sMonSummaryScreen->statEditActive = FALSE;
+        return FALSE;
+    }
+
+    if (!sMonSummaryScreen->statEditActive)
+    {
+        if (!JOY_NEW(SELECT_BUTTON))
+            return FALSE;
+        sMonSummaryScreen->statEditActive = TRUE;
+        sMonSummaryScreen->statEditSlot = 0;
+        PlaySE(SE_SELECT);
+        ShowMonSkillsInfo(taskId, sMonSummaryScreen->skillsPageMode);
+        return TRUE;
+    }
+
+    if (JOY_NEW(SELECT_BUTTON) || JOY_NEW(B_BUTTON))
+    {
+        sMonSummaryScreen->statEditActive = FALSE;
+        PlaySE(SE_SELECT);
+        ShowMonSkillsInfo(taskId, sMonSummaryScreen->skillsPageMode);
+        return TRUE;
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        sMonSummaryScreen->statEditSlot = (sMonSummaryScreen->statEditSlot + 1) % NUM_STATS;
+        PlaySE(SE_SELECT);
+        ShowMonSkillsInfo(taskId, sMonSummaryScreen->skillsPageMode);
+        return TRUE;
+    }
+
+    mon = RandolockeEditTarget();
+    isEV = (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_EVS);
+    stat = sRandolockeStatEditOrder[sMonSummaryScreen->statEditSlot];
+    max = isEV ? MAX_PER_STAT_EVS : MAX_PER_STAT_IVS;
+    value = GetMonData(mon, (isEV ? MON_DATA_HP_EV : MON_DATA_HP_IV) + stat);
+    wanted = value;
+
+    if (JOY_NEW(DPAD_UP))
+        wanted = max;
+    else if (JOY_NEW(DPAD_DOWN))
+        wanted = 0;
+    else if (JOY_NEW(DPAD_RIGHT))
+        wanted = (value < max) ? value + 1 : max;
+    else if (JOY_NEW(DPAD_LEFT))
+        wanted = (value > 0) ? value - 1 : 0;
+    else
+        return TRUE;   // swallow everything else so page and party navigation stay put
+
+    wanted = RandolockeClampStat(mon, stat, wanted, isEV);
+    if (wanted == value)
+    {
+        PlaySE(SE_FAILURE);
+        return TRUE;
+    }
+
+    {
+        u16 written = wanted;
+
+        SetMonData(mon, (isEV ? MON_DATA_HP_EV : MON_DATA_HP_IV) + stat, &written);
+    }
+    CalculateMonStats(mon);
+    CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
+    PlaySE(SE_SELECT);
+    ShowMonSkillsInfo(taskId, sMonSummaryScreen->skillsPageMode);
+    return TRUE;
+}
+
+#endif // RANDOLOCKE_SUMMARY_STAT_EDITOR
 
 static void ShowMonSkillsInfo(u8 taskId, s16 mode)
 {
@@ -3852,6 +4004,18 @@ static void BufferStat(u8 *dst, enum Stat statIndex, u32 stat, u32 strId, u32 n)
     static const u8 sTextNatureNeutral[] = _("{COLOR}{01}");
     u8 *txtPtr;
 
+    #if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
+        // The stat currently being edited is drawn in the "raised by nature" colour, so
+        // there is no doubt which one the D-pad is pointing at.
+        static const u8 sTextEditing[] = _("{COLOR}{02}");
+
+        if (sMonSummaryScreen->statEditActive
+         && statIndex == sRandolockeStatEditOrder[sMonSummaryScreen->statEditSlot])
+        {
+            txtPtr = StringCopy(dst, sTextEditing);
+        }
+        else
+    #endif
     if (statIndex == 0 || !P_SUMMARY_SCREEN_NATURE_COLORS || gNaturesInfo[sMonSummaryScreen->summary.mintNature].statUp == gNaturesInfo[sMonSummaryScreen->summary.mintNature].statDown)
         txtPtr = StringCopy(dst, sTextNatureNeutral);
     else if (statIndex == gNaturesInfo[sMonSummaryScreen->summary.mintNature].statUp)

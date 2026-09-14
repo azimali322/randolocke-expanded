@@ -1024,6 +1024,55 @@ for picking one deliberately; this is the dice version.
 
 ---
 
+## Phase 22 — Summary stat editor and the LEVEL CAP option
+
+`RANDOLOCKE_SUMMARY_STAT_EDITOR`. On the summary's skills page, press A to cycle
+Stats → IVs → EVs, then **SELECT** to edit in place.
+
+| Key | Effect |
+| --- | --- |
+| SELECT | start editing / stop editing |
+| A | move to the next stat, in reading order |
+| Up | jump to the maximum (31 IV, 252 EV) |
+| Down | jump to zero |
+| Right | one higher |
+| Left | one lower |
+| B | stop editing |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T22.1 | **SELECT starts editing** | Summary → skills → IVs, press SELECT | HP is highlighted in the raised-stat colour |
+| T22.2 | A walks the stats | Press A repeatedly | HP → Attack → Defense → Sp. Atk → Sp. Def → Speed → back to HP, in reading order |
+| T22.3 | Up maxes an IV | On an IV, press Up | 31 |
+| T22.4 | Down zeroes it | Press Down | 0 |
+| T22.5 | Left and Right step | Press Right three times, Left once | +2 from where it started |
+| T22.6 | IVs stop at 31 | Press Right at 31 | Refused, failure beep |
+| T22.7 | **Stats update live** | Edit an Attack IV and watch the Stats page | The real stat changed — no level-up needed |
+| T22.8 | **EVs stop at 252** | On the EV page, press Up on one stat | 252, not more |
+| T22.9 | **The 510 total holds** | Max two stats (504), then try to raise a third | Refused. 6 more points are available, so Right works 6 times and then stops |
+| T22.10 | Lowering frees budget | Zero one maxed stat, then raise another | The freed points are spendable |
+| T22.11 | D-pad does not leak | While editing, press Left and Right | The page does **not** change; the value does |
+| T22.12 | Up/Down do not switch Pokémon | While editing, press Up and Down | The party member does **not** change |
+| T22.13 | SELECT exits | Press SELECT again | Highlight gone; D-pad navigates the summary as usual |
+| T22.14 | B exits without closing | Press B while editing | Editing stops, the summary stays open |
+| T22.15 | **Boxed Pokémon are not editable** | Open a boxed Pokémon's summary, press SELECT on the IV page | Nothing happens |
+| T22.16 | Eggs are not editable | Summary of an egg | No edit mode |
+| T22.17 | The Stats page is not editable | Press SELECT on the Stats view | Nothing happens |
+| T22.18 | Changes persist | Edit, close the summary, save, reset, reload | The values stuck |
+
+### LEVEL CAP from the party menu
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T22.19 | **The option appears** | Hold a Cap Candy, open the party menu, pick a Pokémon below the cap | A **LEVEL CAP** entry under SUMMARY |
+| T22.20 | It levels to the cap | Choose it | The Pokémon goes to the current cap in one use |
+| T22.21 | Hidden without the item | Toss the Cap Candy, reopen the menu | No LEVEL CAP entry |
+| T22.22 | Hidden at the cap | Pick a Pokémon already at the cap | No LEVEL CAP entry |
+| T22.23 | Moves and evolutions still happen | Use it on something with a level-up move on the way | It learns the move, and evolves if it should |
+| T22.24 | The item is not consumed | Check the bag afterwards | Cap Candy still there |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.

@@ -110,6 +110,7 @@ enum {
     MENU_CATALOG_MOWER,
     MENU_CHANGE_FORM,
     MENU_CHANGE_ABILITY,
+    MENU_RANDOLOCKE_CAP_CANDY,
     MENU_FIELD_MOVES
 };
 
@@ -455,6 +456,7 @@ static void ShiftMoveSlot(struct BoxPokemon *, u8, u8);
 static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, bool8);
 static void CursorCb_Summary(u8);
+static void CursorCb_RandolockeCapCandy(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
 static void CursorCb_Item(u8);
@@ -2954,6 +2956,13 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     sPartyMenuInternal->numActions = 0;
     AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUMMARY);
 
+    // randolocke: reach the Cap Candy from the Pokemon rather than from the bag. Only
+    // worth offering when it is actually held and there is a cap to climb to.
+    if (B_EXP_CAP_TYPE != EXP_CAP_NONE
+     && CheckBagHasItem(ITEM_CAP_CANDY, 1)
+     && GetMonData(&mons[slotId], MON_DATA_LEVEL) < GetCurrentLevelCap())
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RANDOLOCKE_CAP_CANDY);
+
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
@@ -3121,6 +3130,19 @@ static void Task_HandleSelectionMenuInput(u8 taskId)
             break;
         }
     }
+}
+
+// randolocke: uses the Cap Candy on the chosen Pokemon straight from the party menu, so
+// it does not have to be dug out of the Key Items pocket every time.
+static void CursorCb_RandolockeCapCandy(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+
+    gSpecialVar_ItemId = ITEM_CAP_CANDY;
+    gPartyMenu.learnMoveState = 0;
+    ItemUseCB_CapCandy(taskId, Task_ReturnToChooseMonAfterText);
 }
 
 static void CursorCb_Summary(u8 taskId)
