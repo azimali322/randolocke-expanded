@@ -1113,6 +1113,30 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 24 — Two registered key items, properly
+
+`RANDOLOCKE_DUAL_REGISTERED_ITEMS` (TRUE). The first attempt silently pushed the
+previously registered item into the second slot, which from the outside looked exactly
+like registering having failed. It asks now.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T24.1 | **It asks which gesture** | Bag → a key item → REGISTER | "Register to a tap of SELECT, or to holding it down?" with TAP / HOLD |
+| T24.2 | TAP fills the tap slot | Choose TAP | The usual SELECT badge appears beside the item |
+| T24.3 | **HOLD fills the hold slot** | Register a second item, choose HOLD | A *differently coloured* SELECT badge beside that one |
+| T24.4 | **Porta Heal registers** | Register the Porta Heal to either slot | It takes. This is the case that failed before |
+| T24.5 | Tap uses slot one | In the overworld, tap SELECT | The TAP item is used |
+| T24.6 | **Hold uses slot two** | Hold SELECT for about a third of a second | The HOLD item is used, not the tap one |
+| T24.7 | A hold does not also fire the tap | Hold, then release | Only the hold item is used, once |
+| T24.8 | Deselecting needs no prompt | Choose REGISTER on an already-registered item | It clears immediately, no TAP/HOLD question |
+| T24.9 | An item lives in one slot | Register an item to TAP, then to HOLD | It moves; the tap slot is now empty |
+| T24.10 | Both badges at once | Have one item in each slot, look at the bag | Two items, two different badges |
+| T24.11 | Cancel is safe | Open the prompt and press B | Nothing registered, nothing cleared |
+| T24.12 | Survives a reload | Register both, save, reset, reload | Both still registered to the same gestures |
+| T24.13 | Non-key items are unaffected | Try to register a Potion | REGISTER is not offered, as in vanilla |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.

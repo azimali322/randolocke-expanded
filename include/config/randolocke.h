@@ -45,7 +45,7 @@
 // Porta Heal would not take. Back to the base game's single registered item until the
 // pokeemerald_rando_enh version (separate tap/hold icons, and a prompt explaining the
 // hold) can be ported properly.
-#define RANDOLOCKE_DUAL_REGISTERED_ITEMS  FALSE
+#define RANDOLOCKE_DUAL_REGISTERED_ITEMS  TRUE
 
 // Frames SELECT must be held before the second item fires, at 60fps.
 #define RANDOLOCKE_SELECT_HOLD_FRAMES     20
