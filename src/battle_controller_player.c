@@ -2428,13 +2428,16 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
 
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
+    // randolocke: arrows rather than the stock circles and triangles, so the direction
+    // reads at a glance -- up is good, down is bad, X is pointless. Mirrors what
+    // pokeemerald_rando_enh shows. A doubled arrow marks the 4x and 0.25x extremes.
     static const u8 noIcon[] =  _("");
     static const u8 effectiveIcon[] =  _("{CIRCLE_HOLLOW}");
-    static const u8 extremeleyEffectiveIcon[] =  _("{STAR}");
-    static const u8 superEffectiveIcon[] =  _("{CIRCLE_DOT}");
-    static const u8 notVeryEffectiveIcon[] =  _("{TRIANGLE}");
-    static const u8 mostlyIneffectiveIcon[] =  _("{TRIANGLE_UPSIDE_DOWN}");
-    static const u8 immuneIcon[] =  _("{BIG_MULT_X}");
+    static const u8 extremeleyEffectiveIcon[] =  _("{COLOR}{GREEN}{UP_ARROW_2}{UP_ARROW_2}");
+    static const u8 superEffectiveIcon[] =  _("{COLOR}{GREEN}{UP_ARROW_2}");
+    static const u8 notVeryEffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}");
+    static const u8 mostlyIneffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}{DOWN_ARROW_2}");
+    static const u8 immuneIcon[] =  _("{COLOR}{RED}{BIG_MULT_X}");
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     u8 *txtPtr;
 

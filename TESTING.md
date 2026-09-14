@@ -1073,6 +1073,46 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 23 — Type effectiveness in move select, and the capture fix
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.1 | **Effectiveness shows on a species you have never seen** | Battle a randomized wild Pokémon, open FIGHT | The PP line carries an effectiveness icon. It used to be gated on having *seen* the species, which in a randomizer is never |
+| T23.2 | Super effective | Point at a move the target is weak to | A green up arrow |
+| T23.3 | 4x | A double weakness | Two green up arrows |
+| T23.4 | Not very effective | A resisted move | A red down arrow |
+| T23.5 | 0.25x | A double resist | Two red down arrows |
+| T23.6 | **No effect** | A move the target is immune to | A red X |
+| T23.7 | Neutral | A neutral move | The hollow circle, unchanged |
+| T23.8 | Status moves | Point at a status move | No icon — effectiveness does not apply |
+| T23.9 | **Doubles picks the right target** | In a double battle, choose a target, then look at the icon | It reflects the selected target, not the other one |
+| T23.10 | The L-button detail view still works | Press L on the move list | Unchanged |
+
+### The post-capture softlock
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.11 | **Catching does not hang** | Catch several Pokémon on different routes, including with a Fast Ball | The battle ends, the overworld returns, the player is controllable |
+| T23.12 | Catching something with a big family | Catch an Eevee or a Wurmple line member | No hang — the family walk is bounded now |
+| T23.13 | Perfect IVs still applied | Check a freshly caught Pokémon's IVs | 31 across the board |
+| T23.14 | Area still marked | Catch, then try to catch again on the same route | Refused |
+| T23.15 | HP is not corrupted | Catch a Pokémon at low HP, check it afterwards | Sensible current and max HP |
+
+### Other adjustments
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.16 | **Battle style is SET** | New game, beat a trainer's Pokémon | No "will you switch?" prompt |
+| T23.17 | Still changeable | Options → Battle Style | Can be set back to SHIFT |
+| T23.18 | **Berries come in fours** | Harvest a berry tree | Four times the usual count |
+| T23.19 | **The boy gives all four key items** | Talk to the boy by the Littleroot pond | Porta Heal, Endless Candy, Cap Candy, Repellant |
+| T23.20 | The old man is flavour again | Talk to the Oldale footprints man | His footprints line, no items |
+| T23.21 | **Registered items are vanilla** | Register a key item, press SELECT | Works as the base game does. No hold behaviour |
+| T23.22 | Cap Candy pauses correctly | Use LEVEL CAP on something with a move coming up | Stops at that level, reports that level, and the summary agrees |
+| T23.23 | Pressing it again continues | Use it again | Climbs to the next stop, or the cap |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.
