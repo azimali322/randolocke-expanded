@@ -1993,13 +1993,7 @@ bool8 ScrCmd_showmonpic(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
 
     #if RANDOMIZER_AVAILABLE == TRUE
-        u16 i = 0;
-        for(i = 0; i < STARTER_AND_GIFT_MON_COUNT; i++)
-        {
-            if(gStarterAndGiftMonTable[i] == species)
-                break;
-        }
-        species = RandomizeStarterAndGiftMon(i, gStarterAndGiftMonTable);
+        species = RandomizeStarterAndGiftMonBySpecies(species);
     #endif
 
     ScriptMenu_ShowPokemonPic(species, x, y);

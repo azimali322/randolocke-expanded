@@ -877,6 +877,9 @@ See `docs/SETTINGS.md` §1.
 | T16.12 | **Legendaries in the wild** | 0x20 set, mode `MON_RANDOM`, walk in grass for a while | Legendaries *can* appear — the wild pool is unrestricted in this mode |
 | T16.13 | Legend-aware mode changes that | Set `0x404E` to 1 (`MON_RANDOM_LEGEND_AWARE`), walk in grass | No legendaries in the grass; legendary sites still legendary |
 | T16.14 | Starters are already unique | New game, check the three starters offered | Three different species |
+| T16.16 | **Starter matches its preview** | New game, look at the starter preview picture, then take that Pokémon | The same species. By-slot lookup used to give the starter screen a different answer from every other caller |
+| T16.17 | An off-list gift is untouched | Any scripted `givemon` of a species not in `gStarterAndGiftMonTable` | Given as written, no garbage species — this path read one past the end of the table before |
+| T16.18 | The Wynaut egg | Get the Lavaridge egg with 0x25 set | A randomized species, and no garbage |
 | T16.15 | No species-table thrashing | Trigger a legendary encounter, then a wild one, then another legendary | No stutter — the table is rebuilt at most twice per boot |
 
 ---

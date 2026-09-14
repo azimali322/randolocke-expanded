@@ -1296,7 +1296,7 @@ enum Species RandomizeFixedEncounterMon(enum Species species, u8 mapNum, u8 mapG
 EWRAM_DATA static u32 sLastMonRandomizerSeed = 0;
 EWRAM_DATA static u16 sRandomizedMons[STARTER_AND_GIFT_MON_COUNT] = {0};
 
-enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons)
+static enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_STARTER_AND_GIFT_MON))
     {
@@ -1323,10 +1323,27 @@ enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* or
     return originalStarterAndGiftMons[originalSlot];
 }
 
+// Every caller had the same job to do first - find the species in the table - and every
+// caller got it wrong the same way: a species that is not in the table left the loop
+// counter at STARTER_AND_GIFT_MON_COUNT, and that was passed in as a slot index, reading
+// one past the end of both arrays. Do the lookup here instead, and pass a species that is
+// not on the list straight through.
+enum Species RandomizeStarterAndGiftMonBySpecies(enum Species species)
+{
+    u32 i;
+
+    for (i = 0; i < STARTER_AND_GIFT_MON_COUNT; i++)
+    {
+        if (gStarterAndGiftMonTable[i] == species)
+            return RandomizeStarterAndGiftMon(i, gStarterAndGiftMonTable);
+    }
+    return species;
+}
+
 EWRAM_DATA static u32 sLastEggMonRandomizerSeed = 0;
 EWRAM_DATA static u16 sRandomizedEggMons[EGG_MON_COUNT] = {0};
 
-enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMons)
+static enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMons)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_EGG_MON))
     {
@@ -1351,6 +1368,19 @@ enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMo
     }
 
     return originalEggMons[originalSlot];
+}
+
+// As above: the callers' not-found case indexed one past the end.
+enum Species RandomizeEggMonBySpecies(enum Species species)
+{
+    u32 i;
+
+    for (i = 0; i < EGG_MON_COUNT; i++)
+    {
+        if (gEggMonTable[i] == species)
+            return RandomizeEggMon(i, gEggMonTable);
+    }
+    return species;
 }
 
 #if RZ_ABILITY_STABLE_ACROSS_EVOLUTION == TRUE

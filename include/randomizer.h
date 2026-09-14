@@ -14,9 +14,9 @@
 //#include "constants/moves.h"
 
 #define RANDOMIZER_STREAM 17
-#define STARTER_AND_GIFT_MON_COUNT 11 // Raise this number accordingly to [gStarterAndGiftMonTable]
+#define STARTER_AND_GIFT_MON_COUNT 10 // Raise this number accordingly to [gStarterAndGiftMonTable]
 #define LEGENDARY_MON_COUNT 12 // Raise this number accordingly to [gLegendaryMonTable]
-#define EGG_MON_COUNT 2 // Raise this number accordingly to [gEggMonTable]
+#define EGG_MON_COUNT 1 // Raise this number accordingly to [gEggMonTable]
 
 extern const enum Species gStarterAndGiftMonTable[];
 extern const enum Species gEggMonTable[];
@@ -129,10 +129,10 @@ enum Species RandomizeLegendaryMon(enum Species species);
 extern const enum Species gLegendaryMonTable[LEGENDARY_MON_COUNT];
 
 // Given a starter/gift slot and the list of original starters/gifts, returns the random mon in that slot.
-enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons);
+enum Species RandomizeStarterAndGiftMonBySpecies(enum Species species);
 
 // Given a egg slot and the list of original egg mons, returns the random egg mon in that slot.
-enum Species RandomizeEggMon(u16 originalSlot, const enum Species* originalEggMons);
+enum Species RandomizeEggMonBySpecies(enum Species species);
 
 // Given a species and an abilityNum, returns a replacement for that ability.
 enum Ability RandomizeAbility(enum Species species, u8 abilityNum, enum Ability originalAbility);

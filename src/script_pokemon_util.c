@@ -71,13 +71,7 @@ u8 ScriptGiveEgg(enum Species species)
     u8 isEgg;
 
     #if RANDOMIZER_AVAILABLE == TRUE
-        u16 i = 0;
-        for(i = 0; i < EGG_MON_COUNT; i++)
-        {
-            if(gEggMonTable[i] == species)
-                break;
-        }
-        species = RandomizeEggMon(i, gEggMonTable);
+        species = RandomizeEggMonBySpecies(species);
     #endif
 
     CreateEgg(&mon, species, TRUE);
@@ -492,15 +486,7 @@ void ScrCmd_createmonrandom(struct ScriptContext *ctx)
     // Randomizer: substitute the species using the starter/gift mapping before
     // the rest of the template is parsed.
     #if RANDOMIZER_AVAILABLE == TRUE
-    {
-        u16 j;
-        for (j = 0; j < STARTER_AND_GIFT_MON_COUNT; j++)
-        {
-            if (gStarterAndGiftMonTable[j] == monTemplate.species)
-                break;
-        }
-        monTemplate.species = RandomizeStarterAndGiftMon(j, gStarterAndGiftMonTable);
-    }
+        monTemplate.species = RandomizeStarterAndGiftMonBySpecies(monTemplate.species);
     #endif
 
 

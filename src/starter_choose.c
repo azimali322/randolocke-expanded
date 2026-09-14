@@ -351,13 +351,16 @@ static const struct SpriteTemplate sSpriteTemplate_StarterCircle =
 u16 GetStarterPokemon(u16 chosenStarterId)
 {
     u16 species;
-    if (chosenStarterId > STARTER_MON_COUNT)
+    if (chosenStarterId >= STARTER_MON_COUNT)
         chosenStarterId = 0;
 
+    species = sStarterMon[chosenStarterId];
     #if RANDOMIZER_AVAILABLE == TRUE
-        species = RandomizeStarterAndGiftMon(chosenStarterId, sStarterMon);
-    #else
-        species = sStarterMon[chosenStarterId];
+        // Look the starter up by species rather than by slot. The slot numbers here are
+        // 0-2, but Treecko, Torchic and Mudkip sit at 3-5 of gStarterAndGiftMonTable, so
+        // by-slot picked the Johto starters' entries - and passed this 3-entry array in
+        // where an 11-entry one was read.
+        species = RandomizeStarterAndGiftMonBySpecies(species);
     #endif
 
     return species;
