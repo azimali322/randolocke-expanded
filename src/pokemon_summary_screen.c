@@ -199,6 +199,12 @@ static EWRAM_DATA struct PokemonSummaryScreenData
 
 EWRAM_DATA u8 gLastViewedMonIndex = 0;
 static EWRAM_DATA u8 sMoveSlotToReplace = 0;
+#if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+static EWRAM_DATA bool8 sRandolockeStatsOverlayVisible = FALSE;
+// Zero-initialised because EWRAM_DATA lands in .sbss; ShowPokemonSummaryScreen sets it
+// to WINDOW_NONE before anything reads it.
+static EWRAM_DATA u8 sRandolockeStatsOverlayWindowId = 0;
+#endif
 ALIGNED(4) static EWRAM_DATA u8 sAnimDelayTaskId = 0;
 EWRAM_DATA MainCallback gInitialSummaryScreenCallback = NULL; // stores callback from the first time the screen is opened from the party or PC menu
 
@@ -347,6 +353,11 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
+#if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+static bool32 RandolockeStatsOverlayAvailable(void);
+static void RandolockeToggleStatsOverlay(void);
+static void RandolockeHideStatsOverlay(void);
+#endif
 #if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
 static bool32 RandolockeStatEditInput(u8 taskId);
 static bool32 RandolockeStatEditAvailable(void);
@@ -772,6 +783,24 @@ static const u8 sButtons_Gfx[][4 * TILE_SIZE_4BPP] = {
     INCGFX_U8("graphics/summary_screen/a_button.png", ".4bpp"),
     INCGFX_U8("graphics/summary_screen/b_button.png", ".4bpp"),
 };
+
+#if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+// 24x16 rather than the A and B buttons' 16x16, because the word is longer.
+static const u8 sSelectButton_Gfx[] = INCGFX_U8("graphics/summary_screen/select_button.png", ".4bpp");
+
+// Sits exactly over the Pokemon's picture. baseBlock is past the last label window
+// (PSS_LABEL_WINDOW_PROMPT_RELEARN ends at 821) and well inside bg 0's 1024 tiles.
+static const struct WindowTemplate sRandolockeStatsOverlayTemplate =
+{
+    .bg = 0,
+    .tilemapLeft = 0,
+    .tilemapTop = 4,
+    .width = 10,
+    .height = 8,
+    .paletteNum = 6,
+    .baseBlock = 822,
+};
+#endif
 
 static void (*const sTextPrinterFunctions[])(void) =
 {
@@ -1329,6 +1358,10 @@ void ShowPokemonSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, 
         sMonSummaryScreen->currPageIndex = sMonSummaryScreen->minPageIndex;
 
     sMonSummaryScreen->categoryIconSpriteId = 0xFF;
+    #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+    sRandolockeStatsOverlayVisible = FALSE;
+    sRandolockeStatsOverlayWindowId = WINDOW_NONE;
+    #endif
     SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
 
     if (gMonSpritesGfxPtr == NULL)
@@ -2853,16 +2886,32 @@ static void Task_HandleReplaceMoveInput(u8 taskId)
             }
             else if (JOY_NEW(DPAD_LEFT) || GetLRKeysPressed() == MENU_L_PRESSED)
             {
+                #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+                RandolockeHideStatsOverlay();
+                #endif
                 ChangePage(taskId, -1);
             }
             else if (JOY_NEW(DPAD_RIGHT) || GetLRKeysPressed() == MENU_R_PRESSED)
             {
+                #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+                RandolockeHideStatsOverlay();
+                #endif
                 ChangePage(taskId, 1);
             }
+            #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+            else if (JOY_NEW(SELECT_BUTTON) && RandolockeStatsOverlayAvailable())
+            {
+                PlaySE(SE_SELECT);
+                RandolockeToggleStatsOverlay();
+            }
+            #endif
             else if (JOY_NEW(A_BUTTON))
             {
                 if (CanReplaceMove() == TRUE)
                 {
+                    #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+                    RandolockeHideStatsOverlay();
+                    #endif
                     StopPokemonAnimations();
                     PlaySE(SE_SELECT);
                     sMoveSlotToReplace = sMonSummaryScreen->firstMoveIndex;
@@ -2878,6 +2927,9 @@ static void Task_HandleReplaceMoveInput(u8 taskId)
             }
             else if (JOY_NEW(B_BUTTON))
             {
+                #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+                RandolockeHideStatsOverlay();
+                #endif
                 StopPokemonAnimations();
                 PlaySE(SE_SELECT);
                 sMoveSlotToReplace = MAX_MON_MOVES;
@@ -5053,6 +5105,163 @@ static inline bool32 ShouldShowRename(void)
          && GetPlayerIDAsU32() == sMonSummaryScreen->summary.OTID);
 }
 
+#if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+// --- Stats overlay for the move-select screen --------------------------------
+//
+// The "which move should be forgotten?" screen is reached straight from a level-up, and
+// in that mode the skills page is unreachable (minPageIndex is PSS_PAGE_BATTLE_MOVES), so
+// there is no way to check whether the Pokemon hits harder physically or specially before
+// committing. SELECT swaps its picture for the numbers. Ported from pokeemerald_rando_enh.
+
+static const u8 sRandolockeText_Stats[] = _("Stats");
+
+// True on the screens where SELECT is free and the numbers are what the decision needs.
+static bool32 RandolockeStatsOverlayAvailable(void)
+{
+    return sMonSummaryScreen != NULL
+        && sMonSummaryScreen->mode == SUMMARY_MODE_SELECT_MOVE
+        && !sMonSummaryScreen->summary.isEgg;
+}
+
+// +1 for the stat the nature raises, -1 for the one it lowers. gNaturesInfo stores the
+// pair rather than a table of multipliers, and a neutral nature names the same stat twice.
+static s32 RandolockeNatureMod(u32 nature, enum Stat stat)
+{
+    if (nature >= NUM_NATURES || gNaturesInfo[nature].statUp == gNaturesInfo[nature].statDown)
+        return 0;
+    if (stat == gNaturesInfo[nature].statUp)
+        return 1;
+    if (stat == gNaturesInfo[nature].statDown)
+        return -1;
+    return 0;
+}
+
+// Palette 6 of graphics/summary_screen/tiles.png: 1 black, 2 light grey, 3 white,
+// 5 red, 8 blue. Red for the raised stat, blue for the lowered one, matching the arrows
+// the skills page already draws.
+static void RandolockePrintOverlayStat(u8 windowId, const u8 *label, u32 stat, s32 natureMod, u32 x, u32 y)
+{
+    static const u8 sColorNeutral[] = _("{COLOR}{01}");
+    static const u8 sColorUp[] = _("{COLOR}{05}");
+    static const u8 sColorDown[] = _("{COLOR}{08}");
+    static const u8 sColors[3] = { 3, 1, 2 }; // white background, black text, grey shadow
+    u8 statStr[12];
+    u8 *ptr;
+
+    AddTextPrinterParameterized4(windowId, FONT_NARROW, x, y, 0, 0, sColors, 0, label);
+
+    if (natureMod > 0)
+        ptr = StringCopy(statStr, sColorUp);
+    else if (natureMod < 0)
+        ptr = StringCopy(statStr, sColorDown);
+    else
+        ptr = StringCopy(statStr, sColorNeutral);
+    ConvertIntToDecimalStringN(ptr, stat, STR_CONV_MODE_RIGHT_ALIGN, 3);
+
+    AddTextPrinterParameterized4(windowId, FONT_NARROW, x + 20, y, 0, 0, sColors, 0, statStr);
+}
+
+static void RandolockeShowStatsOverlay(void)
+{
+    #define RZ_STATS_COL1_X  3
+    #define RZ_STATS_COL2_X 43
+    #define RZ_STATS_ROW1_Y  2
+    #define RZ_STATS_ROW2_Y 16
+    #define RZ_STATS_ROW3_Y 30
+    #define RZ_STATS_ABILITY_Y 45
+    #define RZ_STATS_WIDTH  (10 * TILE_WIDTH)
+
+    struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+    // The nature that actually moved the numbers. CalculateMonStats reads
+    // MON_DATA_HIDDEN_NATURE, so a Mint -- or the debug menu's hidden-nature roll --
+    // is what the arrows have to reflect, not the personality's original nature.
+    u32 nature = GetMonData(mon, MON_DATA_HIDDEN_NATURE);
+    enum Ability ability;
+    s32 abilityX;
+    u8 windowId;
+
+    // Read the stats off the Pokemon rather than out of sMonSummaryScreen->summary: the
+    // summary's stat fields are reused by the skills page's IV and EV views, so they do
+    // not always hold stats.
+    StopPokemonAnimations();
+    SetSpriteInvisibility(SPRITE_ARR_ID_MON, TRUE);
+
+    if (sRandolockeStatsOverlayWindowId == WINDOW_NONE)
+        sRandolockeStatsOverlayWindowId = AddWindow(&sRandolockeStatsOverlayTemplate);
+    windowId = sRandolockeStatsOverlayWindowId;
+    if (windowId == WINDOW_NONE)
+        return;
+
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(3));
+
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("HP"), GetMonData(mon, MON_DATA_MAX_HP),
+                               0, RZ_STATS_COL1_X, RZ_STATS_ROW1_Y);
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("ATK"), GetMonData(mon, MON_DATA_ATK),
+                               RandolockeNatureMod(nature, STAT_ATK), RZ_STATS_COL1_X, RZ_STATS_ROW2_Y);
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("DEF"), GetMonData(mon, MON_DATA_DEF),
+                               RandolockeNatureMod(nature, STAT_DEF), RZ_STATS_COL1_X, RZ_STATS_ROW3_Y);
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("SpA"), GetMonData(mon, MON_DATA_SPATK),
+                               RandolockeNatureMod(nature, STAT_SPATK), RZ_STATS_COL2_X, RZ_STATS_ROW1_Y);
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("SpD"), GetMonData(mon, MON_DATA_SPDEF),
+                               RandolockeNatureMod(nature, STAT_SPDEF), RZ_STATS_COL2_X, RZ_STATS_ROW2_Y);
+    RandolockePrintOverlayStat(windowId, COMPOUND_STRING("SPE"), GetMonData(mon, MON_DATA_SPEED),
+                               RandolockeNatureMod(nature, STAT_SPEED), RZ_STATS_COL2_X, RZ_STATS_ROW3_Y);
+
+    // The ability, centred underneath. A long name is simply left-aligned rather than
+    // pushed off the left edge of the window.
+    ability = GetAbilityBySpecies(GetMonData(mon, MON_DATA_SPECIES),
+                                  GetMonData(mon, MON_DATA_ABILITY_NUM), FALSE);
+    abilityX = (RZ_STATS_WIDTH - GetStringWidth(FONT_NARROW, gAbilitiesInfo[ability].name, 0)) / 2;
+    if (abilityX < 0)
+        abilityX = 0;
+    {
+        static const u8 sAbilityColors[3] = { 3, 4, 2 }; // white background, dark grey, grey shadow
+        AddTextPrinterParameterized4(windowId, FONT_NARROW, abilityX, RZ_STATS_ABILITY_Y, 0, 0,
+                                     sAbilityColors, 0, gAbilitiesInfo[ability].name);
+    }
+
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+    ScheduleBgCopyTilemapToVram(0);
+    sRandolockeStatsOverlayVisible = TRUE;
+
+    #undef RZ_STATS_COL1_X
+    #undef RZ_STATS_COL2_X
+    #undef RZ_STATS_ROW1_Y
+    #undef RZ_STATS_ROW2_Y
+    #undef RZ_STATS_ROW3_Y
+    #undef RZ_STATS_ABILITY_Y
+    #undef RZ_STATS_WIDTH
+}
+
+static void RandolockeHideStatsOverlay(void)
+{
+    if (!sRandolockeStatsOverlayVisible)
+        return;
+
+    SetSpriteInvisibility(SPRITE_ARR_ID_MON, FALSE);
+
+    if (sRandolockeStatsOverlayWindowId != WINDOW_NONE)
+    {
+        ClearWindowTilemap(sRandolockeStatsOverlayWindowId);
+        CopyWindowToVram(sRandolockeStatsOverlayWindowId, COPYWIN_MAP);
+        RemoveWindow(sRandolockeStatsOverlayWindowId);
+        sRandolockeStatsOverlayWindowId = WINDOW_NONE;
+    }
+
+    ScheduleBgCopyTilemapToVram(0);
+    sRandolockeStatsOverlayVisible = FALSE;
+}
+
+static void RandolockeToggleStatsOverlay(void)
+{
+    if (sRandolockeStatsOverlayVisible)
+        RandolockeHideStatsOverlay();
+    else
+        RandolockeShowStatsOverlay();
+}
+#endif // RANDOLOCKE_MOVE_SCREEN_STATS
+
 static inline bool32 ShouldShowIvEvPrompt(void)
 {
     if (P_SUMMARY_SCREEN_IV_EV_BOX_ONLY)
@@ -5070,6 +5279,7 @@ static inline bool32 ShouldShowIvEvPrompt(void)
 static inline void ShowUtilityPrompt(s16 mode)
 {
     const u8* promptText = NULL;
+    bool32 useSelectIcon = FALSE;
     const u8* gText_SkillPageIvs = COMPOUND_STRING("IVs");
     const u8* gText_SkillPageEvs = COMPOUND_STRING("EVs");
     const u8* gText_SkillPageStats = COMPOUND_STRING("STATS");
@@ -5109,6 +5319,17 @@ static inline void ShowUtilityPrompt(s16 mode)
     else if (sMonSummaryScreen->currPageIndex == PSS_PAGE_BATTLE_MOVES
              || sMonSummaryScreen->currPageIndex == PSS_PAGE_CONTEST_MOVES)
     {
+        #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+        // On the move-select screen A confirms the move rather than opening the info
+        // page, so the stock "A INFO" prompt named something that does not happen.
+        // Advertise the stats overlay in that slot instead.
+        if (RandolockeStatsOverlayAvailable())
+        {
+            useSelectIcon = TRUE;
+            promptText = sRandolockeText_Stats;
+        }
+        else
+        #endif
         if (mode == SUMMARY_MODE_SELECT_MOVE && !sMonSummaryScreen->lockMovesFlag)
             promptText = gText_Switch;
         else
@@ -5130,7 +5351,20 @@ static inline void ShowUtilityPrompt(s16 mode)
     if (iconXPos < 0)
         iconXPos = 0;
 
-    PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_UTILITY, FALSE, iconXPos);
+    #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
+    if (useSelectIcon)
+    {
+        // The SELECT graphic is 24px wide against the A and B buttons' 16, so it needs
+        // its own offset rather than PrintAOrBButtonIcon's.
+        iconXPos = stringXPos - 25;
+        if (iconXPos < 0)
+            iconXPos = 0;
+        BlitBitmapToWindow(PSS_LABEL_WINDOW_PROMPT_UTILITY, sSelectButton_Gfx, iconXPos, 0, 24, 16);
+    }
+    else
+    #endif
+        PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_UTILITY, FALSE, iconXPos);
+
     PrintTextOnWindow(PSS_LABEL_WINDOW_PROMPT_UTILITY, promptText, stringXPos, 1, 0, 0);
 }
 

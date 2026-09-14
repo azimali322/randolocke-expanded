@@ -2448,17 +2448,20 @@ static bool32 RandolockeMoveIsStab(enum Move move, enum BattlerId battler)
     return FALSE;
 }
 
-// The arrows came out black because a {COLOR} code indexes the *window's* palette, and
-// palette 5 has nothing green or red at those entries. What works is the trick the PP
-// counter already uses: overwrite the palette entry the window draws its text with.
-// Entry 13 is that entry -- see sBattleTextOnWindowsInfo[B_WIN_PP].color.foreground.
-static void RandolockeSetEffectivenessColor(u32 foeEffectiveness)
-{
-    static u16 sDefaultColor = 0;
-    u16 color;
+// Overwriting entry 13 -- the entry B_WIN_PP and the move-name windows both draw their
+// text with -- coloured the move names, the type line and the action menu along with the
+// arrow, and the change outlived move select. Colour only the icons instead: a {COLOR}
+// code picks a palette *index*, so claim two entries the battle text palette never uses
+// (9 and 10 of graphics/battle_interface/text.pal are both (0,0,0), and no window colour
+// or message string references either), write our colours there, and emit the code in
+// front of the icon alone. The default grey matches entry 13 so the neutral circle still
+// looks stock.
+#define RZ_PLTT_EFFECTIVENESS   9
+#define RZ_PLTT_STAB           10
 
-    if (sDefaultColor == 0)
-        sDefaultColor = gPlttBufferUnfaded[BG_PLTT_ID(5) + 13];
+static void RandolockeLoadIndicatorColors(u32 foeEffectiveness)
+{
+    u16 color;
 
     switch (foeEffectiveness)
     {
@@ -2474,12 +2477,25 @@ static void RandolockeSetEffectivenessColor(u32 foeEffectiveness)
         color = RGB(31, 6, 6);      // red
         break;
     default:
-        color = sDefaultColor;
+        color = RGB(9, 9, 9);       // the window's own grey
         break;
     }
 
-    gPlttBufferUnfaded[BG_PLTT_ID(5) + 13] = color;
-    gPlttBufferFaded[BG_PLTT_ID(5) + 13] = color;
+    gPlttBufferUnfaded[BG_PLTT_ID(5) + RZ_PLTT_EFFECTIVENESS] = color;
+    gPlttBufferFaded[BG_PLTT_ID(5) + RZ_PLTT_EFFECTIVENESS] = color;
+    gPlttBufferUnfaded[BG_PLTT_ID(5) + RZ_PLTT_STAB] = RGB(31, 6, 6);
+    gPlttBufferFaded[BG_PLTT_ID(5) + RZ_PLTT_STAB] = RGB(31, 6, 6);
+}
+
+// Writes a {COLOR n} control code and returns the new end of the string. Built by hand
+// because the index is one of ours, not one of the named TEXT_COLOR_* entries.
+static u8 *RandolockeWriteColorCode(u8 *dest, u32 colorIndex)
+{
+    *dest++ = EXT_CTRL_CODE_BEGIN;
+    *dest++ = EXT_CTRL_CODE_COLOR;
+    *dest++ = colorIndex;
+    *dest = EOS;
+    return dest;
 }
 
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
@@ -2506,29 +2522,32 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
 
     if (!IsBattleMoveStatus(moveInfo->moves[gMoveSelectionCursor[battler]]))
     {
+        RandolockeLoadIndicatorColors(foeEffectiveness);
+        txtPtr = RandolockeWriteColorCode(txtPtr, RZ_PLTT_EFFECTIVENESS);
+
         switch (foeEffectiveness)
         {
         case EFFECTIVENESS_EXTREMELY_EFFECTIVE:
-            StringCopy(txtPtr, extremeleyEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, extremeleyEffectiveIcon);
             break;
         case EFFECTIVENESS_SUPER_EFFECTIVE:
-            StringCopy(txtPtr, superEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, superEffectiveIcon);
             break;
         case EFFECTIVENESS_NOT_VERY_EFFECTIVE:
-            StringCopy(txtPtr, notVeryEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, notVeryEffectiveIcon);
             break;
         case EFFECTIVENESS_MOSTLY_INEFFECTIVE:
-            StringCopy(txtPtr, mostlyIneffectiveIcon);
+            txtPtr = StringCopy(txtPtr, mostlyIneffectiveIcon);
             break;
         case EFFECTIVENESS_NO_EFFECT:
-            StringCopy(txtPtr, immuneIcon);
+            txtPtr = StringCopy(txtPtr, immuneIcon);
             break;
         case EFFECTIVENESS_NORMAL:
-            StringCopy(txtPtr, effectiveIcon);
+            txtPtr = StringCopy(txtPtr, effectiveIcon);
             break;
         default:
         case EFFECTIVENESS_CANNOT_VIEW:
-            StringCopy(txtPtr, noIcon);
+            txtPtr = StringCopy(txtPtr, noIcon);
             break;
         }
 
@@ -2536,9 +2555,10 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
         // randomized movesets you cannot tell a Pokemon's own types from its move list,
         // so which of four attacks is actually boosted is genuinely not obvious.
         if (RandolockeMoveIsStab(moveInfo->moves[gMoveSelectionCursor[battler]], battler))
-            StringAppend(gDisplayedStringBattle, stabIcon);
-
-        RandolockeSetEffectivenessColor(foeEffectiveness);
+        {
+            txtPtr = RandolockeWriteColorCode(txtPtr, RZ_PLTT_STAB);
+            txtPtr = StringCopy(txtPtr, stabIcon);
+        }
     }
 
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP);

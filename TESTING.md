@@ -1120,6 +1120,68 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 27 — Playtest round 4
+
+### Fast text by default
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.1 | **A new game starts on Fast** | New game → Options | Text speed reads FAST |
+| T27.2 | Still changeable | Set it to Slow, leave, come back | Slow, and it sticks |
+| T27.3 | An existing save is untouched | Load a save started before this build → Options | Whatever it was already set to. Only new games get the new default |
+
+### Indicator colours, not window colours
+
+The previous build coloured palette entry 13, which every window on that BG draws its text
+with, so one arrow turned the move names, the type line and the action menu red — and the
+change survived leaving move select. The icons now carry their own palette entries.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.4 | **Move names stay black** | Battle → Battle → hover a move with no effect | The ✕ is red; both move names and "TYPE/…" stay dark grey |
+| T27.5 | Green for super effective | Hover a move the foe is weak to | Green ↑ (double for 4×); names unchanged |
+| T27.6 | Orange for resisted | Hover a resisted move | Orange ↓; names unchanged |
+| T27.7 | **It does not leak** | Hover a no-effect move, then B out to the action menu | Battle / Bag / Pokémon / Run are black, not red |
+| T27.8 | The STAB dot stays red | Hover a same-type move that is also super effective | Green arrow *and* a red dot side by side |
+| T27.9 | Neutral is unremarkable | Hover a neutral move | Grey hollow circle, the same grey as the text |
+
+### Level cap candy no longer exits the menu
+
+`Task_LearnNextMoveOrClosePartyMenu` tested `data1` — which by then holds the move just
+learned — instead of `learnMoveState`. Every move but MOVE_POUND took the "close the menu"
+branch, so the Pokémon also never reached the evolution check.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.10 | **Learning a move keeps you in the menu** | Party → a Pokémon → LEVEL CAP onto a level-up move | Learns the move, then returns to the party list. Does *not* drop to the field |
+| T27.11 | Replacing a move too | Same with four moves already known → forget one | Returns to the party list |
+| T27.12 | Declining also returns | Same, but choose not to learn | Returns to the party list |
+| T27.13 | **It evolves now** | LEVEL CAP a Pokémon onto its evolution level | Evolution scene plays |
+| T27.14 | **…and comes back cleanly** | Press through the evolution and the Pokédex entry | Back in the party menu on the field. Press B → field. Not a frozen battle screen |
+| T27.15 | Evolve on a level that also learns a move | A species that does both at once | Move first, then the evolution, then the party menu |
+| T27.16 | Repeat immediately | LEVEL CAP the same Pokémon again | Works; the Cap Candy is never consumed |
+| T27.17 | A real Rare Candy still evolves | Bag → Rare Candy on a Pokémon at its evolution level | Evolves, then back to the bag |
+| T27.18 | A TM still closes the menu | Bag → any TM → teach it | Learns, then back to the bag. Unchanged |
+| T27.19 | Move tutors still work | A randomized tutor → teach a move | Learns and returns to the overworld script |
+
+### Stats on the move-select screen
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.20 | **The prompt is visible** | Level a Pokémon into "which move should be forgotten?" | Top right reads SELECT + "Stats", not "Ⓐ INFO" |
+| T27.21 | **SELECT shows the numbers** | Press SELECT | The picture is replaced by HP / ATK / DEF / SpA / SpD / SPE and the ability |
+| T27.22 | The numbers are the real ones | Compare with the skills page afterwards | Identical |
+| T27.23 | Nature colouring | A Pokémon with a non-neutral nature | Raised stat red, lowered stat blue, rest black |
+| T27.24 | **Hidden nature wins** | A Pokémon given a Mint or a rolled hidden nature | The colours follow the *hidden* nature, which is what moved the numbers |
+| T27.25 | SELECT again hides it | Press SELECT a second time | Picture returns |
+| T27.26 | Page change hides it | Open the overlay, press L or R | Overlay gone, picture back, contest page drawn normally |
+| T27.27 | Confirming works with it open | Open the overlay, press A on a move | Forgets that move and returns as usual |
+| T27.28 | Cancelling works with it open | Open the overlay, press B | Declines as usual |
+| T27.29 | The ability fits | A long ability name, e.g. Neutralizing Gas | Drawn inside the panel, not clipped off the left edge |
+| T27.30 | Not offered elsewhere | Normal summary → moves page → press SELECT | Nothing happens. Only the forget-a-move screen has it |
+
+---
+
 ## Phase 26 — Friendship heart and a bigger bag
 
 | # | Test | Steps | Expected |

@@ -253,4 +253,16 @@
 // still hand out legendaries.
 #define RANDOLOCKE_DEFAULT_SPECIES_MODE     MON_RANDOM_BST
 
+// Text speed a new save starts on. The stock default is OPTIONS_TEXT_SPEED_MID. A
+// randomized run reads a great deal of unfamiliar text -- every species, every move on
+// every trainer -- so it starts on FAST instead. Still changeable in the options menu.
+#define RANDOLOCKE_DEFAULT_TEXT_SPEED       OPTIONS_TEXT_SPEED_FAST
+
+// Press SELECT on the "which move should be forgotten?" screen to swap the Pokemon's
+// picture for its six stats and its ability. Randomized learnsets hand out physical and
+// special moves indiscriminately, so deciding which of four attacks to keep needs to know
+// whether this Pokemon actually hits harder with Attack or with Sp. Attack -- and that
+// screen is reached from a level-up, with no way back to the skills page.
+#define RANDOLOCKE_MOVE_SCREEN_STATS        TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H
