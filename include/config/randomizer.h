@@ -103,14 +103,20 @@
 // Randolocke wants TMs to be a common find; with I_REUSABLE_TMS on they are permanent.
 #define RZ_ITEM_W_TM_BAND          3000
 
-// Which TM, once the TM band is chosen. These are separate from the move weights: a TM is
-// permanent under I_REUSABLE_TMS, so the band leans much harder toward good moves than a
-// one-off move roll does. TMs whose move is Bad or Pokemon Homeless are not in the pool
-// at all. Over 40 eligible TMs this gives roughly 4.0x / 2.4x / 1.05x / 0.27x uniform.
-#define RZ_TM_W_META_DEFINING      1000
-#define RZ_TM_W_STAPLES            3000
-#define RZ_TM_W_FILLER             5000
-#define RZ_TM_W_NICHE              1000
+// Which TM, once the TM band is chosen, and which move a TM teaches when TM moves are
+// randomized. Separate from the move weights: a TM is permanent under I_REUSABLE_TMS, so
+// the band leans much harder toward good moves than a one-off move roll does. Bad and
+// Pokemon Homeless are not in the pool at all.
+//
+// Tuned against the actual algorithm rather than by hand - duplicate rejection distorts
+// the naive share, badly for Staples, where 26 of the band's 46 moves end up used. Over
+// the 50 TMs this lands at about 3 Meta Defining (of the 4 that exist), 26 Staples,
+// 16 Filler and 5 Niche. Per *move* that is 14.3x / 8.0x / 0.78x / 0.13x uniform.
+// Re-run tools/randolocke/tm_band_sim.py after changing these.
+#define RZ_TM_W_META_DEFINING       900
+#define RZ_TM_W_STAPLES            5800
+#define RZ_TM_W_FILLER             2500
+#define RZ_TM_W_NICHE               800
 
 // --- Berry trees ------------------------------------------------------------
 

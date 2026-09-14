@@ -36,6 +36,29 @@ const enum Species gStarterAndGiftMonTable[STARTER_AND_GIFT_MON_COUNT] =
     SPECIES_ANORITH,
 };
 
+// Every legendary encounter site in the game, keyed by the species that stands there in
+// vanilla. RandomizeLegendaryMon assigns these twelve a legendary each, without
+// replacement, so no two sites give the same Pokemon. Order matters only in that changing
+// it reshuffles every existing seed's mapping.
+//
+// Jirachi is deliberately absent: it has no in-game encounter, so a slot for it would
+// consume a legendary nobody can reach.
+const enum Species gLegendaryMonTable[LEGENDARY_MON_COUNT] =
+{
+    SPECIES_RAYQUAZA,       // Sky Pillar          setwildbattle
+    SPECIES_GROUDON,        // Terra Cave          setwildbattle
+    SPECIES_KYOGRE,         // Marine Cave         setwildbattle
+    SPECIES_REGIROCK,       // Desert Ruins        setwildbattle
+    SPECIES_REGICE,         // Island Cave         setwildbattle
+    SPECIES_REGISTEEL,      // Ancient Tomb        setwildbattle
+    SPECIES_LATIAS,         // Southern Island / roamer
+    SPECIES_LATIOS,         // Southern Island / roamer
+    SPECIES_MEW,            // Faraway Island      seteventmon
+    SPECIES_DEOXYS_NORMAL,  // Birth Island        seteventmon
+    SPECIES_HO_OH,          // Navel Rock top      seteventmon
+    SPECIES_LUGIA,          // Navel Rock bottom   seteventmon
+};
+
 // Add the mons you wish to be randomized when given as egg mon to this list
 const enum Species gEggMonTable[EGG_MON_COUNT] =
 {
@@ -1187,10 +1210,77 @@ enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Spec
     return species;
 }
 
+#if RANDOLOCKE_UNIQUE_LEGENDARIES == TRUE
+EWRAM_DATA static u32 sLastLegendarySeed = 0;
+EWRAM_DATA static u16 sRandomizedLegendaries[LEGENDARY_MON_COUNT] = {0};
+
+// Returns the legendary standing in for `species`, or SPECIES_NONE if `species` is not a
+// legendary encounter. MON_RANDOM_LEGEND_AWARE is forced regardless of the player's
+// species mode: it is what keeps a legendary site legendary. GetUniqueMonList does the
+// without-replacement part, the same way the starter list avoids duplicate starters.
+enum Species RandomizeLegendaryMon(enum Species species)
+{
+    u32 i;
+
+    for (i = 0; i < LEGENDARY_MON_COUNT; i++)
+    {
+        if (gLegendaryMonTable[i] == species)
+            break;
+    }
+    if (i == LEGENDARY_MON_COUNT)
+        return SPECIES_NONE;
+
+    if (sLastLegendarySeed != GetRandomizerSeed() || sRandomizedLegendaries[0] == SPECIES_NONE)
+    {
+        GetUniqueMonList(RANDOMIZER_REASON_FIXED_ENCOUNTER, MON_RANDOM_LEGEND_AWARE,
+                         0x1E6E4D, 0, LEGENDARY_MON_COUNT, gLegendaryMonTable,
+                         sRandomizedLegendaries);
+        sLastLegendarySeed = GetRandomizerSeed();
+    }
+    return sRandomizedLegendaries[i];
+}
+#endif
+
+// Scripted encounters created with seteventmon rather than setwildbattle - Mew, Deoxys,
+// Ho-Oh, Lugia and the Southern Island pair. These never reached the randomizer at all
+// before; CreateEnemyEventMon just used the species the script named.
+enum Species RandomizeEventEncounterMon(enum Species species)
+{
+    if (!RandomizerFeatureEnabled(RANDOMIZE_FIXED_MON))
+        return species;
+
+    #if RANDOLOCKE_UNIQUE_LEGENDARIES == TRUE
+    {
+        enum Species legendary = RandomizeLegendaryMon(species);
+
+        if (legendary != SPECIES_NONE)
+            return legendary;
+    }
+    #endif
+
+    // Not a legendary site. Seed off the map, as the setwildbattle path does.
+    return RandomizeMon(RANDOMIZER_REASON_FIXED_ENCOUNTER,
+                        GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE),
+                        ((u32)gSaveBlock1Ptr->location.mapNum << 16)
+                            | ((u32)gSaveBlock1Ptr->location.mapGroup << 8),
+                        species);
+}
+
 enum Species RandomizeFixedEncounterMon(enum Species species, u8 mapNum, u8 mapGroup, u8 localId)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_FIXED_MON))
     {
+        #if RANDOLOCKE_UNIQUE_LEGENDARIES == TRUE
+        {
+            // A legendary site keeps its own pool, so it cannot roll a Zigzagoon and
+            // cannot repeat a legendary another site already took.
+            enum Species legendary = RandomizeLegendaryMon(species);
+
+            if (legendary != SPECIES_NONE)
+                return legendary;
+        }
+        #endif
+
         // The seed is based on the location of the object event.
         u32 seed;
         seed = (u32)mapNum << 16;

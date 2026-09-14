@@ -822,7 +822,7 @@ predictable from its number, the only way to shop your own bag is to read the mo
 | T13.8 | HMs are untouched | Check HM01–HM08 | Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall, Dive |
 | T13.9 | Marts sell the re-pointed move | Buy a TM from any mart | The bag shows the randomized move |
 | T13.10 | **Bands are respected** | With 0x2A set, survey all 50 TMs | **No Bad and no Pokemon Homeless moves at all** — those two bands are excluded from `sTmMoveTiers`, not merely made rare |
-| T13.10b | The spread matches the TM weights | Same survey, bucket by tier | Roughly 4 Meta Defining (all of them), ~15 Staples, ~25 Filler, ~5 Niche |
+| T13.10b | The spread matches the TM weights | Same survey, bucket by tier | Roughly 3 Meta Defining, 26 Staples, 16 Filler, 5 Niche. `tools/randolocke/tm_band_sim.py` prints the prediction |
 | T13.10c | **Found TMs are uniform once moves are randomized** | 0x2A set, collect 20 field TMs | Any of TM01–TM50, evenly. The tier spread lives in the assignment now, not in which TM number drops |
 | T13.10d | Found TMs are tier-weighted when moves are *not* randomized | 0x2A clear, 0x21 set, collect 20 field TMs | Only TMs whose vanilla move is Meta Defining / Staples / Filler / Niche |
 | T13.11 | Reverse lookup is consistent | Use a move-relearner or a battle that names the TM's move | Names agree with the bag panel |
@@ -853,6 +853,31 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 | T13.28 | Wally's tutorial bag | Play the Wally catching tutorial | No regression |
 | T13.29 | **Sell / deposit screens** | Sell a TM at a mart; deposit one in the PC | Panel behaves, money window does not overlap it |
 | T13.30 | Config off | Set `RANDOLOCKE_TM_HOVER_INFO` to `FALSE`, rebuild | Panel appears only after pressing A, as in stock 1.17 |
+
+---
+
+## Phase 16 — Legendaries
+
+`RANDOLOCKE_UNIQUE_LEGENDARIES` (TRUE). Gated by the fixed-encounter flag `0x23`.
+See `docs/SETTINGS.md` §1.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T16.1 | **A legendary site gives a legendary** | 0x23 set, species mode `MON_RANDOM` (0). Beat Rayquaza's encounter at Sky Pillar | Some legendary — never an ordinary Pokémon, despite the mode |
+| T16.2 | **No repeats** | Work through Sky Pillar, Desert Ruins, Island Cave, Ancient Tomb | Four different legendaries |
+| T16.3 | Repeats stay impossible across the whole set | Reach all twelve sites | Twelve distinct species |
+| T16.4 | Stable across a reload | Note what stands at Desert Ruins, soft reset, look again | The same one |
+| T16.5 | Stable across a save/load | Same, but save and reload the save | The same one |
+| T16.6 | Seed drives the mapping | New game, different Trainer ID | A different assignment |
+| T16.7 | **`seteventmon` sites are randomized** | Reach Faraway Island (Mew), Birth Island (Deoxys), Navel Rock (Ho-Oh, Lugia) | All four randomized. **These were not randomized at all before this phase** |
+| T16.8 | Southern Island | Use the Eon Ticket, reach Southern Island | Latios/Latias replaced by a legendary from the pool |
+| T16.9 | **The roamer agrees with the island** | Trigger the TV Lati event, then meet the roamer | The roaming Pokémon is the same species the Southern Island slot gives for that Lati |
+| T16.10 | Flag off restores vanilla | Clear 0x23 | Rayquaza is Rayquaza, Mew is Mew |
+| T16.11 | Config off | Set `RANDOLOCKE_UNIQUE_LEGENDARIES` to `FALSE`, rebuild | Sites roll independently through the species mode — duplicates and non-legendaries both possible |
+| T16.12 | **Legendaries in the wild** | 0x20 set, mode `MON_RANDOM`, walk in grass for a while | Legendaries *can* appear — the wild pool is unrestricted in this mode |
+| T16.13 | Legend-aware mode changes that | Set `0x404E` to 1 (`MON_RANDOM_LEGEND_AWARE`), walk in grass | No legendaries in the grass; legendary sites still legendary |
+| T16.14 | Starters are already unique | New game, check the three starters offered | Three different species |
+| T16.15 | No species-table thrashing | Trigger a legendary encounter, then a wild one, then another legendary | No stutter — the table is rebuilt at most twice per boot |
 
 ---
 

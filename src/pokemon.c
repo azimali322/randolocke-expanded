@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randomizer.h"
 #include "malloc.h"
 #include "apprentice.h"
 #include "battle.h"
@@ -1323,6 +1324,12 @@ void CreateEnemyEventMon(void)
     s32 species = gSpecialVar_0x8004;
     s32 level = gSpecialVar_0x8005;
     s32 itemId = gSpecialVar_0x8006;
+
+    #if RANDOMIZER_AVAILABLE == TRUE
+        // Mew, Deoxys, Ho-Oh, Lugia and the Southern Island pair arrive here rather than
+        // through setwildbattle, so they need the same treatment.
+        species = RandomizeEventEncounterMon(species);
+    #endif
 
     ZeroEnemyPartyMons();
 

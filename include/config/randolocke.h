@@ -73,6 +73,20 @@
 // pokeemerald_rando_enh, where randomized TMs made this close to essential.
 #define RANDOLOCKE_TM_HOVER_INFO        TRUE
 
+// --- Legendaries ------------------------------------------------------------
+
+// If TRUE, every legendary encounter in the game draws from the legendary pool, and does
+// so *without replacement*: the twelve sites in gLegendaryMonTable are assigned twelve
+// different legendaries, so beating Rayquaza's slot and then Registeel's gives two
+// distinct Pokemon. Without this each site rolls independently, so with
+// RANDOLOCKE_DEFAULT_SPECIES_MODE at MON_RANDOM a legendary site can hand you a Zigzagoon,
+// and two sites can hand you the same species.
+//
+// This is deliberately independent of the species mode. The mode governs ordinary
+// encounters; legendary *sites* stay legendary either way, which is what makes them worth
+// travelling to.
+#define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
+
 // --- v1.1 NPCs --------------------------------------------------------------
 
 // Set once the Oldale financier has handed over his money, so he only does it once.

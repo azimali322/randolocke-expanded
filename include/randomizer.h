@@ -15,6 +15,7 @@
 
 #define RANDOMIZER_STREAM 17
 #define STARTER_AND_GIFT_MON_COUNT 11 // Raise this number accordingly to [gStarterAndGiftMonTable]
+#define LEGENDARY_MON_COUNT 12 // Raise this number accordingly to [gLegendaryMonTable]
 #define EGG_MON_COUNT 2 // Raise this number accordingly to [gEggMonTable]
 
 extern const enum Species gStarterAndGiftMonTable[];
@@ -123,6 +124,9 @@ bool32 IsRandomizationPossible(enum Species tableSpecies, enum Species matchSpec
 enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Species species);
 
 enum Species RandomizeFixedEncounterMon(enum Species species, u8 mapNum, u8 mapGroup, u8 localId);
+enum Species RandomizeEventEncounterMon(enum Species species);
+enum Species RandomizeLegendaryMon(enum Species species);
+extern const enum Species gLegendaryMonTable[LEGENDARY_MON_COUNT];
 
 // Given a starter/gift slot and the list of original starters/gifts, returns the random mon in that slot.
 enum Species RandomizeStarterAndGiftMon(u16 originalSlot, const enum Species* originalStarterAndGiftMons);

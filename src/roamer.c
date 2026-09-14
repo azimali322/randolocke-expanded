@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randomizer.h"
 #include "event_data.h"
 #include "ow_abilities.h"
 #include "pokemon.h"
@@ -140,6 +141,12 @@ static u8 GetFirstInactiveRoamerIndex(void)
 bool8 TryAddRoamer(enum Species species, u8 level)
 {
     u8 index = GetFirstInactiveRoamerIndex();
+
+    #if RANDOMIZER_AVAILABLE == TRUE
+        // The roaming Lati is a legendary encounter like any other, and shares the
+        // Southern Island pair's slots so the roamer and the island cannot disagree.
+        species = RandomizeEventEncounterMon(species);
+    #endif
 
     if (index < ROAMER_COUNT)
     {

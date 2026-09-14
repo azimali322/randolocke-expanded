@@ -48,9 +48,9 @@ game. Existing saves are never touched. Each feature has its own switch:
 | --- | --- | --- |
 | `RANDOLOCKE_DEFAULT_WILD_MON` | `0x020` | Every wild encounter — grass, surf, fishing, Rock Smash |
 | `RANDOLOCKE_DEFAULT_TRAINER_MON` | `0x022` | Every trainer's party |
-| `RANDOLOCKE_DEFAULT_FIXED_MON` | `0x023` | Scripted and static encounters: legendaries, Sudowoodo, the Voltorbs |
-| `RANDOLOCKE_DEFAULT_STARTER_GIFT_MON` | `0x024` | The three starters, gift Pokémon, the Lati eon |
-| `RANDOLOCKE_DEFAULT_EGG_MON` | `0x025` | What hatches from eggs |
+| `RANDOLOCKE_DEFAULT_FIXED_MON` | `0x023` | Scripted and static encounters: legendaries, Sudowoodo, the Voltorbs. Also gates the legendary pool below |
+| `RANDOLOCKE_DEFAULT_STARTER_GIFT_MON` | `0x024` | The ten entries in `gStarterAndGiftMonTable`: the three Hoenn starters, the three Johto starters, Beldum, Castform, Lileep, Anorith. Already **without replacement** — no two are ever the same |
+| `RANDOLOCKE_DEFAULT_EGG_MON` | `0x025` | The entries in `gEggMonTable` — in Emerald that is only the Wynaut egg. Not ordinary breeding |
 | `RANDOLOCKE_DEFAULT_ABILITIES` | `0x026` | Every Pokémon's ability |
 | `RANDOLOCKE_DEFAULT_FIELD_ITEMS` | `0x021` | Overworld item balls and hidden items |
 | `RANDOLOCKE_DEFAULT_LEARNSET` | `0x028` | Level-up learnsets — the 21-move scheme |
@@ -91,6 +91,49 @@ Written to `VAR_UNUSED_0x404E` on a new game. Controls *how* a species is substi
 
 Change it mid-run from the debug menu by writing the var; it changes what future rolls
 produce, but Pokémon already caught keep what they are.
+
+### Legendaries
+
+```c
+#define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
+```
+
+Legendary encounters are handled apart from the species mode, for two reasons.
+
+**They stay legendary.** With the mode at `MON_RANDOM`, a legendary *site* would otherwise
+be able to hand you a Zigzagoon. This forces `MON_RANDOM_LEGEND_AWARE` for those twelve
+sites only, so Rayquaza's spot always holds *some* legendary. Ordinary encounters are
+unaffected — with `MON_RANDOM`, a legendary can still turn up in the grass.
+
+**They are drawn without replacement.** All twelve sites are assigned at once from one
+pool, so no two ever give the same species. Clear Rayquaza's slot and get Mew, and Mew is
+then gone from every other site.
+
+The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
+
+| Site | Vanilla occupant | Reaches the randomizer via |
+| --- | --- | --- |
+| Sky Pillar | Rayquaza | `setwildbattle` |
+| Terra Cave | Groudon | `setwildbattle` |
+| Marine Cave | Kyogre | `setwildbattle` |
+| Desert Ruins | Regirock | `setwildbattle` |
+| Island Cave | Regice | `setwildbattle` |
+| Ancient Tomb | Registeel | `setwildbattle` |
+| Southern Island / roamer | Latias | `seteventmon` / `TryAddRoamer` |
+| Southern Island / roamer | Latios | `seteventmon` / `TryAddRoamer` |
+| Faraway Island | Mew | `seteventmon` |
+| Birth Island | Deoxys | `seteventmon` |
+| Navel Rock top | Ho-Oh | `seteventmon` |
+| Navel Rock bottom | Lugia | `seteventmon` |
+
+Jirachi is absent on purpose: it has no in-game encounter, so a slot for it would consume
+a legendary nobody can reach.
+
+The roaming Lati shares the Southern Island pair's slots, so the roamer and the island
+cannot disagree about who is who.
+
+Set this to `FALSE` and each site rolls independently through the ordinary species mode —
+duplicates possible, and non-legendaries possible.
 
 ### The seed
 
@@ -320,6 +363,15 @@ Active only when flag `0x028` is set.
    ```bash
    python3 tools/randolocke/tier_report.py            # abilities
    python3 tools/randolocke/tier_report.py --moves    # moves
+   ```
+
+   For the **TM** bands use the simulator instead — duplicate rejection makes the naive
+   `50 x weight / total` badly wrong for Staples, so weights have to be solved against the
+   real algorithm:
+
+   ```bash
+   python3 tools/randolocke/tm_band_sim.py            # what the current weights produce
+   python3 tools/randolocke/tm_band_sim.py 3 25 15 5  # solve for these TM counts
    ```
 5. `python3 tools/randolocke/validate_tiers.py` to confirm nothing is untiered or
    duplicated.
