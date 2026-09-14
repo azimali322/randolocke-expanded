@@ -1120,6 +1120,34 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 25 — First-encounter badge
+
+`RANDOLOCKE_FIRST_ENCOUNTER_BADGE` (TRUE). A circled **1** appears on a wild Pokémon's
+health box when catching it *here* would be legal under the nuzlocke rules — so you do
+not have to throw a ball to find out.
+
+Printed onto the healthbox sprite the same way HP numbers are, so it inherits the box's
+position, slide-in and cleanup rather than owning a second sprite.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T25.1 | **It appears on a legal catch** | Walk into fresh grass on a route you have not caught in | A circled 1 on the wild Pokémon's health box |
+| T25.2 | **Gone once the area is used** | Catch something there, then meet another | No badge |
+| T25.3 | Gone on a duplicate | Meet a species whose family you already own | No badge, even on an unused area |
+| T25.4 | **Shinies always show it** | Meet a shiny on a used-up area | Badge present — the shiny clause makes it catchable |
+| T25.5 | It agrees with the bag | Whenever the badge shows, open the bag | Balls are allowed. No badge means they are refused |
+| T25.6 | Not on trainer battles | Fight any trainer | No badge |
+| T25.7 | Not on your own Pokémon | Look at your side of the screen | No badge there |
+| T25.8 | Not in the Safari Zone | Enter a Safari battle | No badge |
+| T25.9 | **Before the rules start** | New game, before Birch's five Poké Balls | No badge — nothing is being ruled on yet |
+| T25.10 | Rules off | Set flag `0x2D` | No badge |
+| T25.11 | Doubles | A double wild battle | Each opposing box is judged on its own species |
+| T25.12 | **It does not corrupt the box** | Watch HP change, switch, and let the box slide out | HP numbers, nickname, level and status all draw correctly; no leftover glyph |
+| T25.13 | Survives a switch | Send out a different Pokémon and back | The badge is still correct |
+| T25.14 | Config off | Set `RANDOLOCKE_FIRST_ENCOUNTER_BADGE` to `FALSE`, rebuild | No badge anywhere |
+
+---
+
 ## Phase 24 — Two registered key items, properly
 
 `RANDOLOCKE_DUAL_REGISTERED_ITEMS` (TRUE). The first attempt silently pushed the

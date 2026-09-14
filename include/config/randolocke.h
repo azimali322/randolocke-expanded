@@ -128,6 +128,13 @@
 // a second trip. Capped at 255, which is the field's limit.
 #define RANDOLOCKE_BERRY_YIELD_MULTIPLIER   4
 
+// --- First-encounter badge ---------------------------------------------------
+
+// If TRUE, a circled 1 is drawn on a wild Pokemon's health box when catching it would be
+// a legal nuzlocke catch here: the area is unused, the family is new, or it is shiny. The
+// rules are enforced either way -- this just stops you throwing a ball to find out.
+#define RANDOLOCKE_FIRST_ENCOUNTER_BADGE    TRUE
+
 // --- Nuzlocke rules ----------------------------------------------------------
 
 // If TRUE the classic rules are enforced in-game rather than left to the player:
