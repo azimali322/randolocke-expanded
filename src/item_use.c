@@ -85,7 +85,9 @@ static bool32 IsValidLocationForVsSeeker(void);
 
 static const u8 sText_RepellantOn[] = _("The Repellant is now active!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_RepellantOff[] = _("The Repellant was switched off.{PAUSE_UNTIL_PRESS}");
-static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored to full health!{PAUSE_UNTIL_PRESS}");
+// Two lines: one run of "Your Pokemon were restored to full health!" overflows the
+// field message box, which has no room for a 41-character line.
+static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored\nto full health!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_CantDismountBike[] = _("You can't dismount your BIKE here.{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderNearby[] = _("Huh?\nThe ITEMFINDER's responding!\pThere's an item buried around here!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderOnTop[] = _("Oh!\nThe ITEMFINDER's shaking wildly!{PAUSE_UNTIL_PRESS}");

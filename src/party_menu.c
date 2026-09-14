@@ -5818,51 +5818,20 @@ static void UNUSED DisplayExpPoints(u8 taskId, TaskFunc task, u8 holdEffectParam
 // Returns the level a Cap Candy should raise this Pokémon to: the soonest of the
 // current level cap, the next level it learns a move, and the next level it
 // evolves. Falls back to +1 (which also covers item-based evolutions).
+// The Cap Candy takes a Pokemon all the way to the current level cap in one use, which is
+// how pokeemerald_rando_enh's does it. It used to stop at the soonest of the cap, the next
+// level-up move and the next level evolution; that was fiddlier to reason about and meant
+// carrying a stack of them to reach the cap. Moves and evolutions still happen on the way,
+// because the level-up path is walked normally.
 static u32 GetCapCandyTargetLevel(struct Pokemon *mon)
 {
-    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
     u32 level = GetMonData(mon, MON_DATA_LEVEL);
-    u32 target = level + 1;
-    u32 best = MAX_LEVEL + 1;
-    u32 i;
-    const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
-    const struct Evolution *evolutions = GetSpeciesEvolutions(species);
+    u32 target = (B_EXP_CAP_TYPE != EXP_CAP_NONE) ? GetCurrentLevelCap() : MAX_LEVEL;
 
-    // Next level-up move.
-    if (learnset != NULL)
-    {
-        for (i = 0; learnset[i].move != LEVEL_UP_MOVE_END; i++)
-        {
-            if (learnset[i].level > level && learnset[i].level < best)
-                best = learnset[i].level;
-        }
-    }
-
-    // Next level-based evolution.
-    if (evolutions != NULL)
-    {
-        for (i = 0; evolutions[i].method != EVOLUTIONS_END; i++)
-        {
-            if (evolutions[i].method == EVO_LEVEL
-             && evolutions[i].param > level && evolutions[i].param < best)
-                best = evolutions[i].param;
-        }
-    }
-
-    if (best <= MAX_LEVEL && best > target)
-        target = best;
-
-    // Never exceed the level cap or the maximum level.
-    if (B_EXP_CAP_TYPE != EXP_CAP_NONE)
-    {
-        u32 cap = GetCurrentLevelCap();
-
-        if (target > cap)
-            target = cap;
-    }
     if (target > MAX_LEVEL)
         target = MAX_LEVEL;
-
+    if (target < level)
+        target = level;
     return target;
 }
 

@@ -3314,10 +3314,21 @@ static void DebugSelectionStep_UpdateIVs(u8 taskId, u8 digits, u32 min, u32 max)
     DebugNativeStep_PrintWindowSelection(taskId);
 }
 
+// Shows how much of the 510 budget the stats confirmed so far have used, so the cap is
+// visible while editing rather than a surprise applied at the end.
 static void DebugSelectionStep_UpdateEVs(u8 taskId, u8 digits, u32 min, u32 max)
 {
+    u32 spent = 0, i;
+
+    for (i = 0; i < gTasks[taskId].tSubstep && i < NUM_STATS; i++)
+        spent += DebugSelection_GetData(taskId, i);
+    if (spent > MAX_TOTAL_EVS)
+        spent = MAX_TOTAL_EVS;
+
     StringCopy(gStringVar3, gStatNamesTable[gTasks[taskId].tSubstep]);
-    StringExpandPlaceholders(gStringVar1, COMPOUND_STRING("{STR_VAR_3} EV:"));
+    ConvertIntToDecimalStringN(gStringVar1, MAX_TOTAL_EVS - spent, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringCopy(gStringVar2, gStringVar1);
+    StringExpandPlaceholders(gStringVar1, COMPOUND_STRING("{STR_VAR_3} EV ({STR_VAR_2} left):"));
     ConvertIntToDecimalStringN(gStringVar2, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, digits);
     StringCopy(gStringVar3, COMPOUND_STRING(""));
     DebugNativeStep_PrintWindowSelection(taskId);
@@ -4732,14 +4743,27 @@ static void DebugSelection_PartyEVs_OnInit(u8 taskId)
         DebugSelection_SetData(taskId, i, GetMonData(mon, MON_DATA_HP_EV + i));
 }
 
+// The per-stat cap is enforced by the selection step, but nothing enforced the 510 total,
+// so it was possible to confirm 252 in several stats at once and leave the Pokemon in a
+// state the game does not expect. Stats are filled in order and each one gets whatever is
+// left of the 510 budget, so the result is always legal.
 static bool32 DebugSelection_PartyEVs_OnComplete(u8 taskId)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gTasks[taskId].tPartyId];
-    u32 i;
+    u32 i, spent = 0;
 
     for (i = 0; i < NUM_STATS; i++)
     {
-        u16 value = DebugSelection_GetData(taskId, i);
+        u32 wanted = DebugSelection_GetData(taskId, i);
+        u16 value;
+
+        if (wanted > MAX_PER_STAT_EVS)
+            wanted = MAX_PER_STAT_EVS;
+        if (spent + wanted > MAX_TOTAL_EVS)
+            wanted = MAX_TOTAL_EVS - spent;
+
+        value = wanted;
+        spent += wanted;
         SetMonData(mon, MON_DATA_HP_EV + i, &value);
     }
     CalculateMonStats(mon);

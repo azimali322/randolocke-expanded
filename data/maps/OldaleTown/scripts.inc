@@ -215,8 +215,6 @@ OldaleTown_EventScript_BlockedPath::
 @ REPELLANT. He checks each one, so it is safe to talk to him again.
 OldaleTown_EventScript_NotBlockingPath::
 	setvar VAR_0x8009, 0
-	setvar VAR_0x8008, ITEM_CAP_CANDY
-	call OldaleTown_EventScript_GiveKeyItemIfMissing
 	setvar VAR_0x8008, ITEM_REPELLANT
 	call OldaleTown_EventScript_GiveKeyItemIfMissing
 	goto_if_eq VAR_0x8009, 0, OldaleTown_EventScript_OldManNothingToGive
@@ -242,9 +240,7 @@ OldaleTown_EventScript_OldManNothingToGive::
 
 OldaleTown_Text_OldManTakeThese:
 	.string "I'm too old for the road now, so take\n"
-	.string "these off my hands.\p"
-	.string "The CAP CANDY brings a POKéMON up to\n"
-	.string "whatever the badges will allow.\p"
+	.string "this off my hands.\p"
 	.string "The REPELLANT never empties. Press it\n"
 	.string "once to switch it on, once to stop.$"
 
@@ -439,6 +435,9 @@ OldaleTown_Text_TownSign:
 OldaleTown_EventScript_Financier::
 	lock
 	faceplayer
+	@ randolocke: nothing is handed out before Birch's five POKe BALLS, which is also when
+	@ the nuzlocke rules begin. Being given a fortune before the run has started is odd.
+	goto_if_unset FLAG_ADVENTURE_STARTED, OldaleTown_EventScript_FinancierNotYet
 	goto_if_set RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN, OldaleTown_EventScript_FinancierDone
 	msgbox OldaleTown_Text_FinancierOffer, MSGBOX_DEFAULT
 	addmoney 999999
@@ -453,6 +452,16 @@ OldaleTown_EventScript_FinancierDone::
 	msgbox OldaleTown_Text_FinancierDone, MSGBOX_DEFAULT
 	release
 	end
+
+OldaleTown_EventScript_FinancierNotYet::
+	msgbox OldaleTown_Text_FinancierNotYet, MSGBOX_DEFAULT
+	release
+	end
+
+OldaleTown_Text_FinancierNotYet:
+	.string "You're not on the road yet, are you?\p"
+	.string "Come and find me when the PROFESSOR\n"
+	.string "has sent you on your way.$"
 
 OldaleTown_Text_FinancierOffer:
 	.string "Money? I have far too much of it.\p"

@@ -167,6 +167,7 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         enum Type teraType;
         u8 mintNature;
     } summary;
+    u8 natureSuffix[16]; // randolocke: " (Modest)" when a hidden nature differs
     u16 bgTilemapBuffers[PSS_PAGE_COUNT][2][0x400];
     u8 mode;
     u8 skillsPageMode;
@@ -3593,11 +3594,29 @@ static void PrintMonTrainerMemo(void)
     PrintTextOnWindow(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), gStringVar4, 0, 1, 0, 0);
 }
 
+// randolocke: a Pokemon whose hidden nature has been changed -- by a Mint, or by the debug
+// menu's Roll Hidden Nature -- keeps its original nature in the memo while its *stats* use
+// the hidden one, which reads as a bug. Name both: "Docile (Modest) nature". Placeholder 5
+// already sits between the nature name and the word "nature" in every memo string.
 static void BufferNatureString(void)
 {
     struct PokemonSummaryScreenData *sumStruct = sMonSummaryScreen;
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, gNaturesInfo[sumStruct->summary.nature].name);
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, gText_EmptyString5);
+    u32 nature = sumStruct->summary.nature;
+    u32 hidden = sumStruct->summary.mintNature;
+
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, gNaturesInfo[nature].name);
+
+    if (hidden != nature && hidden < NUM_NATURES)
+    {
+        u8 *end = StringCopy(sumStruct->natureSuffix, COMPOUND_STRING(" ("));
+        end = StringCopy(end, gNaturesInfo[hidden].name);
+        StringCopy(end, COMPOUND_STRING(")"));
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, sumStruct->natureSuffix);
+    }
+    else
+    {
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, gText_EmptyString5);
+    }
 }
 
 static void GetMetLevelString(u8 *output)
