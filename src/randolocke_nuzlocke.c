@@ -7,6 +7,8 @@
 #include "pokemon.h"
 #include "randolocke_nuzlocke.h"
 #include "wild_encounter.h"
+#include "overworld.h"
+#include "constants/region_map_sections.h"
 #include "item.h"
 #include "pokemon_storage_system.h"
 #include "constants/items.h"
@@ -24,15 +26,23 @@ bool32 RandolockeNuzlockeActive(void)
     return FlagGet(RANDOLOCKE_FLAG_RULES_BEGIN) && !FlagGet(RANDOLOCKE_FLAG_NUZLOCKE_OFF);
 }
 
-// The area the player is standing in, or RANDOLOCKE_NO_AREA where the rules do not apply:
-// somewhere with no wild encounter table at all, or an area past the end of the bitfield.
+// The area the player is standing in, or RANDOLOCKE_NO_AREA where the rules do not apply.
+//
+// Keyed by region map section, not by map, so a cave counts once however many floors it
+// has -- every floor of Magma Hideout being its own catch was too generous, and it is the
+// case Randolocke's own notes single out. A map with no wild encounter table at all is
+// still not an area: that is what keeps the legendary sites and scripted battles free.
 u32 RandolockeCurrentArea(void)
 {
-    u16 headerId = GetCurrentMapWildMonHeaderId();
+    u32 mapSec;
 
-    if (headerId == HEADER_NONE || headerId >= RANDOLOCKE_MAX_AREAS)
+    if (GetCurrentMapWildMonHeaderId() == HEADER_NONE)
         return RANDOLOCKE_NO_AREA;
-    return headerId;
+
+    mapSec = gMapHeader.regionMapSectionId;
+    if (mapSec >= RANDOLOCKE_MAX_AREAS)
+        return RANDOLOCKE_NO_AREA;
+    return mapSec;
 }
 
 bool32 RandolockeAreaUsed(u32 area)
@@ -129,6 +139,34 @@ void RandolockeNoteCatch(struct Pokemon *mon)
 
     MarkAreaUsed(RandolockeCurrentArea());
 }
+
+// --- Player Pokemon IVs ------------------------------------------------------
+
+#if RANDOLOCKE_PLAYER_IVS != RANDOLOCKE_IVS_VANILLA
+
+// Called wherever a Pokemon becomes the player's -- caught, gifted, a starter, or hatched.
+// Not from CreateBoxMon: trainer parties go through that too, and their IVs are their own
+// business.
+void RandolockeSetPlayerMonIVs(struct Pokemon *mon, bool32 isGiftOrStarter)
+{
+    #if RANDOLOCKE_PLAYER_IVS == RANDOLOCKE_IVS_PERFECT
+        u32 i, iv = MAX_PER_STAT_IVS;
+
+        (void)isGiftOrStarter;
+        for (i = 0; i < NUM_STATS; i++)
+            SetMonData(mon, MON_DATA_HP_IV + i, &iv);
+        CalculateMonStats(mon);
+    #else
+        // Randolocke's own rule: starters and gifts are guaranteed a few perfect IVs,
+        // everything else keeps whatever it rolled.
+        if (!isGiftOrStarter)
+            return;
+        SetBoxMonPerfectIVs(&mon->box, RANDOLOCKE_GIFT_PERFECT_IVS);
+        CalculateMonStats(mon);
+    #endif
+}
+
+#endif
 
 // --- Permadeath --------------------------------------------------------------
 

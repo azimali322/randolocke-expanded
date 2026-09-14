@@ -7808,6 +7808,11 @@ static void FinalizeCapture(void)
     struct Pokemon *caughtMon = GetBattlerMon(gBattlerTarget);
     SetMonData(caughtMon, MON_DATA_POKEBALL, &ballId);
 
+    // Uses up this area's one catch. Deliberately before Cmd_trysetcaughtmondexflags
+    // runs: once the dex flag for this catch is set, every catch looks like a duplicate.
+    RandolockeNoteCatch(caughtMon);
+    RandolockeSetPlayerMonIVs(caughtMon, FALSE);
+
     if (CalculatePlayerPartyCount() == PARTY_SIZE)
         gBattleCommunication[MULTISTRING_CHOOSER] = 0;
     else

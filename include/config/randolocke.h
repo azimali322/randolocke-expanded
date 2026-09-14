@@ -87,6 +87,24 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// --- Player Pokemon quality ---------------------------------------------------
+
+// How good the IVs are on a Pokemon that becomes yours -- caught, gifted, a starter or
+// hatched. Trainers are never affected.
+//   RANDOLOCKE_IVS_PERFECT   31 across the board. In a run where a Pokemon usually cannot
+//                            be re-caught, IV luck is a tax rather than a decision
+//   RANDOLOCKE_IVS_RANDOLOCKE  3 guaranteed perfect IVs on starters and gifts, random
+//                            everywhere else. Randolocke's own behaviour
+//   RANDOLOCKE_IVS_VANILLA   untouched
+#define RANDOLOCKE_IVS_VANILLA      0
+#define RANDOLOCKE_IVS_RANDOLOCKE   1
+#define RANDOLOCKE_IVS_PERFECT      2
+
+#define RANDOLOCKE_PLAYER_IVS       RANDOLOCKE_IVS_PERFECT
+
+// How many IVs a starter or gift is guaranteed under RANDOLOCKE_IVS_RANDOLOCKE.
+#define RANDOLOCKE_GIFT_PERFECT_IVS 3
+
 // --- Nuzlocke rules ----------------------------------------------------------
 
 // If TRUE the classic rules are enforced in-game rather than left to the player:
@@ -189,6 +207,10 @@
 //   MON_RANDOM_LEGEND_AWARE legendaries only ever replace other legendaries
 //   MON_RANDOM_BST          replacements have a similar base stat total
 //   MON_EVOLUTION           replacements sit at the same evolution stage
-#define RANDOLOCKE_DEFAULT_SPECIES_MODE     MON_RANDOM
+// Randolocke substitutes a Pokemon of similar base stat total, which is what keeps the
+// early game survivable: a Route 101 Zigzagoon can no longer roll into Rayquaza. The
+// twelve legendary sites ignore this and use MON_RANDOM_LEGEND_AWARE regardless, so they
+// still hand out legendaries.
+#define RANDOLOCKE_DEFAULT_SPECIES_MODE     MON_RANDOM_BST
 
 #endif // GUARD_CONFIG_RANDOLOCKE_H

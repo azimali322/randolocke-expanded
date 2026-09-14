@@ -177,6 +177,11 @@
 // If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
 // physical attacker gets physical STAB, a special attacker special STAB. Without this a
 // pure physical attacker can roll seven special STAB moves and be unable to use any of them.
+// If TRUE, each of the three move groups is sorted by Base Power so stronger moves are
+// learned later -- Randolocke's default. FALSE fills the 21 slots in whatever order they
+// roll, which is the older, wilder behaviour.
+#define RZ_LEARNSET_SORT_BY_POWER   TRUE
+
 #define RZ_STAB_MATCH_CATEGORY      TRUE
 
 // How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a

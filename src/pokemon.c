@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "randomizer.h"
 #include "malloc.h"
 #include "apprentice.h"
@@ -6706,6 +6707,9 @@ struct BoxPokemon *GetSelectedBoxMonFromPcOrParty(void)
 
 u32 GiveScriptedMonToPlayer(struct Pokemon *mon, u8 slot)
 {
+    // randolocke: starters, gifts and anything a script hands over.
+    RandolockeSetPlayerMonIVs(mon, TRUE);
+
     u32 sentToPc;
     u32 i = 0;
     if (slot < PARTY_SIZE)

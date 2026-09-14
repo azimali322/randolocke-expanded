@@ -6,6 +6,13 @@
 
 #define RANDOLOCKE_NO_AREA  0xFFFFFFFF
 
+#if RANDOLOCKE_PLAYER_IVS != RANDOLOCKE_IVS_VANILLA
+void RandolockeSetPlayerMonIVs(struct Pokemon *mon, bool32 isGiftOrStarter);
+#else
+static inline void RandolockeSetPlayerMonIVs(struct Pokemon *mon, bool32 isGiftOrStarter)
+{ (void)mon; (void)isGiftOrStarter; }
+#endif
+
 enum RandolockeCatchRule
 {
     RANDOLOCKE_CATCH_OK,

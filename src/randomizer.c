@@ -1580,10 +1580,11 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
 
     // 7 STAB. Dual types split 4/3 across the two.
     stabFromT1 = (t1 == t2) ? RZ_LEARNSET_STAB_MOVES : (RZ_LEARNSET_STAB_MOVES + 1) / 2;
-    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, category, TRUE);
+    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, category,
+                RZ_LEARNSET_SORT_BY_POWER);
     if (stabFromT1 < RZ_LEARNSET_STAB_MOVES)
         RzPickMoves(&state, &picks[stabFromT1], RZ_LEARNSET_STAB_MOVES - stabFromT1,
-                    RzAcceptStab, t2, t2, category, TRUE);
+                    RzAcceptStab, t2, t2, category, RZ_LEARNSET_SORT_BY_POWER);
 
     // 7 status, in no particular order - Base Power does not apply to them.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES], RZ_LEARNSET_STATUS_MOVES,
@@ -1591,7 +1592,8 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
 
     // 7 non-STAB damaging, weakest first.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES],
-                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, category, TRUE);
+                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, category,
+                RZ_LEARNSET_SORT_BY_POWER);
 
     // Interleave the three groups so each level band mixes categories, and keep the
     // within-group power ordering so stronger moves still arrive later.

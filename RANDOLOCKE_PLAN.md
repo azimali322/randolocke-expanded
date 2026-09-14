@@ -782,7 +782,7 @@ Randolocke randomizes to a Pokémon of **similar base stat total**. The mode exi
 
 ### 20.2 — Perfect IVs *(small)*
 
-Two options, the first on by default:
+**Decided: all 31s by default.**
 
 - **All player-caught Pokémon have 31 across the board.** Applies to catches, gifts,
   starters and hatched eggs; trainer Pokémon are untouched
@@ -826,6 +826,8 @@ importance rather than one blanket setting.
 | Rivals, admins, ace trainers | above + `HP_AWARE`, `SMART_MON_CHOICES`, `TRY_TO_2HKO` |
 | Bosses (`Boss: Yes`) | above + `SMART_SWITCHING`, `ACE_POKEMON`, `WEIGH_ABILITY_PREDICTION`, and `OMNISCIENT` for the Champion only |
 
+**Decided: tiered by importance**, as above.
+
 Applied by a script over `trainers.party`, the same way Phase 7c scaled the levels, so it
 is reproducible and reviewable as a diff. `RZ_TRAINER_AI_TIER` gates it.
 
@@ -847,7 +849,7 @@ area. That is the stricter and more conventional reading.
 Switching means re-indexing `SaveBlock1.caughtInArea` from header id to `MAPSEC`, which is
 a data change but not a layout change — the bitfield stays the same 50 bytes.
 
-**This one needs a decision before implementing.**
+**Decided: region map section.** A whole cave is one area.
 
 ## 8. Credits to carry
 
