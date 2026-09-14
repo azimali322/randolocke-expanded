@@ -130,6 +130,13 @@
 // a second trip. Capped at 255, which is the field's limit.
 #define RANDOLOCKE_BERRY_YIELD_MULTIPLIER   4
 
+// --- Friendship heart ---------------------------------------------------------
+
+// If TRUE, the summary's info page shows a heart under the Pokemon's picture that fills
+// from the bottom as friendship rises, and turns gold at 250 -- the game's own definition
+// of maximum friendship. Graphic ported from pokeemerald_rando_enh.
+#define RANDOLOCKE_FRIENDSHIP_HEART         TRUE
+
 // --- First-encounter badge ---------------------------------------------------
 
 // If TRUE, a circled 1 is drawn on a wild Pokemon's health box when catching it would be

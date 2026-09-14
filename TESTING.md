@@ -1120,6 +1120,35 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 26 — Friendship heart and a bigger bag
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T26.1 | **The heart appears** | Summary → info page | A heart under the bottom-right of the Pokémon's picture |
+| T26.2 | It starts nearly empty | A freshly caught Pokémon (friendship 70) | Low fill |
+| T26.3 | **It fills as friendship rises** | Walk with it, level it, use vitamins | The heart fills from the bottom in steps at 42 / 85 / 128 / 170 / 212 |
+| T26.4 | **Gold at maximum** | Friendship 250 or more | A gold heart |
+| T26.5 | It tracks the selected Pokémon | Page up and down between party members | The heart changes with each one |
+| T26.6 | Info page only | Switch to skills or moves | No heart |
+| T26.7 | …and comes back | Return to the info page | Heart again, still correct |
+| T26.8 | Eggs have none | View an egg's summary | No heart |
+| T26.9 | It does not collide | Look at the ball icon, status icon and name | All still drawn correctly |
+| T26.10 | Boxed Pokémon | Open a boxed Pokémon's summary | Heart shows normally |
+
+### Bigger bag
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T26.11 | **Items pocket holds 150** | Buy every evolution item and keep collecting | No "the bag is full" until 150 distinct items |
+| T26.12 | Balls hold 40 | Buy Ultra, Fast and Timer Balls plus finds | 40 distinct entries |
+| T26.13 | Berries hold 60 | Harvest randomized berry trees | 60 distinct entries |
+| T26.14 | Key items hold 50 | Collect all four custom key items and the tickets | Fits comfortably |
+| T26.15 | **Freed features are really gone** | Check Mystery Gift on the main menu | Absent — its save data was reclaimed for the bag |
+| T26.16 | The game still saves | Play, save, reset, reload | Loads correctly; bag contents intact |
+| T26.17 | **A pre-0.9.2 save does not load** | Try an older save | Expected — the bag change moved SaveBlock1. Start a new game |
+
+---
+
 ## Phase 25 — First-encounter badge
 
 `RANDOLOCKE_FIRST_ENCOUNTER_BADGE` (TRUE). A circled **1** appears on a wild Pokémon's

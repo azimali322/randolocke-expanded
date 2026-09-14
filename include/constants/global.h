@@ -114,7 +114,7 @@ enum Language
 // ball, field items are randomized and TMs are permanent, so the vanilla pockets fill up
 // and then quietly stop accepting pickups. WARNING: these sizes are part of SaveBlock1,
 // so changing them changes the save layout.
-#define BAG_ITEMS_COUNT 100
+#define BAG_ITEMS_COUNT 150
 #define BAG_KEYITEMS_COUNT 50
 #define BAG_POKEBALLS_COUNT 40
 #define BAG_TMHM_COUNT 64

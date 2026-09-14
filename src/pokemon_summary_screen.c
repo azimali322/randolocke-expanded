@@ -112,6 +112,9 @@ enum
     SPRITE_ARR_ID_MON,
     SPRITE_ARR_ID_BALL,
     SPRITE_ARR_ID_STATUS,
+    SPRITE_ARR_ID_FRIENDSHIP, // randolocke: the friendship heart. Deliberately before
+                              // SPRITE_ARR_ID_TYPE, which is where HidePageSpecificSprites
+                              // starts sweeping -- this one is managed by hand instead.
     SPRITE_ARR_ID_TYPE, // 2 for mon types, 5 for move types(4 moves and 1 to learn), used interchangeably, because mon types and move types aren't shown on the same screen
     SPRITE_ARR_ID_MOVE_SELECTOR1 = SPRITE_ARR_ID_TYPE + TYPE_ICON_SPRITE_COUNT, // 10 sprites that make up the selector
     SPRITE_ARR_ID_MOVE_SELECTOR2 = SPRITE_ARR_ID_MOVE_SELECTOR1 + MOVE_SELECTOR_SPRITES_COUNT,
@@ -312,6 +315,9 @@ static void StopPokemonAnimations(void);
 static void CreateMonMarkingsSprite(struct Pokemon *);
 static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *);
 static void CreateCaughtBallSprite(struct Pokemon *);
+#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+static void RandolockeSetFriendshipHeart(void);
+#endif
 static void CreateSetStatusSprite(void);
 static void CreateMoveSelectorSprites(u8);
 static void SpriteCB_MoveSelector(struct Sprite *);
@@ -797,6 +803,68 @@ static const u8 sMovesPPLayout[] = _("{PP}{DYNAMIC 0}/{DYNAMIC 1}");
 #define TAG_MOVE_TYPES 30002
 #define TAG_MON_MARKINGS 30003
 #define TAG_CATEGORY_ICONS 30004
+
+#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+// Seven 8x8 frames: an outline filling from the bottom up, and a gold heart at the top of
+// the range. Graphic ported from pokeemerald_rando_enh.
+static const u16 sFriendshipHeart_Pal[] = INCBIN_U16("graphics/summary_screen/friendship_heart.gbapal");
+static const u32 sFriendshipHeart_Gfx[] = INCGFX_U32("graphics/summary_screen/friendship_heart.png", ".4bpp.lz");
+
+#define TAG_FRIENDSHIP_HEART    30000
+#define FRIENDSHIP_HEART_FRAMES 7
+
+// The friendship value each frame takes over at. 250 is the game's own "max friendship"
+// line, so the gold heart means what a player would expect it to mean.
+static const u16 sFriendshipHeartThresholds[FRIENDSHIP_HEART_FRAMES] = { 0, 42, 85, 128, 170, 212, 250 };
+
+static const struct OamData sOamData_FriendshipHeart =
+{
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .shape = SPRITE_SHAPE(8x8),
+    .size = SPRITE_SIZE(8x8),
+    .priority = 0,
+};
+
+static const union AnimCmd sAnim_FriendshipHeart_0[] = { ANIMCMD_FRAME(0, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_1[] = { ANIMCMD_FRAME(1, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_2[] = { ANIMCMD_FRAME(2, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_3[] = { ANIMCMD_FRAME(3, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_4[] = { ANIMCMD_FRAME(4, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_5[] = { ANIMCMD_FRAME(5, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_6[] = { ANIMCMD_FRAME(6, 0), ANIMCMD_END };
+
+static const union AnimCmd *const sAnimTable_FriendshipHeart[] =
+{
+    sAnim_FriendshipHeart_0, sAnim_FriendshipHeart_1, sAnim_FriendshipHeart_2,
+    sAnim_FriendshipHeart_3, sAnim_FriendshipHeart_4, sAnim_FriendshipHeart_5,
+    sAnim_FriendshipHeart_6,
+};
+
+static const struct CompressedSpriteSheet sSpriteSheet_FriendshipHeart =
+{
+    .data = sFriendshipHeart_Gfx,
+    .size = FRIENDSHIP_HEART_FRAMES * 32,
+    .tag = TAG_FRIENDSHIP_HEART,
+};
+
+static const struct SpritePalette sSpritePal_FriendshipHeart =
+{
+    .data = sFriendshipHeart_Pal,
+    .tag = TAG_FRIENDSHIP_HEART,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_FriendshipHeart =
+{
+    .tileTag = TAG_FRIENDSHIP_HEART,
+    .paletteTag = TAG_FRIENDSHIP_HEART,
+    .oam = &sOamData_FriendshipHeart,
+    .anims = sAnimTable_FriendshipHeart,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+#endif
 
 static const struct OamData sOamData_CategoryIcons =
 {
@@ -1393,6 +1461,9 @@ static bool8 LoadGraphics(void)
         break;
     case 19:
         CreateCaughtBallSprite(&sMonSummaryScreen->currentMon);
+        #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+            RandolockeSetFriendshipHeart();
+        #endif
         gMain.state++;
         break;
     case 20:
@@ -2189,6 +2260,9 @@ static void Task_ChangeSummaryMon(u8 taskId)
         break;
     case 6:
         CreateCaughtBallSprite(&sMonSummaryScreen->currentMon);
+        #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+            RandolockeSetFriendshipHeart();
+        #endif
         break;
     case 7:
         if (sMonSummaryScreen->summary.ailment != AILMENT_NONE)
@@ -4803,6 +4877,44 @@ static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *mon)
     FreeSpriteTilesByTag(TAG_MON_MARKINGS);
     CreateMonMarkingsSprite(mon);
 }
+
+#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+// Draws the friendship heart under the bottom-right of the Pokemon's picture. Fills from
+// the bottom as friendship climbs, and turns gold at the top of the range.
+//
+// Kept outside HidePageSpecificSprites' range and shown only on the info page, which is
+// the page that describes the Pokemon rather than its numbers.
+static void RandolockeSetFriendshipHeart(void)
+{
+    u8 *spriteId = &sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_FRIENDSHIP];
+    u32 friendship = GetMonData(&sMonSummaryScreen->currentMon, MON_DATA_FRIENDSHIP);
+    u32 frame = 0;
+
+    if (sMonSummaryScreen->summary.isEgg)
+    {
+        if (*spriteId != SPRITE_NONE)
+            SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, TRUE);
+        return;
+    }
+
+    while (frame + 1 < FRIENDSHIP_HEART_FRAMES
+        && friendship >= sFriendshipHeartThresholds[frame + 1])
+        frame++;
+
+    if (*spriteId == SPRITE_NONE)
+    {
+        LoadCompressedSpriteSheet(&sSpriteSheet_FriendshipHeart);
+        LoadSpritePalette(&sSpritePal_FriendshipHeart);
+        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 76, 64, 0);
+        if (*spriteId == SPRITE_NONE)
+            return;
+    }
+
+    StartSpriteAnim(&gSprites[*spriteId], frame);
+    SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP,
+                          sMonSummaryScreen->currPageIndex != PSS_PAGE_INFO);
+}
+#endif
 
 static void CreateCaughtBallSprite(struct Pokemon *mon)
 {
