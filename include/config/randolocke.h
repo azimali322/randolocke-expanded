@@ -283,14 +283,22 @@
 // Set TRUE to let them be randomized like anything else.
 #define RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS FALSE
 
-// SELECT on the summary's Pokemon Info page re-rolls that Pokemon's hidden nature -- the
-// one CalculateMonStats reads, so the one that actually moves its numbers -- along with
-// its ability. Both are shown on that page: the ability above, and the Trainer Memo
-// underneath reading "Naive (Modest) nature,". Rolling them together is deliberate, since
-// which ability is worth having usually depends on which stats the nature favours. The
-// debug menu's Roll Hidden Nature still works; this puts it where both are displayed.
-// Party Pokemon only, and never an egg. Re-rolling is unlimited and free, which is a
-// deliberate randomizer-run convenience rather than an oversight.
+// On the summary's Pokemon Info page, where both are displayed:
+//   SELECT re-rolls the hidden nature -- the one CalculateMonStats reads, so the one that
+//          actually moves the numbers. The Trainer Memo shows it as "Naive (Modest)".
+//   START  re-rolls the ability, shown two lines above.
+// Separate buttons so a spread can be aimed at: fix the nature you want, then work on the
+// ability, without one undoing the other. The debug menu's Roll Hidden Nature still works.
+// Party Pokemon only, never an egg, never a Frontier rental.
 #define RANDOLOCKE_SUMMARY_NATURE_ROLL      TRUE
+#define RANDOLOCKE_SUMMARY_ABILITY_ROLL     TRUE
+
+// What one roll costs. Free unlimited re-rolls meant natures and abilities stopped being
+// constraints at all; a price keeps aiming for a spread possible without making it
+// thoughtless. Set to 0 to charge nothing.
+//
+// Worth knowing: the Oldale NPC hands over P999,999, so this bites much less than the
+// number suggests -- it is a brake, not a wall.
+#define RANDOLOCKE_ROLL_COST                5000
 
 #endif // GUARD_CONFIG_RANDOLOCKE_H

@@ -38,6 +38,7 @@
 #include "region_map.h"
 #include "scanline_effect.h"
 #include "sound.h"
+#include "money.h"
 #include "sprite.h"
 #include "string_util.h"
 #include "strings.h"
@@ -356,16 +357,21 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+static bool32 RandolockeRollAvailable(void);
+#endif
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-static bool32 RandolockeNatureRollAvailable(void);
-static void RandolockeRollNature(void);
+static void RandolockeTryRollNature(void);
+#endif
+#if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+static void RandolockeTryRollAbility(void);
 #endif
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
 static bool32 RandolockeStatsOverlayAvailable(void);
 static void RandolockeToggleStatsOverlay(void);
 static void RandolockeHideStatsOverlay(void);
 #endif
-#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
 // The Pokemon being edited, which is the real party entry rather than the screen's own
 // working copy in currentMon. Both editors write here and then refresh the copy.
 static struct Pokemon *RandolockeEditTarget(void);
@@ -1883,7 +1889,7 @@ static void HandleMoveRelearnerInput(u8 taskId)
     }
 }
 
-#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
 static struct Pokemon *RandolockeEditTarget(void)
 {
     return &sMonSummaryScreen->monList.mons[sMonSummaryScreen->curMonIndex];
@@ -1964,9 +1970,16 @@ static void Task_HandleInput(u8 taskId)
             BeginCloseSummaryScreen(taskId);
         }
         #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-        else if (JOY_NEW(SELECT_BUTTON) && RandolockeNatureRollAvailable())
+        else if (JOY_NEW(SELECT_BUTTON) && RandolockeRollAvailable())
         {
-            RandolockeRollNature();
+            RandolockeTryRollNature();
+        }
+        #endif
+        #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+        // START is free here. The move relearner takes it, but only on the move pages.
+        else if (JOY_NEW(START_BUTTON) && RandolockeRollAvailable())
+        {
+            RandolockeTryRollAbility();
         }
         #endif
         else if (DEBUG_POKEMON_SPRITE_VISUALIZER && JOY_NEW(SELECT_BUTTON) && !gMain.inBattle)
@@ -3908,13 +3921,13 @@ static void PrintMonTrainerMemo(void)
     PrintTextOnWindow(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), gStringVar4, 0, 1, 0, 0);
 }
 
-#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-// randolocke: SELECT on the Pokemon Info page re-rolls the hidden nature. That is the
-// nature CalculateMonStats reads, so it is the one that moves the numbers, and the
-// Trainer Memo two lines down is where the result is already displayed -- "Naive
-// (Modest) nature,". Party Pokemon only: RandolockeEditTarget indexes monList.mons,
-// which is not what a boxed Pokemon is stored in.
-static bool32 RandolockeNatureRollAvailable(void)
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+// randolocke: the Pokemon Info page is where the nature and the ability are both
+// displayed, so it is where they can be re-rolled -- SELECT for the nature, START for the
+// ability. Separate buttons on purpose: aiming for a spread means keeping the half you
+// like while working on the other. Party Pokemon only, because RandolockeEditTarget
+// indexes monList.mons, which is not where a boxed Pokemon lives.
+static bool32 RandolockeRollAvailable(void)
 {
     return sMonSummaryScreen != NULL
         && !sMonSummaryScreen->isBoxMon
@@ -3926,11 +3939,66 @@ static bool32 RandolockeNatureRollAvailable(void)
         && InSlateportBattleTent() != TRUE;
 }
 
+// Every roll is paid for. Free and unlimited, natures and abilities stopped being
+// constraints at all -- a price keeps aiming for a spread possible without making it
+// thoughtless. Returns FALSE when the player cannot afford it, and charges nothing.
+static bool32 RandolockePayForRoll(void)
+{
+    if (RANDOLOCKE_ROLL_COST == 0)
+        return TRUE;
+
+    if (!IsEnoughMoney(&gSaveBlock1Ptr->money, RANDOLOCKE_ROLL_COST))
+    {
+        PlaySE(SE_FAILURE);
+        return FALSE;
+    }
+
+    RemoveMoney(&gSaveBlock1Ptr->money, RANDOLOCKE_ROLL_COST);
+    return TRUE;
+}
+#endif
+
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+static void RandolockeTryRollNature(void)
+{
+    struct Pokemon *mon;
+    u32 current, nature;
+
+    if (!RandolockePayForRoll())
+        return;
+
+    mon = RandolockeEditTarget();
+    current = GetMonData(mon, MON_DATA_HIDDEN_NATURE);
+
+    // Always lands somewhere else, so a press is never a no-op the player cannot tell
+    // apart from a missed input.
+    do {
+        nature = Random() % NUM_NATURES;
+    } while (nature == current);
+
+    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+    CalculateMonStats(mon);
+    CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
+    sMonSummaryScreen->summary.mintNature = nature;
+
+    // AddWindowFromTemplateList hands back the window it already created and only clears
+    // it on the first call, so the old text has to be wiped or the new prints over it.
+    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
+    BufferMonTrainerMemo();
+    PrintMonTrainerMemo();
+    ScheduleBgCopyTilemapToVram(0);
+    PlaySE(SE_SELECT);
+}
+#endif
+
+#if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
 // Moves to a different ability slot, skipping empty slots and any slot that would hand
 // back the ability the Pokemon already has -- plenty of species repeat one across two
-// slots. Hidden abilities are in the running. A species with only one ability keeps it.
-static void RandolockeRollAbility(struct Pokemon *mon)
+// slots. Hidden abilities are in the running. A species with only one ability keeps it,
+// and is not charged for the attempt.
+static void RandolockeTryRollAbility(void)
 {
+    struct Pokemon *mon = RandolockeEditTarget();
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
     u32 current = GetMonData(mon, MON_DATA_ABILITY_NUM);
     enum Ability currentAbility = GetAbilityBySpecies(species, current, FALSE);
@@ -3946,42 +4014,23 @@ static void RandolockeRollAbility(struct Pokemon *mon)
     }
 
     if (count == 0)
+    {
+        PlaySE(SE_FAILURE);
+        return;
+    }
+
+    if (!RandolockePayForRoll())
         return;
 
     chosen = candidates[Random() % count];
     SetMonData(mon, MON_DATA_ABILITY_NUM, &chosen);
-    sMonSummaryScreen->summary.abilityNum = chosen;
-}
-
-static void RandolockeRollNature(void)
-{
-    struct Pokemon *mon = RandolockeEditTarget();
-    u32 current = GetMonData(mon, MON_DATA_HIDDEN_NATURE);
-    u32 nature;
-
-    // Always lands somewhere else, so a press is never a no-op the player cannot tell
-    // apart from a missed input.
-    do {
-        nature = Random() % NUM_NATURES;
-    } while (nature == current);
-
-    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
-    RandolockeRollAbility(mon);
-    CalculateMonStats(mon);
     CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
-    sMonSummaryScreen->summary.mintNature = nature;
+    sMonSummaryScreen->summary.abilityNum = chosen;
 
-    // AddWindowFromTemplateList hands back the window it already created and only clears
-    // it on the first call, so the old text has to be wiped or the new prints over it.
     // The ability's name and its description share one window.
     FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
     PrintMonAbilityName();
     PrintMonAbilityDescription();
-
-    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
-    BufferMonTrainerMemo();
-    PrintMonTrainerMemo();
-
     ScheduleBgCopyTilemapToVram(0);
     PlaySE(SE_SELECT);
 }
