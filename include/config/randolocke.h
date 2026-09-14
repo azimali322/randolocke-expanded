@@ -87,6 +87,13 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// --- Key item delivery -------------------------------------------------------
+
+// The four key items are fully implemented but nothing in the game ever handed them out.
+// A new game now starts with all four in the bag. For a save that already exists, the
+// boy by the Littleroot pond gives you whichever ones you are missing.
+#define RANDOLOCKE_START_WITH_KEY_ITEMS     TRUE
+
 // --- Terrain -----------------------------------------------------------------
 
 // Randolocke moves the Old Rod fisherman from Dewford to Route 103, so fishing is

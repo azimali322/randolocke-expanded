@@ -245,9 +245,46 @@ LittlerootTown_EventScript_FatMan::
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
+@ randolocke: a new game starts with the four key items, but a save made before they were
+@ handed out has none, and there was no other way to get them. He tops you up.
 LittlerootTown_EventScript_Boy::
-	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
+	lock
+	faceplayer
+	setvar VAR_0x8009, 0
+	setvar VAR_0x8008, ITEM_REPELLANT
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_PORTA_HEAL
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_ENDLESS_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_CAP_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	goto_if_eq VAR_0x8009, 0, LittlerootTown_EventScript_BoyNothingToGive
+	msgbox LittlerootTown_Text_BoyKeepThemSafe, MSGBOX_DEFAULT
+	release
 	end
+
+LittlerootTown_EventScript_GiveKeyItemIfMissing::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	setvar VAR_0x8009, 1
+	return
+
+LittlerootTown_EventScript_KeyItemAlreadyHeld::
+	return
+
+LittlerootTown_EventScript_BoyNothingToGive::
+	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_DEFAULT
+	release
+	end
+
+LittlerootTown_Text_BoyKeepThemSafe:
+	.string "Dad said to hand these out to anyone\n"
+	.string "mad enough to try a run like yours.\p"
+	.string "The candies don't run out. Neither\n"
+	.string "does the repel. Don't ask me how.$"
 
 LittlerootTown_EventScript_Twin::
 	lock
