@@ -720,6 +720,26 @@ void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx)
     RandomizeFoundItemScript(&gSpecialVar_0x8005);
 }
 
+#if RANDOLOCKE_RANDOMIZE_NPC_GIFTS == TRUE
+// randolocke: the same treatment for items an NPC hands over, so the man in Rustboro is
+// not always good for a Quick Claw. Std_ObtainItem calls this before `additem` and before
+// the name is buffered, so the bag and the "obtained the ..." line agree.
+//
+// ShouldRandomizeItem already refuses HMs and the whole key item pocket, which is every
+// item the story gates progress behind -- the bikes, the rods, the Devon Goods, the
+// Letter, the Scope, the Go-Goggles, the tickets. Poke Balls are held back separately;
+// see RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS.
+void GiftItemRandomize_NativeCall(struct ScriptContext *ctx)
+{
+    #if RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS == FALSE
+        if (GetItemPocket(gSpecialVar_0x8000) == POCKET_POKE_BALLS)
+            return;
+    #endif
+
+    RandomizeFoundItemScript(&gSpecialVar_0x8000);
+}
+#endif
+
 // Both legendary and mythical Pokémon are included in this category.
 static inline bool32 IsRandomizerLegendary(enum Species species)
 {

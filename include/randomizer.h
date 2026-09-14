@@ -114,6 +114,9 @@ static inline enum Type RandomizeMonType(enum Species species, u8 typeNum)
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId);
 void FindItemRandomize_NativeCall(struct ScriptContext *ctx);
 void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx);
+// Items an NPC hands over, via Std_ObtainItem. Rewrites VAR_0x8000 before the item is
+// added and before its name is buffered, so the message names what was really received.
+void GiftItemRandomize_NativeCall(struct ScriptContext *ctx);
 
 enum Species RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);
 enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);

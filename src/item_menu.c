@@ -1084,7 +1084,14 @@ static void PrintItemDescription(int itemIndex)
     {
         enum Item itemId = GetBagItemId(gBagPosition.pocket, itemIndex);
 
-        str = GetItemDescription(itemId);
+        #if RANDOLOCKE_TM_MOVE_DESCRIPTIONS == TRUE
+            // A TM describes the move it teaches, not the move it taught in the base game.
+            static u8 sDescriptionBuffer[ITEM_DESCRIPTION_BUFFER];
+            str = GetItemDescriptionForWindow(itemId, sDescriptionBuffer,
+                                              TILE_WIDTH * sDefaultBagWindows[WIN_DESCRIPTION].width - 3);
+        #else
+            str = GetItemDescription(itemId);
+        #endif
         #if RANDOLOCKE_TM_HOVER_INFO == TRUE
             // Show the hovered TM's move at a glance, rather than only once it is
             // selected. Randomized TMs make this close to essential.

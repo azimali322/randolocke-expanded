@@ -621,7 +621,16 @@ static void BuyMenuPrintItemDescriptionAndShowItemIcon(s32 item, bool8 onInit, s
     if (item != LIST_CANCEL)
     {
         if (sMartInfo.martType == MART_TYPE_NORMAL)
-            description = GetItemDescription(item);
+        {
+            #if RANDOLOCKE_TM_MOVE_DESCRIPTIONS == TRUE
+                // Marts sell TMs, so the same substitution applies here.
+                static u8 sDescriptionBuffer[ITEM_DESCRIPTION_BUFFER];
+                description = GetItemDescriptionForWindow(item, sDescriptionBuffer,
+                                                          TILE_WIDTH * sShopBuyMenuWindowTemplates[WIN_ITEM_DESCRIPTION].width - 3);
+            #else
+                description = GetItemDescription(item);
+            #endif
+        }
         else
             description = gDecorations[item].description;
     }

@@ -1120,6 +1120,59 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 
 ---
 
+## Phase 28 — Playtest round 5
+
+### NPC gift items
+
+Items an NPC hands over now go through the same randomizer as item balls, via a hook at
+the top of `Std_ObtainItem` — 158 `giveitem` calls, every gift in the game. HMs and the
+whole key items pocket are refused by `ShouldRandomizeItem`, and Poké Balls are held back
+separately. Follows the same toggle as field items (`RANDOMIZE_FIELD_ITEMS`).
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.1 | **Ordinary gifts are randomized** | Rustboro — the man who gives a Quick Claw | Something other than a Quick Claw |
+| T28.2 | The message agrees with the bag | Read the "obtained the …" line, then open the bag | Same item in both. The message never names the original |
+| T28.3 | The fanfare and pocket agree | Receive a gift that rolls into a TM | TM fanfare, "put away in the TM CASE" |
+| T28.4 | It is stable | Save before the gift, take it, reset, take it again | The same replacement both times |
+| T28.5 | **The five Poké Balls survive** | Birch's lab — the starting Poké Balls | Five Poké Balls. Not randomized |
+| T28.6 | **HMs survive** | Cut, Flash, Rock Smash, Strength, Surf, Waterfall, Dive | Each is the HM it should be |
+| T28.7 | **Key items survive** | Letter, Devon Goods, Devon Scope, Go-Goggles, both bikes, all three rods, Wailmer Pail, Soot Sack, Contest Pass, Meteorite, Scanner, the tickets | Each is itself. The story never blocks |
+| T28.8 | Gym TM rewards are randomized | Beat a gym, take the leader's TM | Some other item or TM |
+| T28.9 | Berry gifts are randomized | Route 123 Berry Master | Random items rather than the named berries |
+| T28.10 | Purchases are untouched | Game Corner prizes, Lilycove rooftop, Frontier exchange | Exactly what was chosen. These use `additem`, not the gift path |
+| T28.11 | Bag-full still handled | Fill the items pocket, then take a gift | "no room" message, gift not lost |
+
+### TM descriptions name the move they teach
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.12 | **The bag shows the move's description** | Bag → TM/HM pocket → hover a randomized TM | The description of the move it teaches, matching the hover panel's type and PP |
+| T28.13 | It is re-wrapped, not clipped | Hover a TM whose move has a long description | Three lines at most, nothing running off the right edge |
+| T28.14 | The mart agrees | Mauville or Lilycove mart → a TM | Same description as the bag |
+| T28.15 | HMs read correctly | Bag → an HM | The HM's move description |
+| T28.16 | Non-TMs are unchanged | Hover a Potion, a berry, a key item | Their own descriptions, wrapped as before |
+
+### Randomized trainers get their own moves
+
+`CustomTrainerPartyAssignMoves` kept the hand-written moveset for a Pokémon whose species
+had been substituted, so Roxanne's whole team carried Tackle / Defense Curl / Rock Throw /
+Rock Tomb regardless of what they became — no same-type attacks and three identical
+Pokémon. It now falls back to the level-up learnset, which is itself randomized.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.17 | **Roxanne's team has its own moves** | Fight Roxanne | Three different move lists, suited to the three species. No shared Rock Tomb |
+| T28.18 | Same-type moves appear | Watch a gym leader's Pokémon attack | Moves matching its own types, since the learnset gives it seven |
+| T28.19 | Ordinary trainers too | Any route trainer with a written moveset | Moves that fit the species it became |
+| T28.20 | Movesets are stable | Save before a battle, fight, reset, fight again | The same moves |
+| T28.21 | PP is right | Check a trainer Pokémon's PP in battle | Full PP for the move it actually has |
+| T28.22 | **Bosses are harder now** | Fight a gym leader | Four of the species' strongest available moves plus boss AI. Expected — note if it is too much |
+| T28.23 | Low-level trainers still work | The first Route 102 trainer | Has at least one move; nothing blank or Struggle-only |
+| T28.24 | Wally's Ralts | The Petalburg tutorial catch | Battle plays out normally |
+
+---
+
 ## Phase 27 — Playtest round 4
 
 ### Fast text by default
@@ -1504,7 +1557,10 @@ or Flips itself (*Apply Patch*).
 
 - **Save states** (Shift+F1–F9 save, F1–F9 load) — invaluable for testing randomization
   stability: state-save before an event, reload, and confirm you get the *same* result.
-- **Log view** (View → Log, enable "Game Error"/"Debug") shows `MgbaPrintf` output; the
-  randomizer prints `GetSpeciesGroup:` lines in debug builds.
+- **Log view** (View → Log) shows `MgbaPrintf` output. The randomizer's
+  `GetSpeciesGroup:` lines go out at **Info**, and only in the debug ROM
+  (`#ifndef NDEBUG`), so the Debug channel is always empty. Info is also where mGBA puts
+  its own `GBA DMA:` hardware trace, which will drown anything the game prints — turn
+  that category off in mGBA before looking.
 - **Reset vs. reload** — some randomizer bugs only appear after a true power cycle. Use
   *File → Reset*, not just a save-state reload, when testing persistence.

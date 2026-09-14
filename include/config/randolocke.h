@@ -265,4 +265,22 @@
 // screen is reached from a level-up, with no way back to the skills page.
 #define RANDOLOCKE_MOVE_SCREEN_STATS        TRUE
 
+// A TM/HM's bag description is the description of the move it actually teaches. A
+// randomized TM keeps its own printed description otherwise, which describes whatever
+// move it taught in the base game -- the stats panel and the teaching flow already show
+// the real move, so only the description disagreed. Move descriptions are written for the
+// summary screen's wider window and get re-wrapped to fit.
+#define RANDOLOCKE_TM_MOVE_DESCRIPTIONS     TRUE
+
+// Items handed over by NPCs are randomized the same way item balls are -- the man in
+// Rustboro hands over something other than a Quick Claw. HMs and key items are never
+// touched (ShouldRandomizeItem rejects them), so nothing the story needs can be lost.
+#define RANDOLOCKE_RANDOMIZE_NPC_GIFTS      TRUE
+
+// Poke Balls given by NPCs are left alone even so. The five from the rival on Route 103
+// are what start the run, and nuzlocke rules make balls the scarcest resource in the
+// game; turning them into a random item would be the single most punishing roll in it.
+// Set TRUE to let them be randomized like anything else.
+#define RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS FALSE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

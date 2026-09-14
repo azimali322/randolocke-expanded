@@ -2,6 +2,11 @@
 .set AMOUNT, VAR_0x8001
 
 Std_ObtainItem::
+	@ randolocke: rewrite ITEMID before anything reads it, so the bag, the fanfare, the
+	@ pocket name and the "obtained the ..." message all name the item really received.
+	#if RANDOMIZER_AVAILABLE == TRUE
+	callnative GiftItemRandomize_NativeCall
+	#endif
 	copyvar VAR_0x8006, ITEMID
 	additem ITEMID, AMOUNT
 	copyvar VAR_0x8007, VAR_RESULT

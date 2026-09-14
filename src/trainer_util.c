@@ -60,7 +60,7 @@ static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
 }
 #endif
 
-static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
+static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry, bool32 speciesWasRandomized)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
@@ -70,6 +70,20 @@ static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct Trai
         if (partyEntry->moves[j] != MOVE_NONE)
             noMoveSet = FALSE;
     }
+    // randolocke: a hand-written moveset belongs to the species it was written for. Once
+    // the species has been substituted it is worse than useless -- Roxanne's three
+    // Pokemon all carried Tackle / Defense Curl / Rock Throw / Rock Tomb whatever they
+    // turned into, so none of them had a single same-type move and all three fought
+    // identically. Fall back to the level-up moveset, which GetSpeciesLevelUpLearnset
+    // routes through the randomizer, so the Pokemon gets moves that suit the species it
+    // actually is: same-type attacks included, strongest first.
+    #if RZ_TRAINER_REGENERATE_MOVES == TRUE && RANDOMIZER_AVAILABLE == TRUE
+    // The same applies once learnsets are randomized even if the species survived: this
+    // run's Geodude does not learn Rock Tomb either way, so a hand-written moveset is a
+    // list of moves the Pokemon in front of you cannot actually have.
+    if (speciesWasRandomized || RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
+        noMoveSet = TRUE;
+    #endif
     if (noMoveSet)
     {
         GiveMonInitialMoveset(mon);
@@ -222,7 +236,7 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
     }
 
     SetMonData(mon, MON_DATA_IVS, &trainerMon->iv);
-    CustomTrainerPartyAssignMoves(mon, trainerMon);
+    CustomTrainerPartyAssignMoves(mon, trainerMon, species != trainerMon->species);
     SetMonData(mon, MON_DATA_HELD_ITEM, &trainerMon->heldItem);
 
     bool32 abilitySet = FALSE;

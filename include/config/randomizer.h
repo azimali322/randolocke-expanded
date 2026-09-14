@@ -222,6 +222,12 @@
 // roll, which is the older, wilder behaviour.
 #define RZ_LEARNSET_SORT_BY_POWER   TRUE
 
+// A trainer Pokemon whose species was substituted gets a fresh moveset from its level-up
+// learnset instead of the moves written for the species it replaced. Without this, a
+// randomized gym leader's whole team carries the original team's moves -- no same-type
+// attacks, and every Pokemon on the team fighting the same way.
+#define RZ_TRAINER_REGENERATE_MOVES TRUE
+
 #define RZ_STAB_MATCH_CATEGORY      TRUE
 
 // How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a
