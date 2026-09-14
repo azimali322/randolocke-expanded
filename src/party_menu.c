@@ -156,6 +156,10 @@ enum {
 #define PARTY_PAL_NO_MON       (1 << 6)
 #define PARTY_PAL_UNUSED       (1 << 7)
 
+// The selection window is laid out as 19 - numActions*2 rows from the top of the screen,
+// so ten entries would place it off the top. Nine is the ceiling.
+#define PARTY_MENU_MAX_ACTIONS 9
+
 #define MENU_DIR_DOWN     1
 #define MENU_DIR_UP      -1
 #define MENU_DIR_RIGHT    2
@@ -186,7 +190,9 @@ struct PartyMenuInternal
     u32 spriteIdCancelPokeball:7;
     u32 messageId:14;
     u8 windowId[3];
-    u8 actions[8];
+    // Has to hold PARTY_MENU_MAX_ACTIONS: the stock eight could already be overrun by a
+    // Pokemon that knew four field moves once the Cap Candy entry joined them.
+    u8 actions[PARTY_MENU_MAX_ACTIONS];
     u8 numActions;
     // In vanilla Emerald, only the first 0xB0 hwords (0x160 bytes) are actually used.
     // However, a full 0x100 hwords (0x200 bytes) are allocated.
@@ -2952,6 +2958,30 @@ static void SetPartyMonSelectionActions(struct Pokemon *mons, u8 slotId, u8 acti
     }
 }
 
+// AppendToList is shared with the start menu and cannot bounds-check for us, so
+// everything that builds the field selection list goes through here instead. Three slots
+// are held back for the Switch / Item / Cancel entries appended after the field moves.
+static void AppendFieldSelectionAction(u8 action, u32 reserve)
+{
+    if (sPartyMenuInternal->numActions + reserve >= PARTY_MENU_MAX_ACTIONS)
+        return;
+    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, action);
+}
+
+#if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+// randolocke: offers a badge-gated field move the Pokemon does not know. Every other HM
+// is reached by walking into the thing it works on, which ScrCmd_checkfieldmove handles;
+// Fly and Flash have no such trigger, so without this they would still need teaching.
+static void AppendUnknownFieldMove(struct Pokemon *mons, u8 slotId, enum FieldMove fieldMove)
+{
+    if (!IsFieldMoveUnlocked(fieldMove) || !FieldMove_IsVisible(fieldMove))
+        return;
+    if (MonKnowsMove(&mons[slotId], FieldMove_GetMoveId(fieldMove)))
+        return;
+    AppendFieldSelectionAction(fieldMove + MENU_FIELD_MOVES, 3);
+}
+#endif
+
 static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 {
     u8 i, j;
@@ -2964,7 +2994,7 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     if (B_EXP_CAP_TYPE != EXP_CAP_NONE
      && CheckBagHasItem(ITEM_CAP_CANDY, 1)
      && GetMonData(&mons[slotId], MON_DATA_LEVEL) < GetCurrentLevelCap())
-        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RANDOLOCKE_CAP_CANDY);
+        AppendFieldSelectionAction(MENU_RANDOLOCKE_CAP_CANDY, 3);
 
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -2976,11 +3006,18 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 
             if (GetMonData(&mons[slotId], i + MON_DATA_MOVE1) == FieldMove_GetMoveId(j))
             {
-                AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + MENU_FIELD_MOVES);
+                AppendFieldSelectionAction(j + MENU_FIELD_MOVES, 3);
                 break;
             }
         }
     }
+
+    #if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+    // Flash first: Fly can also be reached from the region map, so if only one of the two
+    // fits, Flash is the one with no other way in.
+    AppendUnknownFieldMove(mons, slotId, FIELD_MOVE_FLASH);
+    AppendUnknownFieldMove(mons, slotId, FIELD_MOVE_FLY);
+    #endif
 
     if (!InBattlePike())
     {

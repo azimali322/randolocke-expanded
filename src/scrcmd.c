@@ -16,6 +16,7 @@
 #include "field_door.h"
 #include "field_effect.h"
 #include "field_move.h"
+#include "config/randolocke.h"
 #include "event_object_lock.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
@@ -2321,6 +2322,32 @@ bool8 ScrCmd_checkfieldmove(struct ScriptContext *ctx)
             break;
         }
     }
+
+    #if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+    // randolocke: no HM slave required. When nobody knows the move, the lead Pokemon uses
+    // it anyway -- the scripts only want a party index to name and to animate. Restricted
+    // to the badge-gated moves, which is exactly the HM set: the always-unlocked ones
+    // (Teleport, Dig, Sweet Scent, Soft-Boiled, Secret Power) are real moves a Pokemon has
+    // to have earned, and Secret Power in particular reaches here from the base scripts.
+    // The badge itself is still required.
+    if (gSpecialVar_Result == PARTY_SIZE
+     && gFieldMoveInfo[fieldMove].unlockType == BADGE_UNLOCK
+     && IsFieldMoveUnlocked(fieldMove))
+    {
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            enum Species species = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES);
+
+            if (!species)
+                break;
+            if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_IS_EGG))
+                continue;
+            gSpecialVar_Result = i;
+            gSpecialVar_0x8004 = species;
+            break;
+        }
+    }
+    #endif
 
     return FALSE;
 }

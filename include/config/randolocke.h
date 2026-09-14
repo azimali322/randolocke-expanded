@@ -16,9 +16,18 @@
 
 // --- Field moves ------------------------------------------------------------
 
-// If TRUE, HM/field moves can be used out of battle without a party Pokemon that
-// knows the move. Randolocke pairs this with P_CAN_FORGET_HIDDEN_MOVE so HM slaves
-// are unnecessary. Badge requirements still apply.
+// If TRUE, the badge-gated field moves -- Cut, Flash, Rock Smash, Strength, Surf, Fly,
+// Dive, Waterfall -- work without any party Pokemon knowing them, so no HM slave is
+// needed and no move slot is spent on an HM. The badge is still required for each.
+//
+// Most of them are reached by walking into the thing they work on, which goes through
+// ScrCmd_checkfieldmove; when nobody knows the move it hands the script the lead Pokemon
+// to name and animate. Fly and Flash have no such trigger, so they are offered in the
+// party menu's field move list instead, whether or not the Pokemon knows them.
+//
+// The always-unlocked field moves are deliberately untouched: Teleport, Dig, Sweet Scent,
+// Soft-Boiled, Milk Drink and Secret Power are ordinary moves a Pokemon has to have
+// earned, not infrastructure the game blocks progress behind.
 #define RANDOLOCKE_FIELD_MOVES_NEED_NO_USER  TRUE
 
 // --- Catching ---------------------------------------------------------------

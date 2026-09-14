@@ -1173,6 +1173,50 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 31 — HMs without HM slaves
+
+Every badge-gated field move now works with no party Pokémon knowing it. The badge is
+still required. The always-unlocked ones — Teleport, Dig, Sweet Scent, Soft-Boiled, Milk
+Drink, Secret Power — are untouched, because those are ordinary moves rather than
+infrastructure.
+
+### The six reached by walking into something
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.1 | **Cut** | A party that knows no field moves at all → face a cuttable tree → A | "Would you like to CUT?" naming the lead Pokémon, and it works |
+| T31.2 | **Rock Smash** | Same party → face a breakable rock | Prompts and breaks it |
+| T31.3 | **Strength** | Same party → a boulder | Prompts and enables pushing |
+| T31.4 | **Surf** | Same party → face surfable water | Prompts and surfs |
+| T31.5 | **Waterfall** | Surfing north at a waterfall | Prompts and climbs |
+| T31.6 | **Dive** | Over deep water | Prompts and dives, and surfacing works |
+| T31.7 | Rock Climb | A rock climb tile, if enabled | Prompts and climbs |
+| T31.8 | **The badge is still required** | Try each before its gym | The "can't use until a new badge" refusal, not a free pass |
+
+### The two with no overworld trigger
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.9 | **Flash appears without being known** | In a dark cave, after Badge 2 → party menu → any Pokémon | FLASH in its option list |
+| T31.10 | **Fly appears without being known** | After Badge 6 → party menu → any Pokémon | FLY in its option list |
+| T31.11 | Neither appears before its badge | Same, before the badge | Absent |
+| T31.12 | No duplicate entry | A Pokémon that really knows Fly | FLY listed once, not twice |
+| T31.13 | Flash wins a tight list | A Pokémon knowing four field moves, Cap Candy in the bag | Nothing is dropped from the menu and it still fits on screen |
+
+### The option list cannot overflow
+
+The list is nine entries at most — the selection window is laid out as `19 - numActions*2`
+rows from the top, so ten would place it off-screen — and the array holding it was eight.
+A Pokémon knowing four field moves with the Cap Candy entry alongside could already run
+past the end before this phase.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.14 | **A full list is intact** | Teach one Pokémon four field moves, hold the Cap Candy, open its menu | Every entry drawn, window fully on screen, no corruption |
+| T31.15 | Each entry still works | Pick each one in turn | All behave normally |
+
+---
+
 ## Phase 30 — A readable heart, and rolling natures where you can see them
 
 ### The heart is 16x16 now
