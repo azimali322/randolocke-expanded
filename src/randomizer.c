@@ -221,12 +221,6 @@ static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tie
     return 0;   // caller falls back
 }
 
-static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
-                          bool32 (*accept)(u16, u32), u32 arg)
-{
-    return RzWeightedPickMode(state, tiers, tierCount, accept, arg, RZ_TIER_WEIGHTED);
-}
-
 #define RZ_TIER(arr, w) { (arr), ARRAY_COUNT(arr), (w) }
 
 static const struct RzTier sAbilityTiers[] =

@@ -53,7 +53,11 @@ jobs:
         run: make -j$(nproc) -O all
 
   build-firered:
-    if: github.actor != 'allcontributors[bot]'
+    # randolocke: this fork targets Emerald only. The randomizer it is built on has
+    # referenced Emerald-only flag constants (FLAG_UNUSED_0x0xx, which flags_frlg.h
+    # does not define) since before this project started, so the FireRed and LeafGreen
+    # targets have never built here. Disabled rather than left permanently red.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -88,7 +92,11 @@ jobs:
         run: make firered -j$(nproc) -O
 
   build-leafgreen:
-    if: github.actor != 'allcontributors[bot]'
+    # randolocke: this fork targets Emerald only. The randomizer it is built on has
+    # referenced Emerald-only flag constants (FLAG_UNUSED_0x0xx, which flags_frlg.h
+    # does not define) since before this project started, so the FireRed and LeafGreen
+    # targets have never built here. Disabled rather than left permanently red.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
