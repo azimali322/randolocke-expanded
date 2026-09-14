@@ -64,7 +64,7 @@ static void WarpToTruck(void);
 static void ResetMiniGamesRecords(void);
 static void ResetItemFlags(void);
 static void ResetDexNav(void);
-static void RandolockeSetDefaultRandomizerOptions(void);
+static void RandolockeApplyNewGameDefaults(void);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
@@ -238,14 +238,18 @@ void NewGameInitData(void)
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
-    RandolockeSetDefaultRandomizerOptions();
+    RandolockeApplyNewGameDefaults();
 }
 
-// A fresh Randolocke save is randomized from the start. Runs after InitEventData(), which
-// clears every flag and var, so this is the last word on them. Existing saves are never
-// touched - loading one keeps whatever it was already set to.
-static void RandolockeSetDefaultRandomizerOptions(void)
+// A fresh Randolocke save is randomized from the start, and has the moved-NPC flags
+// already applied. Runs after InitEventData(), which clears every flag and var, so this
+// is the last word on them. Existing saves are never touched - loading one keeps whatever
+// it was already set to.
+static void RandolockeApplyNewGameDefaults(void)
 {
+    // The Old Rod fisherman lives on Route 103 now, not in Dewford.
+    FlagSet(RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN);
+
 #if RANDOMIZER_AVAILABLE == TRUE && RANDOLOCKE_RANDOMIZE_ON_NEW_GAME == TRUE
     // A feature compiled as FORCE_RANDOMIZE_* ignores its flag entirely, so there is no
     // flag to set for it.

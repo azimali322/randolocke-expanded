@@ -209,9 +209,11 @@ Five minor versions, each with a `REFACTORS` section. Detailed in §5.
 - [ ] Press R to throw a ball
 
 ### Map & event changes
-- [ ] Old Rod sailor moved to Route 103
+- [x] Old Rod sailor moved to Route 103 ✅ now at (22, 11); the Dewford object is hidden
+      rather than deleted, so object local IDs stay put
 - [ ] Scorched Slab populated with Pokémon
-- [ ] Water added to Littleroot, grass added to Oldale
+- [x] Water added to Littleroot, grass added to Oldale ✅ with water/fishing and land
+      encounter tables to match
 - [ ] Lilycove Dept. Store evolution-item sellers
 - [ ] Scroll of Darkness / Scroll of Waters from the Mossdeep white rock
 - [ ] Tutor Mansion in Lilycove (may be partly replaced by 1.17 relearner NPCs)
@@ -478,13 +480,17 @@ Poke Mart:
    unevolvable. This needs either the in-game trade NPCs Randolocke added, or a data change
    to give them an item-based evolution.
 
-**Terrain changes need Porymap and are not done:**
+**Terrain changes — done, and Porymap turned out not to be needed:**
 
-- Water added to Littleroot Town, grass added to Oldale Town
-- Old Rod sailor moved to Route 103 (an object move in the map JSON, doable, not yet done)
+- Water added to Littleroot Town (pond at x 10-15, y 14-18), grass added to Oldale Town
+  (two patches), both with matching entries in `src/data/wild_encounters.json`
+- Old Rod sailor moved to Route 103 at (22, 11)
 
-These edit map layouts and object placement, which are binary/editor artefacts rather than
-code. They are the one part of this project that genuinely needs the map editor.
+`map.bin` is a flat array of `metatile | collision << 10 | elevation << 12`, so the edits
+are a few lines of Python. The part that genuinely needed an editor was *seeing* the
+result, and `tools/randolocke/render_map.py` covers that: it composes the tileset's
+metatiles and palettes and writes the layout out as a PNG. The pond's rim metatiles were
+lifted from the enclosed pond on Route 123 rather than guessed.
 
 **v1.1 NPC additions not done:** the Oldale 999-Ultra-Balls and ₽999,999 NPCs (the balls are
 largely covered by the cheap mart), the Slateport legendary-location map seller, and the
@@ -728,7 +734,7 @@ teachables pipeline.
   text and the free tiles were read out of the layout's collision data.
 - ~~**Oldale ₽999,999 NPC**~~ — **done**, one-time.
 - **Oldale 999 Ultra Balls NPC** — not done, and not wanted: the Phase 11 cheap mart covers it.
-- **Terrain**: water in Littleroot, grass in Oldale, the relocated Old Rod sailor. Porymap.
+- ~~**Terrain**~~ — **done.** See the terrain section above; no Porymap was needed.
 
 ### Later — v1.1
 - [ ] TM / tutor / move randomization against the build-time teachables pipeline (§5.1)

@@ -87,6 +87,15 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// --- Terrain -----------------------------------------------------------------
+
+// Randolocke moves the Old Rod fisherman from Dewford to Route 103, so fishing is
+// available before the first badge. Rather than delete the Dewford object -- object local
+// IDs are positional, and Mr. Briney's boat scene depends on the ones after it -- the
+// object is kept and hidden behind this flag, which a new game sets. An existing save
+// keeps its Dewford fisherman; he is harmless, his script already handles "you have one".
+#define RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN  FLAG_UNUSED_0x02C
+
 // --- v1.1 NPCs --------------------------------------------------------------
 
 // Set once the Oldale financier has handed over his money, so he only does it once.

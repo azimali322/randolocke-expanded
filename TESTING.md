@@ -856,6 +856,61 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 
 ---
 
+## Phase 17 — Terrain
+
+Layout edits made by writing `data/layouts/*/map.bin` directly and checking the result
+with `tools/randolocke/render_map.py`, which renders a layout to a PNG. No Porymap.
+
+```bash
+python3 tools/randolocke/render_map.py LAYOUT_LITTLEROOT_TOWN /tmp/littleroot.png
+```
+
+### Littleroot pond
+
+Water at x 10-15, y 14-18: stone rim at y14, water y15-17, near shore y18.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T17.1 | **The pond is there** | New game, leave your house | A pond east of Birch's lab, stone rim on three sides |
+| T17.2 | It is not walkable | Try to walk onto the water | Blocked |
+| T17.3 | The shore is walkable | Walk along y=18 below the pond | Passable — this is the fishing spot |
+| T17.4 | **The town is still connected** | Walk from the lab door to the east side of town | Reachable. The y=17 route east is now water; go along y=18 or above the pond |
+| T17.5 | The boy moved | Look for the boy who stood at (14, 17) | Now at (11, 18), on the shore, facing the water |
+| T17.6 | **Fishing works** | Get the Old Rod (Phase 17 below), face the pond, use it | A bite |
+| T17.7 | Fishing encounters are randomized | 0x20 set | Randomized species, not Magikarp |
+| T17.8 | **Surfing works** | With Surf, step onto the pond | Surfable |
+| T17.9 | Surf encounters | Surf around | Water encounters at rate 4 |
+| T17.10 | No graphical seams | Walk a full lap around the pond | No torn tiles at the rim or where it meets the lab |
+| T17.11 | Level cap still applies | Fish up something over the cap | It gains no experience |
+
+### Oldale tall grass
+
+Two patches: x 2-4 / y 12-16 west of the Pokémon Center, and x 4-7 / y 2-3 north-west.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T17.12 | **Grass is there** | Walk into Oldale Town | Two tall-grass patches |
+| T17.13 | Encounters trigger | Walk in the grass | Wild battles at rate 20 |
+| T17.14 | Levels are right | Several encounters, flag 0x20 clear | Poochyena / Zigzagoon / Wurmple at 2-4 |
+| T17.15 | Randomized | Flag 0x20 set | Randomized species |
+| T17.16 | Nothing is blocked | Walk to the Mart, Pokémon Center, both houses and both exits | All reachable |
+| T17.17 | The financier is reachable | Talk to the GENTLEMAN at (6, 12) | Fine — he stands on the path, not in the grass |
+
+### The Old Rod fisherman
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T17.18 | **He is on Route 103** | Go north from Oldale, east along Route 103 to (22, 11) | A FISHERMAN on the shore, facing the water |
+| T17.19 | He gives the rod | Talk to him, say yes | OLD ROD received, `FLAG_RECEIVED_OLD_ROD` set |
+| T17.20 | Saying no | Talk to him, say no | Declines cleanly, can ask again |
+| T17.21 | Only once | Talk again after taking it | The "how's the fishing" line |
+| T17.22 | **Gone from Dewford** | New game, reach Dewford Town | No fisherman at (12, 14) |
+| T17.23 | Briney's boat still works | Sail with Mr. Briney from Dewford to Petalburg | The scene plays — the hidden object kept its local ID, so the boat is still object 4 |
+| T17.24 | Existing saves keep him | Load a save from before this change, go to Dewford | He is still there, and gives nothing new if you already have the rod |
+| T17.25 | Rod is usable immediately | Take the rod, fish in the Littleroot pond | Works before the first badge |
+
+---
+
 ## Phase 16 — Legendaries
 
 `RANDOLOCKE_UNIQUE_LEGENDARIES` (TRUE). Gated by the fixed-encounter flag `0x23`.

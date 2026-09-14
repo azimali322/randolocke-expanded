@@ -64,7 +64,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "DewfordTown_EventScript_OldRodFisherman",
-      "flag": "0"
+      "flag": "RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN"
     },
     {
       "local_id": "LOCALID_DEWFORD_BOAT",
