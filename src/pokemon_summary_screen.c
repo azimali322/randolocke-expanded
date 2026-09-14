@@ -85,7 +85,11 @@
 #define PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER 17
 #define PSS_LABEL_WINDOW_PORTRAIT_NICKNAME 18 // The upper name
 #define PSS_LABEL_WINDOW_PORTRAIT_SPECIES 19 // The lower name
-#define PSS_LABEL_WINDOW_END 20
+// randolocke: the skills page's RIBBON slot now carries the ability, so its banner needs
+// a new caption. The word "RIBBON" has been blanked out of page_skills.bin and this
+// window prints over the bare banner with a transparent background.
+#define PSS_LABEL_WINDOW_SKILLS_ABILITY 20
+#define PSS_LABEL_WINDOW_END 21
 
 // Dynamic fields for the Pokémon Info page
 #define PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER 0
@@ -357,14 +361,15 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+static bool32 RandolockeRollPage(void);
+static void RandolockeRefreshAfterRoll(u8 taskId);
+#endif
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-static bool32 RandolockeNatureRollAvailable(void);
-static void RandolockeTryRollNature(void);
+static void RandolockeTryRollNature(u8 taskId);
 #endif
 #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
-static bool32 RandolockeAbilityRollOnStart(void);
-static bool32 RandolockeAbilityRollOnSelect(void);
-static void RandolockeTryRollAbility(void);
+static void RandolockeTryRollAbility(u8 taskId);
 #endif
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
 static bool32 RandolockeStatsOverlayAvailable(void);
@@ -660,6 +665,15 @@ static const struct WindowTemplate sSummaryTemplate[] =
         .height = 4,
         .paletteNum = 6,
         .baseBlock = 431,
+    },
+    [PSS_LABEL_WINDOW_SKILLS_ABILITY] = {
+        .bg = 0,
+        .tilemapLeft = 22,
+        .tilemapTop = 3,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 7,
+        .baseBlock = 922,   // past the stats overlay, which ends at 921
     },
     [PSS_LABEL_WINDOW_END] = DUMMY_WIN_TEMPLATE
 };
@@ -1970,21 +1984,17 @@ static void Task_HandleInput(u8 taskId)
             BeginCloseSummaryScreen(taskId);
         }
         #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-        else if (JOY_NEW(SELECT_BUTTON) && RandolockeNatureRollAvailable())
+        else if (JOY_NEW(SELECT_BUTTON) && RandolockeRollPage())
         {
-            RandolockeTryRollNature();
+            RandolockeTryRollNature(taskId);
         }
         #endif
         #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
-        else if (JOY_NEW(SELECT_BUTTON) && RandolockeAbilityRollOnSelect())
+        // START is free on both of these pages. The move relearner takes it, but only on
+        // the move pages.
+        else if (JOY_NEW(START_BUTTON) && RandolockeRollPage())
         {
-            RandolockeTryRollAbility();
-        }
-        // START is free on the info page. The move relearner takes it, but only on the
-        // move pages.
-        else if (JOY_NEW(START_BUTTON) && RandolockeAbilityRollOnStart())
-        {
-            RandolockeTryRollAbility();
+            RandolockeTryRollAbility(taskId);
         }
         #endif
         else if (ShouldShowMoveRelearner() && IS_MOVE_PAGE(sMonSummaryScreen->currPageIndex))
@@ -3601,6 +3611,18 @@ static void PrintPageNamesAndStats(void)
 
     ShowUtilityPrompt(SUMMARY_MODE_NORMAL);
 
+    #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
+    {
+        // Transparent background so the banner behind shows through, white on dark grey
+        // to match the captions baked into the page graphic either side of it.
+        static const u8 sAbilityCaptionColors[3] = { 0, 3, 4 };
+        FillWindowPixelBuffer(PSS_LABEL_WINDOW_SKILLS_ABILITY, PIXEL_FILL(0));
+        AddTextPrinterParameterized4(PSS_LABEL_WINDOW_SKILLS_ABILITY, FONT_SMALL,
+                                     0, 0, 0, 0, sAbilityCaptionColors, 0,
+                                     COMPOUND_STRING("ABILITY"));
+    }
+    #endif
+
     PrintTextOnWindow(PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL, gText_RentalPkmn, 0, 1, 0, 1);
     PrintTextOnWindow(PSS_LABEL_WINDOW_POKEMON_INFO_TYPE, gText_TypeSlash, 0, 1, 0, 0);
     statsXPos = 6 + GetStringCenterAlignXOffset(FONT_NORMAL, gText_HP4, 42);
@@ -3644,6 +3666,9 @@ static void PutPageWindowTilemaps(u8 page)
         break;
     case PSS_PAGE_SKILLS:
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
+        #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
+        PutWindowTilemap(PSS_LABEL_WINDOW_SKILLS_ABILITY);
+        #endif
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -3700,6 +3725,9 @@ static void ClearPageWindowTilemaps(u8 page)
         ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_RELEARN);
         break;
     case PSS_PAGE_SKILLS:
+        #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
+        ClearWindowTilemap(PSS_LABEL_WINDOW_SKILLS_ABILITY);
+        #endif
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -3937,27 +3965,18 @@ static bool32 RandolockeRollAllowed(void)
         && InSlateportBattleTent() != TRUE;
 }
 
-// The nature rolls on the info page, where the Trainer Memo prints the result.
-static bool32 RandolockeNatureRollAvailable(void)
+// Both rolls work on both pages, so there is nothing to remember about which page does
+// what. The info page prints the nature in its memo and the ability above it; the skills
+// page recolours its stats for the nature and carries the ability in the old ribbon slot.
+// The skills page's IV and EV views are excluded -- SELECT belongs to the stat editor
+// there, and neither the nature nor the ability is on screen to react.
+static bool32 RandolockeRollPage(void)
 {
-    return RandolockeRollAllowed()
-        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO;
-}
-
-// The ability rolls from two places. START on the info page, beside where it is printed;
-// and SELECT on the skills page, which is where the numbers it has to suit are shown --
-// but only in the plain stats view, because the IV and EV views need SELECT for the stat
-// editor.
-static bool32 RandolockeAbilityRollOnStart(void)
-{
-    return RandolockeRollAllowed()
-        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO;
-}
-
-static bool32 RandolockeAbilityRollOnSelect(void)
-{
-    return RandolockeRollAllowed()
-        && sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS
+    if (!RandolockeRollAllowed())
+        return FALSE;
+    if (sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO)
+        return TRUE;
+    return sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS
         && sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_STATS;
 }
 
@@ -3981,7 +4000,36 @@ static bool32 RandolockePayForRoll(void)
 #endif
 
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-static void RandolockeTryRollNature(void)
+// Redraws whichever page is showing so the roll is visible where it happened. The info
+// page's windows are positioned for the info page, so they are only touched there --
+// AddWindowFromTemplateList would happily open one across the skills layout.
+static void RandolockeRefreshAfterRoll(u8 taskId)
+{
+    if (sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO)
+    {
+        // AddWindowFromTemplateList hands back the window it already created and only
+        // clears it on the first call, so old text has to be wiped or the new prints over
+        // it. The ability's name and its description share one window.
+        FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
+        PrintMonAbilityName();
+        PrintMonAbilityDescription();
+
+        FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
+        BufferMonTrainerMemo();
+        PrintMonTrainerMemo();
+
+        ScheduleBgCopyTilemapToVram(0);
+    }
+    else
+    {
+        // Re-extracts from currentMon and redraws both stat columns, the held item and the
+        // ability slot, which is everything a roll can change on this page.
+        ShowMonSkillsInfo(taskId, sMonSummaryScreen->skillsPageMode);
+    }
+    PlaySE(SE_SELECT);
+}
+
+static void RandolockeTryRollNature(u8 taskId)
 {
     struct Pokemon *mon;
     u32 current, nature;
@@ -4002,14 +4050,7 @@ static void RandolockeTryRollNature(void)
     CalculateMonStats(mon);
     CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
     sMonSummaryScreen->summary.mintNature = nature;
-
-    // AddWindowFromTemplateList hands back the window it already created and only clears
-    // it on the first call, so the old text has to be wiped or the new prints over it.
-    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
-    BufferMonTrainerMemo();
-    PrintMonTrainerMemo();
-    ScheduleBgCopyTilemapToVram(0);
-    PlaySE(SE_SELECT);
+    RandolockeRefreshAfterRoll(taskId);
 }
 #endif
 
@@ -4018,7 +4059,7 @@ static void RandolockeTryRollNature(void)
 // back the ability the Pokemon already has -- plenty of species repeat one across two
 // slots. Hidden abilities are in the running. A species with only one ability keeps it,
 // and is not charged for the attempt.
-static void RandolockeTryRollAbility(void)
+static void RandolockeTryRollAbility(u8 taskId)
 {
     struct Pokemon *mon = RandolockeEditTarget();
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
@@ -4048,19 +4089,7 @@ static void RandolockeTryRollAbility(void)
     SetMonData(mon, MON_DATA_ABILITY_NUM, &chosen);
     CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
     sMonSummaryScreen->summary.abilityNum = chosen;
-
-    // Only on the info page: sPageInfoTemplate's windows are positioned for that page, and
-    // AddWindowFromTemplateList would happily open one on top of the skills layout. Rolling
-    // from the skills page is deliberately quiet -- press left to read the result.
-    if (sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO)
-    {
-        // The ability's name and its description share one window.
-        FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
-        PrintMonAbilityName();
-        PrintMonAbilityDescription();
-        ScheduleBgCopyTilemapToVram(0);
-    }
-    PlaySE(SE_SELECT);
+    RandolockeRefreshAfterRoll(taskId);
 }
 #endif
 
@@ -4299,6 +4328,24 @@ static void PrintRibbonCount(void)
 {
     const u8 *text;
     int x;
+
+    #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
+    {
+        // randolocke: the ability, not the ribbon count. Randomized abilities matter
+        // constantly and the count never did -- and in this hack it is actively
+        // misleading, since a ribbon bit is what marks a Pokemon as having fainted under
+        // nuzlocke rules. The banner caption is relabelled to match.
+        enum Ability ability = GetAbilityBySpecies(sMonSummaryScreen->summary.species,
+                                                   sMonSummaryScreen->summary.abilityNum, FALSE);
+
+        text = gAbilitiesInfo[ability].name;
+        x = GetStringCenterAlignXOffset(FONT_NORMAL, text, 70) + 6;
+        if (x < 0)
+            x = 0;
+        PrintTextOnWindow(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_RIBBON_COUNT), text, x, 1, 0, 0);
+        return;
+    }
+    #endif
 
     if (sMonSummaryScreen->summary.ribbonCount == 0)
     {

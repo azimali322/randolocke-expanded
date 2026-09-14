@@ -283,17 +283,24 @@
 // Set TRUE to let them be randomized like anything else.
 #define RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS FALSE
 
-// Re-rolling a Pokemon's hidden nature and its ability, from the summary screen:
-//   Pokemon Info page   SELECT  hidden nature -- the one CalculateMonStats reads, so the
-//                               one that moves the numbers. The Trainer Memo shows it as
-//                               "Naive (Modest) nature,".
-//                       START   ability, printed two lines above.
-//   Pokemon Skills page SELECT  ability, so it can be rolled while looking at the stats
-//                               it has to suit. Only in the plain stats view -- the IV and
-//                               EV views keep SELECT for the stat editor.
-// Separate buttons so a spread can be aimed at: fix the nature you want, then work on the
-// ability, without one undoing the other. The debug menu's Roll Hidden Nature still works.
-// Party Pokemon only, never an egg, never a Frontier rental.
+// The skills page shows the Pokemon's ability where the ribbon count used to be. The
+// count was never worth the space, and in this hack it is actively misleading: a ribbon
+// bit is what marks a Pokemon as having fainted under nuzlocke rules, so the number counts
+// something the player never earned. Randomized abilities, meanwhile, matter constantly --
+// and this is the page where the stats an ability has to suit are displayed.
+#define RANDOLOCKE_SKILLS_PAGE_ABILITY      TRUE
+
+// Re-rolling a Pokemon's hidden nature and its ability, from the summary screen. Both work
+// the same way on the Pokemon Info page and on the Pokemon Skills page, so there is no
+// need to remember which page does what:
+//   SELECT  hidden nature -- the one CalculateMonStats reads, so the one that moves the
+//           numbers. The info page's Trainer Memo shows it as "Naive (Modest) nature,";
+//           on the skills page the raised and lowered stats recolour immediately.
+//   START   ability, printed on both pages.
+// On the skills page this applies to the plain stats view only -- the IV and EV views keep
+// SELECT for the stat editor. Separate buttons so a spread can be aimed at: fix the nature
+// you want, then work on the ability, without one undoing the other. The debug menu's
+// Roll Hidden Nature still works. Party Pokemon only, never an egg, never a rental.
 #define RANDOLOCKE_SUMMARY_NATURE_ROLL      TRUE
 #define RANDOLOCKE_SUMMARY_ABILITY_ROLL     TRUE
 

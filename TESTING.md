@@ -1197,16 +1197,35 @@ art is the same, doubled, and it fills the picture frame's bottom-right corner e
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T30.7 | **SELECT rolls the nature** | Summary → info page → SELECT | Trainer Memo changes to "Naive (Modest) nature," — original, then the new hidden one. The ability does **not** change |
-| T30.7b | **START rolls the ability** | Same page → START | ABILITY line and its description change. The nature does **not** change |
-| T30.7c | **SELECT on the skills page rolls the ability** | Skills page in its plain stats view → SELECT | Confirmation sound. Press LEFT to the info page: the ability has changed |
-| T30.7d | **No debug page** | Skills page → SELECT, in *both* ROMs | Never the Bulbasaur sprite browser |
-| T30.7e | The IV/EV editor still owns SELECT | Skills page → A until it reads IVs or EVs → SELECT | Opens the stat editor, no ability roll |
-| T30.7f | They are independent | Roll a nature you want, then roll the ability several times | The nature stays put |
-| T30.7g | One-ability species | A species with a single ability across all slots | Failure sound, nothing changes |
-| T30.7h | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
-| T30.7i | **Rolling is free** | Note your money, roll several times | Money unchanged |
-| T30.7j | START on the move pages is still RELEARN | Battle moves page → START | Opens the move relearner, not an ability roll |
+SELECT rolls the nature and START rolls the ability, on **both** the info page and the
+skills page — same two buttons either side, nothing to remember about which page does
+what. The skills page's IV and EV views are the exception: SELECT stays the stat editor.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.7 | **SELECT rolls the nature — info page** | Info page → SELECT | Trainer Memo reads "Naive (Modest) nature," — original, then the new hidden one. The ability does **not** change |
+| T30.7b | **START rolls the ability — info page** | Info page → START | ABILITY line and its description change. The nature does **not** change |
+| T30.7c | **SELECT rolls the nature — skills page** | Skills page, stats view → SELECT | The red and blue stats recolour on the spot. Left to the info page confirms the new nature |
+| T30.7d | **START rolls the ability — skills page** | Skills page, stats view → START | The ability in the old RIBBON slot changes on the spot |
+| T30.7e | **No debug page** | SELECT on any page, in *both* ROMs | Never the Bulbasaur sprite browser |
+| T30.7f | The IV/EV editor still owns SELECT | Skills page → A until it reads IVs or EVs → SELECT | Opens the stat editor. No nature roll |
+| T30.7g | They are independent | Roll a nature you want, then roll the ability repeatedly | The nature stays put |
+| T30.7h | One-ability species | A species with a single ability across all slots | Failure sound, nothing changes |
+| T30.7i | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
+| T30.7j | **Rolling is free** | Note your money, roll several times | Money unchanged |
+| T30.7k | START on the move pages is still RELEARN | Battle moves page → START | Opens the move relearner |
+| T30.7l | Stats follow the nature | Roll on the skills page and watch the numbers | Raised stat up and red, lowered stat down and blue |
+
+### The ability replaces the ribbon count
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.18 | **The caption reads ABILITY** | Skills page | Top-right banner says ABILITY, not RIBBON, with no leftover letters behind it |
+| T30.19 | The ability is shown | Any Pokémon | Its ability, centred in the box where the ribbon count was |
+| T30.20 | A long name fits | A Pokémon with a long ability name | Inside the box, not clipped off the left |
+| T30.21 | It tracks the Pokémon | Page up and down through the party | Changes with each one |
+| T30.22 | Eggs | An egg's summary | Nothing broken |
+| T30.23 | The other pages are unchanged | Info, battle moves, contest moves | No stray ABILITY caption |
 | T30.8 | It never no-ops | Press SELECT repeatedly | The parenthetical changes every time; it never rolls the nature it already had |
 | T30.9 | **The stats follow** | Roll, then page right to skills | Numbers match the new nature; the raised stat is up, the lowered one down |
 | T30.10 | It persists | Roll, leave the summary, come back | Same hidden nature |
