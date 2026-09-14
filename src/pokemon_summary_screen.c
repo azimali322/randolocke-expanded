@@ -4934,8 +4934,10 @@ static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *mon)
 // Draws the friendship heart under the bottom-right of the Pokemon's picture. Fills from
 // the bottom as friendship climbs, and turns gold at the top of the range.
 //
-// Kept outside HidePageSpecificSprites' range and shown only on the info page, which is
-// the page that describes the Pokemon rather than its numbers.
+// Kept outside HidePageSpecificSprites' range, which sweeps everything from
+// SPRITE_ARR_ID_TYPE onward when the page changes, and shown on every page -- the
+// Pokemon's picture is drawn on all four, so there is no page where the heart has
+// nothing to sit under.
 static void RandolockeSetFriendshipHeart(void)
 {
     u8 *spriteId = &sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_FRIENDSHIP];
@@ -4957,14 +4959,26 @@ static void RandolockeSetFriendshipHeart(void)
     {
         LoadCompressedSpriteSheet(&sSpriteSheet_FriendshipHeart);
         LoadSpritePalette(&sSpritePal_FriendshipHeart);
-        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 76, 64, 0);
+        // Bottom-right of the picture frame, just above where the nickname starts
+        // (PSS_LABEL_WINDOW_PORTRAIT_NICKNAME sits at tile row 12, so y 96). The first
+        // pass put this at 76,64 -- the frame's right *edge*, halfway up, where an 8x8
+        // icon reads as a smudge on the border rather than as a heart.
+        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 68, 92, 0);
         if (*spriteId == SPRITE_NONE)
             return;
     }
 
     StartSpriteAnim(&gSprites[*spriteId], frame);
-    SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP,
-                          sMonSummaryScreen->currPageIndex != PSS_PAGE_INFO);
+    SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, FALSE);
+}
+
+// The stats overlay covers the picture frame, heart included.
+static void RandolockeSetFriendshipHeartVisible(bool32 visible)
+{
+    if (sMonSummaryScreen != NULL
+     && sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_FRIENDSHIP] != SPRITE_NONE
+     && !sMonSummaryScreen->summary.isEgg)
+        SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, !visible);
 }
 #endif
 
@@ -5185,6 +5199,9 @@ static void RandolockeShowStatsOverlay(void)
     // not always hold stats.
     StopPokemonAnimations();
     SetSpriteInvisibility(SPRITE_ARR_ID_MON, TRUE);
+    #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+    RandolockeSetFriendshipHeartVisible(FALSE);
+    #endif
 
     if (sRandolockeStatsOverlayWindowId == WINDOW_NONE)
         sRandolockeStatsOverlayWindowId = AddWindow(&sRandolockeStatsOverlayTemplate);
@@ -5240,6 +5257,9 @@ static void RandolockeHideStatsOverlay(void)
         return;
 
     SetSpriteInvisibility(SPRITE_ARR_ID_MON, FALSE);
+    #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
+    RandolockeSetFriendshipHeartVisible(TRUE);
+    #endif
 
     if (sRandolockeStatsOverlayWindowId != WINDOW_NONE)
     {

@@ -1173,6 +1173,23 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 29 — Heart placement
+
+The heart was created at (76, 64) — the picture frame's right *edge*, halfway up — where
+an 8x8 icon reads as a smudge on the border. It belongs at (68, 92), bottom-right inside
+the frame and just above the nickname, which is where pokeemerald_rando_enh puts it.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T29.1 | **It is where it should be** | Summary → info page | Heart inside the picture frame, bottom right, above the nickname. Not clipping the green border |
+| T29.2 | It does not cover the nickname | A Pokémon with a nine-character nickname | Name fully readable |
+| T29.3 | It survives page changes | L/R through all four pages | Heart on every page, same spot |
+| T29.4 | Eggs still have none | An egg's summary, then page through | No heart anywhere |
+| T29.5 | The stats overlay hides it | Forget-a-move screen → SELECT → SELECT | Gone, then back |
+| T29.6 | The colour is right | A freshly caught Pokémon, then a maxed one | Red outline filling from the bottom; gold at 250 |
+
+---
+
 ## Phase 27 — Playtest round 4
 
 ### Fast text by default
@@ -1239,13 +1256,13 @@ branch, so the Pokémon also never reached the evolution check.
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T26.1 | **The heart appears** | Summary → info page | A heart under the bottom-right of the Pokémon's picture |
+| T26.1 | **The heart appears** | Summary → info page | A small heart at the bottom right of the picture frame, just above the nickname |
 | T26.2 | It starts nearly empty | A freshly caught Pokémon (friendship 70) | Low fill |
 | T26.3 | **It fills as friendship rises** | Walk with it, level it, use vitamins | The heart fills from the bottom in steps at 42 / 85 / 128 / 170 / 212 |
 | T26.4 | **Gold at maximum** | Friendship 250 or more | A gold heart |
 | T26.5 | It tracks the selected Pokémon | Page up and down between party members | The heart changes with each one |
-| T26.6 | Info page only | Switch to skills or moves | No heart |
-| T26.7 | …and comes back | Return to the info page | Heart again, still correct |
+| T26.6 | **Every page** | Switch to skills, moves, contest | The heart stays put on all four |
+| T26.7 | Hidden behind the stats overlay | Forget-a-move screen → SELECT | Heart gone with the picture; back when SELECT is pressed again |
 | T26.8 | Eggs have none | View an egg's summary | No heart |
 | T26.9 | It does not collide | Look at the ball icon, status icon and name | All still drawn correctly |
 | T26.10 | Boxed Pokémon | Open a boxed Pokémon's summary | Heart shows normally |
