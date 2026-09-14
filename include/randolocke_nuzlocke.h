@@ -15,6 +15,11 @@ enum RandolockeCatchRule
 
 #if RANDOLOCKE_NUZLOCKE_RULES == TRUE
 bool32 RandolockeNuzlockeActive(void);
+bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon);
+bool32 RandolockeDeadMonsAreLocked(void);
+void RandolockeBoxFaintedPartyMons(void);
+bool32 RandolockeAnyLivingMonInBoxes(void);
+bool32 RandolockeMoveFirstLivingBoxMonToParty(void);
 u32 RandolockeCurrentArea(void);
 bool32 RandolockeAreaUsed(u32 area);
 enum RandolockeCatchRule RandolockeCatchRuleForBattle(void);
@@ -22,6 +27,11 @@ void RandolockeNoteCatch(struct Pokemon *mon);
 #else
 static inline enum RandolockeCatchRule RandolockeCatchRuleForBattle(void) { return RANDOLOCKE_CATCH_OK; }
 static inline void RandolockeNoteCatch(struct Pokemon *mon) { (void)mon; }
+static inline bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon) { (void)boxMon; return FALSE; }
+static inline bool32 RandolockeDeadMonsAreLocked(void) { return FALSE; }
+static inline void RandolockeBoxFaintedPartyMons(void) {}
+static inline bool32 RandolockeAnyLivingMonInBoxes(void) { return TRUE; }
+static inline bool32 RandolockeMoveFirstLivingBoxMonToParty(void) { return FALSE; }
 #endif
 
 #endif // GUARD_RANDOLOCKE_NUZLOCKE_H

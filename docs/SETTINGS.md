@@ -161,6 +161,15 @@ off for that save.
 The per-area bits live in `SaveBlock1.caughtInArea`, carved out of the old dex-flag
 filler at 0x988 rather than appended — so the save layout did not change.
 
+**Permadeath** (`RANDOLOCKE_PERMADEATH`): a Pokémon that faints is stripped of its held
+item, marked, boxed, and cannot be withdrawn, moved or shifted until you are Champion. It
+can still be released. **Wiping** (`RANDOLOCKE_RUN_OVER_ON_WIPE`): a living box Pokémon
+takes over if there is one; if there is not, the run is over and the game returns to the
+title screen — the save is never deleted.
+
+`docs/NUZLOCKE.md` has the full rules, including how the level caps line up with each
+boss's ace.
+
 ### The seed
 
 ```c

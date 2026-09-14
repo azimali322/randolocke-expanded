@@ -1,4 +1,6 @@
 #include "global.h"
+#include "config/randolocke.h"
+#include "randolocke_nuzlocke.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -393,6 +395,20 @@ static void (*const sMovementStatusHandler[])(struct LinkPlayerObjectEvent *, st
 // code
 void DoWhiteOut(void)
 {
+    #if RANDOLOCKE_RUN_OVER_ON_WIPE == TRUE
+        if (RandolockeNuzlockeActive())
+        {
+            // Everything is down. If a living Pokemon is left in a box, it takes over;
+            // if nothing is, the run is finished and the game goes back to the title.
+            // The save is deliberately left alone -- it is the record of the run.
+            if (!RandolockeAnyLivingMonInBoxes())
+            {
+                DoSoftReset();
+                return;
+            }
+            RandolockeMoveFirstLivingBoxMonToParty();
+        }
+    #endif
     RunScriptImmediately(EventScript_WhiteOut);
     HealPlayerParty();
     Overworld_ResetStateAfterWhiteOut();

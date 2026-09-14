@@ -106,6 +106,24 @@
 // The flag is inverted deliberately: a save made before this existed has it clear, so the
 // rules are on there too, with no new game needed.
 #define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+
+// Permadeath. A Pokemon that faints is boxed, marked, and cannot be withdrawn, moved or
+// shifted again until you are Champion -- at which point the run is over and they come
+// back. It can still be released, so the box can be tidied. Its held item is returned to
+// the bag on the way, because losing the item too is punishing without being interesting.
+#define RANDOLOCKE_PERMADEATH               TRUE
+
+// Where the "this one is gone" mark is stored. Substruct 3 is exactly full at 96 bits, so
+// there is no room for a new field without changing the size of every boxed Pokemon and
+// invalidating saves. marineRibbon is never distributed in Emerald, so it is free.
+#define RANDOLOCKE_MON_DATA_FAINTED         MON_DATA_MARINE_RIBBON
+
+// What happens when the whole party is down.
+//   If any living Pokemon is left in a box, the first one is moved into the party and the
+//   usual white-out happens. If there are none, the run is over: the game returns to the
+//   title screen. The save is never deleted -- load it and you are standing at the last
+//   Pokemon Center with an empty party, which is a record of the run, not a playable one.
+#define RANDOLOCKE_RUN_OVER_ON_WIPE         TRUE
 #define RANDOLOCKE_FLAG_NUZLOCKE_OFF        FLAG_UNUSED_0x02D
 
 // --- Key item delivery -------------------------------------------------------

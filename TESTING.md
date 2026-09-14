@@ -892,6 +892,56 @@ wild table — the legendary sites, gift Pokémon, scripted battles — are neve
 
 ---
 
+## Phase 19 — Permadeath and wiping
+
+`RANDOLOCKE_PERMADEATH` and `RANDOLOCKE_RUN_OVER_ON_WIPE`. See `docs/NUZLOCKE.md`.
+
+### Death
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.1 | **A fainted Pokémon is boxed** | Let one faint in a wild battle, then finish the battle | Gone from your party; in a PC box |
+| T19.2 | Its held item comes back | Give it Leftovers first, then let it faint | Leftovers in your bag, the Pokémon holding nothing |
+| T19.3 | **It cannot be withdrawn** | In the PC, select it and choose WITHDRAW | "This POKéMON is gone for good." |
+| T19.4 | It cannot be moved | Choose MOVE on it | Same refusal |
+| T19.5 | It cannot be shifted | Choose SHIFT on it | Same refusal |
+| T19.6 | It *can* be released | Choose RELEASE on it | Allowed — the box can be tidied |
+| T19.7 | Living box Pokémon are unaffected | Withdraw one that never fainted | Normal |
+| T19.8 | Faints in a trainer battle count | Lose a Pokémon to a trainer | Boxed the same way |
+| T19.9 | **Field poison counts** | Let a poisoned Pokémon faint while walking | Boxed |
+| T19.10 | Several at once | Lose three in one battle | All three boxed, party compacted, no gaps |
+| T19.11 | Eggs are safe | Carry an egg through a wipe | Not boxed, not marked |
+| T19.12 | **Wally's tutorial is exempt** | Play the Petalburg tutorial | Nothing is boxed |
+| T19.13 | The Battle Frontier is exempt | Lose a Frontier battle | Nothing is boxed |
+| T19.14 | Safari Zone is exempt | Run out of time or lose there | Nothing is boxed |
+| T19.15 | **Survives a reload** | Lose one, save, reset, reload | Still in the box, still locked |
+| T19.16 | Champion releases the lock | Beat the Champion, then open the PC | Dead Pokémon can be withdrawn again |
+| T19.17 | Flag off releases the lock | Set flag 0x2D | Withdrawable again |
+
+### Wiping
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.18 | **A box Pokémon takes over** | Have one living Pokémon in a box, wipe | It is in your party; normal white-out to the last Pokémon Center |
+| T19.19 | It is a *living* one | Have both dead and living Pokémon boxed, wipe | A living one is chosen, never a dead one |
+| T19.20 | **Nothing left ends the run** | Wipe with no living Pokémon anywhere | Back to the title screen |
+| T19.21 | The save is not deleted | After T19.20, load the save | Loads: last Pokémon Center, empty party |
+| T19.22 | The ending can be escaped | After T19.20, set flag 0x2D, then withdraw a dead Pokémon | Playable again |
+| T19.23 | Config off | Set `RANDOLOCKE_RUN_OVER_ON_WIPE` to `FALSE`, rebuild, wipe | The vanilla white-out, no ending |
+
+### Level caps against boss levels
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.24 | **Cap equals the next boss's ace** | Before each gym, check your cap and the leader's highest level | Equal at every badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 |
+| T19.25 | The 8-badge cap covers the Elite Four | Check the cap after the 8th badge, then Sidney through Wallace | Cap 63; Sidney's ace 53 rising to Wallace's 63 |
+| T19.26 | Champion lifts it | After beating the Champion | Cap 100 |
+| T19.27 | Hard cap, not soft | Battle at the cap | **No** experience at all, not reduced |
+| T19.28 | Rare Candy respects it | Use one at the cap | Refused |
+| T19.29 | Cap Candy reaches it | Use a Cap Candy below the cap | Levels to the cap |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.

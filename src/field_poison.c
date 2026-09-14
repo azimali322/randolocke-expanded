@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "battle.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -82,6 +83,8 @@ static void Task_TryFieldPoisonWhiteOut(u8 taskId)
                 return;
             }
         }
+        // randolocke: poison kills for good too.
+        RandolockeBoxFaintedPartyMons();
         tState = 2; // Finished checking party
         break;
     case 1:

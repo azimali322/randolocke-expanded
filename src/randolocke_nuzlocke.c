@@ -7,6 +7,10 @@
 #include "pokemon.h"
 #include "randolocke_nuzlocke.h"
 #include "wild_encounter.h"
+#include "item.h"
+#include "pokemon_storage_system.h"
+#include "constants/items.h"
+#include "constants/flags.h"
 
 #if RANDOLOCKE_NUZLOCKE_RULES == TRUE
 
@@ -123,5 +127,104 @@ void RandolockeNoteCatch(struct Pokemon *mon)
 
     MarkAreaUsed(RandolockeCurrentArea());
 }
+
+// --- Permadeath --------------------------------------------------------------
+
+#if RANDOLOCKE_PERMADEATH == TRUE
+
+// Dead Pokemon are locked in their box until the run is finished. Becoming Champion ends
+// the run, so from that point they are yours again.
+bool32 RandolockeDeadMonsAreLocked(void)
+{
+    return RandolockeNuzlockeActive() && !FlagGet(FLAG_IS_CHAMPION);
+}
+
+bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon)
+{
+    return GetBoxMonData(boxMon, RANDOLOCKE_MON_DATA_FAINTED, NULL) != 0;
+}
+
+// Boxes everything in the party that fainted. The held item comes back to the bag first:
+// losing the Pokemon is the punishment, losing its Leftovers as well is just attrition.
+void RandolockeBoxFaintedPartyMons(void)
+{
+    u32 i;
+
+    if (!RandolockeNuzlockeActive())
+        return;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+        enum Item held;
+        u8 mark = TRUE;
+        enum Item none = ITEM_NONE;
+
+        if (!GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL))
+            continue;
+        if (GetMonData(mon, MON_DATA_IS_EGG, NULL))
+            continue;
+        if (GetMonData(mon, MON_DATA_HP, NULL) != 0)
+            continue;
+
+        held = GetMonData(mon, MON_DATA_HELD_ITEM, NULL);
+        if (held != ITEM_NONE && AddBagItem(held, 1))
+            SetMonData(mon, MON_DATA_HELD_ITEM, &none);
+
+        SetMonData(mon, RANDOLOCKE_MON_DATA_FAINTED, &mark);
+        if (CopyMonToPC(mon) == MON_GIVEN_TO_PC)
+            ZeroMonData(mon);
+    }
+    CompactPartySlots();
+    CalculatePlayerPartyCount();
+}
+
+bool32 RandolockeAnyLivingMonInBoxes(void)
+{
+    u32 box, slot;
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            struct BoxPokemon *boxMon = GetBoxedMonPtr(box, slot);
+
+            if (GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES, NULL)
+             && !GetBoxMonData(boxMon, MON_DATA_IS_EGG, NULL)
+             && !RandolockeMonIsDead(boxMon))
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// After a white-out the party is empty, which the game cannot cope with. Pull the first
+// living box Pokemon out so the player has something to walk around with.
+bool32 RandolockeMoveFirstLivingBoxMonToParty(void)
+{
+    u32 box, slot;
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            struct BoxPokemon *boxMon = GetBoxedMonPtr(box, slot);
+
+            if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES, NULL)
+             || GetBoxMonData(boxMon, MON_DATA_IS_EGG, NULL)
+             || RandolockeMonIsDead(boxMon))
+                continue;
+
+            BoxMonToMon(boxMon, &gParties[B_TRAINER_PLAYER][0]);
+            ZeroBoxMonData(boxMon);
+            CompactPartySlots();
+            CalculatePlayerPartyCount();
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+#endif // RANDOLOCKE_PERMADEATH
 
 #endif // RANDOLOCKE_NUZLOCKE_RULES

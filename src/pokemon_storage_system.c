@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "malloc.h"
 #include "bg.h"
 #include "data.h"
@@ -92,6 +93,7 @@ enum {
     MSG_BYE_BYE,
     MSG_MARK_POKE,
     MSG_LAST_POKE,
+    MSG_RANDOLOCKE_DEAD,
     MSG_PARTY_FULL,
     MSG_HOLDING_POKE,
     MSG_WHICH_ONE_WILL_TAKE,
@@ -659,6 +661,7 @@ static void InitSummaryScreenData(void);
 static void SetSelectionAfterSummaryScreen(void);
 static void SetMonMarkings(u8);
 static bool8 IsRemovingLastPartyMon(void);
+static bool8 IsCursorMonPermanentlyDead(void);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
@@ -1062,6 +1065,7 @@ static const struct StorageMessage sMessages[] =
     [MSG_BYE_BYE]              = {COMPOUND_STRING("Bye-bye, {DYNAMIC 0}!"),      MSG_VAR_RELEASE_MON_3},
     [MSG_MARK_POKE]            = {COMPOUND_STRING("Mark your POKéMON."),         MSG_VAR_NONE},
     [MSG_LAST_POKE]            = {COMPOUND_STRING("That's your last POKéMON!"),  MSG_VAR_NONE},
+    [MSG_RANDOLOCKE_DEAD]      = {COMPOUND_STRING("This POKéMON is gone for good."), MSG_VAR_NONE},
     [MSG_PARTY_FULL]           = {gText_YourPartysFull,                          MSG_VAR_NONE},
     [MSG_HOLDING_POKE]         = {COMPOUND_STRING("You're holding a POKéMON!"),  MSG_VAR_NONE},
     [MSG_WHICH_ONE_WILL_TAKE]  = {COMPOUND_STRING("Which one will you take?"),   MSG_VAR_NONE},
@@ -2234,6 +2238,7 @@ enum {
     MSTATE_SCROLL_BOX,
     MSTATE_WAIT_MSG,
     MSTATE_ERROR_LAST_PARTY_MON,
+    MSTATE_ERROR_RANDOLOCKE_DEAD,
     MSTATE_ERROR_HAS_MAIL,
     MSTATE_WAIT_ERROR_MSG,
     MSTATE_MULTIMOVE_RUN,
@@ -2343,7 +2348,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_MOVE_MON:
-            if (IsRemovingLastPartyMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (IsRemovingLastPartyMon())
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
@@ -2354,7 +2363,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_SHIFT_MON:
-            if (!CanShiftMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (!CanShiftMon())
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
@@ -2365,6 +2378,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_WITHDRAW:
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+                break;
+            }
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_WithdrawMon);
             break;
@@ -2463,6 +2481,11 @@ static void Task_PokeStorageMain(u8 taskId)
     case MSTATE_ERROR_LAST_PARTY_MON:
         PlaySE(SE_FAILURE);
         PrintMessage(MSG_LAST_POKE);
+        sStorage->state = MSTATE_WAIT_ERROR_MSG;
+        break;
+    case MSTATE_ERROR_RANDOLOCKE_DEAD:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_RANDOLOCKE_DEAD);
         sStorage->state = MSTATE_WAIT_ERROR_MSG;
         break;
     case MSTATE_ERROR_HAS_MAIL:
@@ -2585,7 +2608,11 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_PokeStorageMain);
             break;
         case MENU_MOVE:
-            if (IsRemovingLastPartyMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (IsRemovingLastPartyMon())
             {
                 sStorage->state = 3;
             }
@@ -2602,7 +2629,11 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_PlaceMon);
             break;
         case MENU_SHIFT:
-            if (!CanShiftMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (!CanShiftMon())
             {
                 sStorage->state = 3;
             }
@@ -2614,6 +2645,11 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_WITHDRAW:
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+                break;
+            }
             PlaySE(SE_SELECT);
             ClearBottomWindow();
             SetPokeStorageTask(Task_WithdrawMon);
@@ -6873,6 +6909,15 @@ static void SetMonMarkings(u8 markings)
         if (sCursorArea == CURSOR_AREA_IN_BOX)
             SetCurrentBoxMonData(sCursorPosition, MON_DATA_MARKINGS, &markings);
     }
+}
+
+// randolocke: a Pokemon that fainted stays in its box until the run is over. It can still
+// be released -- tidying the graveyard is allowed -- but not moved, shifted or withdrawn.
+static bool8 IsCursorMonPermanentlyDead(void)
+{
+    if (!RandolockeDeadMonsAreLocked() || sInPartyMenu)
+        return FALSE;
+    return GetCurrentBoxMonData(sCursorPosition, RANDOLOCKE_MON_DATA_FAINTED) != 0;
 }
 
 static bool8 IsRemovingLastPartyMon(void)
