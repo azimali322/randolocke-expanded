@@ -250,14 +250,6 @@ static void RandolockeApplyNewGameDefaults(void)
     // The Old Rod fisherman lives on Route 103 now, not in Dewford.
     FlagSet(RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN);
 
-    #if RANDOLOCKE_START_WITH_KEY_ITEMS == TRUE
-        // Runs after ClearBag(), so these survive.
-        AddBagItem(ITEM_REPELLANT, 1);
-        AddBagItem(ITEM_PORTA_HEAL, 1);
-        AddBagItem(ITEM_ENDLESS_CANDY, 1);
-        AddBagItem(ITEM_CAP_CANDY, 1);
-    #endif
-
 #if RANDOMIZER_AVAILABLE == TRUE && RANDOLOCKE_RANDOMIZE_ON_NEW_GAME == TRUE
     // A feature compiled as FORCE_RANDOMIZE_* ignores its flag entirely, so there is no
     // flag to set for it.

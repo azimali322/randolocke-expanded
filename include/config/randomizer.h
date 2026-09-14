@@ -118,6 +118,21 @@
 #define RZ_TM_W_FILLER             2500
 #define RZ_TM_W_NICHE               800
 
+// --- Trainer EVs ------------------------------------------------------------
+
+// Not one of the 856 trainers in trainers.party specifies EVs, so every trainer Pokemon
+// in vanilla Emerald -- gym leaders included -- runs on zero. The player has no EV cap
+// and can train freely, which turns any boss into a pushover the moment you bother.
+//
+// If TRUE, trainers are given an EV spread that grows with your badge count, applied to
+// HP, Speed, and whichever of the attacking and defending pairs the Pokemon is actually
+// better at. That last part matters here: the species is randomized, so a fixed spread
+// would land on the wrong stats half the time. Ported from pokeemerald_rando_enh.
+#define RZ_TRAINER_EV_SCALING       TRUE
+
+// EVs per stat, by badges earned. 252 is the per-stat maximum.
+#define RZ_TRAINER_EVS_BY_BADGE   { 12, 24, 36, 48, 60, 72, 80, 100, 128 }
+
 // --- Berry trees ------------------------------------------------------------
 
 // Berries are randomized where they are found, at berry trees, rather than in the field

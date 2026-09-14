@@ -107,31 +107,35 @@
 // rules are on there too, with no new game needed.
 #define RANDOLOCKE_NUZLOCKE_RULES           TRUE
 
-// Permadeath. A Pokemon that faints is boxed, marked, and cannot be withdrawn, moved or
-// shifted again until you are Champion -- at which point the run is over and they come
-// back. It can still be released, so the box can be tidied. Its held item is returned to
-// the bag on the way, because losing the item too is punishing without being interesting.
-#define RANDOLOCKE_PERMADEATH               TRUE
+// The rules do not apply until Birch hands over the five Poke Balls, which is what
+// FLAG_ADVENTURE_STARTED marks: after the Route 103 rival battle and the walk back to the
+// lab. Before that you have one Pokemon and no balls, so there is nothing to rule on.
+#define RANDOLOCKE_FLAG_RULES_BEGIN         FLAG_ADVENTURE_STARTED
+
+// A wipe -- every Pokemon in the party down -- costs you the whole party. They are boxed
+// and marked, and cannot be withdrawn, moved or shifted again; you go to the PC and pick
+// a new team out of whatever is left. Individual faints are just faints: heal and carry
+// on. Held items come back to the bag on the way, because losing those as well is
+// attrition rather than drama. Becoming Champion ends the run and lifts the lock.
+#define RANDOLOCKE_WIPE_COSTS_PARTY         TRUE
 
 // Where the "this one is gone" mark is stored. Substruct 3 is exactly full at 96 bits, so
 // there is no room for a new field without changing the size of every boxed Pokemon and
 // invalidating saves. marineRibbon is never distributed in Emerald, so it is free.
 #define RANDOLOCKE_MON_DATA_FAINTED         MON_DATA_MARINE_RIBBON
 
-// What happens when the whole party is down.
-//   If any living Pokemon is left in a box, the first one is moved into the party and the
-//   usual white-out happens. If there are none, the run is over: the game returns to the
-//   title screen. The save is never deleted -- load it and you are standing at the last
-//   Pokemon Center with an empty party, which is a record of the run, not a playable one.
+// If nothing living is left in any box after a wipe, the run is over and the game returns
+// to the title screen. The save is never deleted: load it and you are standing at the last
+// Pokemon Center with an empty party. Restarting is the player's call, not the game's.
 #define RANDOLOCKE_RUN_OVER_ON_WIPE         TRUE
 #define RANDOLOCKE_FLAG_NUZLOCKE_OFF        FLAG_UNUSED_0x02D
 
 // --- Key item delivery -------------------------------------------------------
 
 // The four key items are fully implemented but nothing in the game ever handed them out.
-// A new game now starts with all four in the bag. For a save that already exists, the
-// boy by the Littleroot pond gives you whichever ones you are missing.
-#define RANDOLOCKE_START_WITH_KEY_ITEMS     TRUE
+// Each now has exactly one source, and both work on a save that already exists:
+//   Cap Candy, Repellant       the old man in Oldale Town, once the adventure has started
+//   Porta Heal, Endless Candy  the boy by the Littleroot pond
 
 // --- Terrain -----------------------------------------------------------------
 

@@ -892,53 +892,80 @@ wild table — the legendary sites, gift Pokémon, scripted battles — are neve
 
 ---
 
-## Phase 19 — Permadeath and wiping
+## Phase 19 — Wipes, trainer EVs, and when the rules start
 
-`RANDOLOCKE_PERMADEATH` and `RANDOLOCKE_RUN_OVER_ON_WIPE`. See `docs/NUZLOCKE.md`.
+`RANDOLOCKE_WIPE_COSTS_PARTY`, `RANDOLOCKE_RUN_OVER_ON_WIPE`, `RZ_TRAINER_EV_SCALING`.
+See `docs/NUZLOCKE.md`.
 
-### Death
-
-| # | Test | Steps | Expected |
-| --- | --- | --- | --- |
-| T19.1 | **A fainted Pokémon is boxed** | Let one faint in a wild battle, then finish the battle | Gone from your party; in a PC box |
-| T19.2 | Its held item comes back | Give it Leftovers first, then let it faint | Leftovers in your bag, the Pokémon holding nothing |
-| T19.3 | **It cannot be withdrawn** | In the PC, select it and choose WITHDRAW | "This POKéMON is gone for good." |
-| T19.4 | It cannot be moved | Choose MOVE on it | Same refusal |
-| T19.5 | It cannot be shifted | Choose SHIFT on it | Same refusal |
-| T19.6 | It *can* be released | Choose RELEASE on it | Allowed — the box can be tidied |
-| T19.7 | Living box Pokémon are unaffected | Withdraw one that never fainted | Normal |
-| T19.8 | Faints in a trainer battle count | Lose a Pokémon to a trainer | Boxed the same way |
-| T19.9 | **Field poison counts** | Let a poisoned Pokémon faint while walking | Boxed |
-| T19.10 | Several at once | Lose three in one battle | All three boxed, party compacted, no gaps |
-| T19.11 | Eggs are safe | Carry an egg through a wipe | Not boxed, not marked |
-| T19.12 | **Wally's tutorial is exempt** | Play the Petalburg tutorial | Nothing is boxed |
-| T19.13 | The Battle Frontier is exempt | Lose a Frontier battle | Nothing is boxed |
-| T19.14 | Safari Zone is exempt | Run out of time or lose there | Nothing is boxed |
-| T19.15 | **Survives a reload** | Lose one, save, reset, reload | Still in the box, still locked |
-| T19.16 | Champion releases the lock | Beat the Champion, then open the PC | Dead Pokémon can be withdrawn again |
-| T19.17 | Flag off releases the lock | Set flag 0x2D | Withdrawable again |
-
-### Wiping
+### When the rules begin
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T19.18 | **A box Pokémon takes over** | Have one living Pokémon in a box, wipe | It is in your party; normal white-out to the last Pokémon Center |
-| T19.19 | It is a *living* one | Have both dead and living Pokémon boxed, wipe | A living one is chosen, never a dead one |
-| T19.20 | **Nothing left ends the run** | Wipe with no living Pokémon anywhere | Back to the title screen |
-| T19.21 | The save is not deleted | After T19.20, load the save | Loads: last Pokémon Center, empty party |
-| T19.22 | The ending can be escaped | After T19.20, set flag 0x2D, then withdraw a dead Pokémon | Playable again |
-| T19.23 | Config off | Set `RANDOLOCKE_RUN_OVER_ON_WIPE` to `FALSE`, rebuild, wipe | The vanilla white-out, no ending |
+| T19.1 | **Nothing applies before the Poké Balls** | New game. Before returning to the lab, check the bag in a wild battle | Balls behave normally; no nuzlocke messages |
+| T19.2 | Losing the Route 103 rival battle is free | Lose it on purpose | Ordinary white-out; nothing is boxed |
+| T19.3 | **The rules start at the five Poké Balls** | Beat the rival, return to the lab, take the balls. Then catch twice on one route | Second catch refused |
+| T19.4 | The starter is not an area catch | After T19.3, catch on Route 101 | Allowed |
+| T19.5 | Flag check | Debug → Flags, read `FLAG_ADVENTURE_STARTED` | Clear before the balls, set after |
+
+### Individual faints
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.6 | **A single faint costs nothing** | Let one Pokémon faint with others still standing | Stays in your party, fainted. Heal at a Center and carry on |
+| T19.7 | Field poison faint | Let a poisoned Pokémon faint while walking, with others alive | Same — stays in the party |
+
+### Wipes
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.8 | **A wipe boxes the whole party** | Lose with every Pokémon down, with something living in a box | Party empty; all of them in a box, marked |
+| T19.9 | Held items come back | Give one Leftovers, then wipe | Leftovers in your bag |
+| T19.10 | You start at the Pokémon Center | After T19.8 | Last Pokémon Center, empty party |
+| T19.11 | **Withdraw a new team** | Use the PC | Living Pokémon can be withdrawn |
+| T19.12 | The wiped team cannot come back | Try to withdraw one of them | "This POKéMON is gone for good." |
+| T19.13 | Nor moved or shifted | Try MOVE and SHIFT on one | Same refusal |
+| T19.14 | It can be released | Choose RELEASE on one | Allowed |
+| T19.15 | **No wild battles while empty** | Walk out of the Center into grass with an empty party | No encounters at all |
+| T19.16 | Eggs survive a wipe | Carry an egg through one | Still in your party |
+| T19.17 | **Nothing left ends the run** | Wipe with no living Pokémon anywhere | Back to the title screen |
+| T19.18 | The save is not deleted | After T19.17, load the save | Loads: last Pokémon Center, empty party |
+| T19.19 | The ending can be escaped | After T19.17, set flag 0x2D, withdraw a wiped Pokémon | Playable again |
+| T19.20 | Champion lifts the lock | Beat the Champion, open the PC | Wiped Pokémon are withdrawable |
+| T19.21 | Frontier losses are safe | Lose a Frontier battle | Nothing is boxed |
+| T19.22 | Config off | Set `RANDOLOCKE_WIPE_COSTS_PARTY` to `FALSE`, rebuild, wipe | Vanilla white-out, party kept |
+
+### Trainer EVs
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.23 | **Trainers hit harder than vanilla** | Fight Roxanne at the level cap with an untrained team | Noticeably tougher than a 0-EV party |
+| T19.24 | The spread follows badges | Compare an early trainer with a late one | Late trainers are bulkier and faster for their level |
+| T19.25 | **The spread follows the species** | Fight a trainer whose randomized Pokémon is a special attacker | Its Sp. Atk is boosted, not its Atk |
+| T19.26 | The player is not capped | EV train one of yours to 252 in a stat | Allowed — `B_EV_CAP_TYPE` is `EV_CAP_NONE` |
+| T19.27 | Vitamins still work | Buy and use one | Normal |
+| T19.28 | Config off | Set `RZ_TRAINER_EV_SCALING` to `FALSE`, rebuild | Trainers back to zero EVs |
 
 ### Level caps against boss levels
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T19.24 | **Cap equals the next boss's ace** | Before each gym, check your cap and the leader's highest level | Equal at every badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 |
-| T19.25 | The 8-badge cap covers the Elite Four | Check the cap after the 8th badge, then Sidney through Wallace | Cap 63; Sidney's ace 53 rising to Wallace's 63 |
-| T19.26 | Champion lifts it | After beating the Champion | Cap 100 |
-| T19.27 | Hard cap, not soft | Battle at the cap | **No** experience at all, not reduced |
-| T19.28 | Rare Candy respects it | Use one at the cap | Refused |
-| T19.29 | Cap Candy reaches it | Use a Cap Candy below the cap | Levels to the cap |
+| T19.29 | **Cap equals the next boss's ace** | Before each gym, check your cap and the leader's highest level | Equal at every badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 |
+| T19.30 | The 8-badge cap covers the Elite Four | Check after the 8th badge, then Sidney through Wallace | Cap 63; Sidney's ace 53 rising to Wallace's 63 |
+| T19.31 | Champion lifts it | After beating the Champion | Cap 100 |
+| T19.32 | Hard cap, not soft | Battle at the cap | **No** experience at all, not reduced |
+| T19.33 | Cap Candy reaches it | Use one below the cap | Levels to the cap |
+
+### Key items
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.34 | **The Oldale old man gives two** | After the five Poké Balls, talk to the man near the Oldale Mart sign | CAP CANDY and REPELLANT |
+| T19.35 | He does not repeat | Talk again | His ordinary footprints line |
+| T19.36 | He waits for the balls | Talk to him before the adventure starts | The vanilla blocking-the-path scene, no items |
+| T19.37 | The Littleroot boy gives the other two | Talk to the boy by the pond | PORTA HEAL and ENDLESS CANDY |
+| T19.38 | Works on an existing save | Load a save from before this build, talk to both | All four handed over |
+| T19.39 | Repellant toggles | Use it, walk, use it again | Repel on, then off; the step counter never ticks down while on |
+| T19.40 | Cap Candy respects the cap | Use it on a Pokémon already at the cap | Refused or no-op, never over the cap |
 
 ---
 

@@ -19,7 +19,9 @@ STATIC_ASSERT(ARRAY_COUNT(((struct SaveBlock1 *)0)->caughtInArea) == RANDOLOCKE_
 
 bool32 RandolockeNuzlockeActive(void)
 {
-    return !FlagGet(RANDOLOCKE_FLAG_NUZLOCKE_OFF);
+    // Nothing applies until Birch hands over the five Poke Balls. Before that the player
+    // has one Pokemon, no balls, and a scripted loss to Route 103's rival to survive.
+    return FlagGet(RANDOLOCKE_FLAG_RULES_BEGIN) && !FlagGet(RANDOLOCKE_FLAG_NUZLOCKE_OFF);
 }
 
 // The area the player is standing in, or RANDOLOCKE_NO_AREA where the rules do not apply:
@@ -130,7 +132,7 @@ void RandolockeNoteCatch(struct Pokemon *mon)
 
 // --- Permadeath --------------------------------------------------------------
 
-#if RANDOLOCKE_PERMADEATH == TRUE
+#if RANDOLOCKE_WIPE_COSTS_PARTY == TRUE
 
 // Dead Pokemon are locked in their box until the run is finished. Becoming Champion ends
 // the run, so from that point they are yours again.
@@ -144,9 +146,9 @@ bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon)
     return GetBoxMonData(boxMon, RANDOLOCKE_MON_DATA_FAINTED, NULL) != 0;
 }
 
-// Boxes everything in the party that fainted. The held item comes back to the bag first:
-// losing the Pokemon is the punishment, losing its Leftovers as well is just attrition.
-void RandolockeBoxFaintedPartyMons(void)
+// Called on a wipe, and only on a wipe. The whole party is boxed and marked; eggs are
+// spared, since they were never in the fight. Held items come back to the bag first.
+void RandolockeBoxWipedParty(void)
 {
     u32 i;
 
@@ -163,8 +165,6 @@ void RandolockeBoxFaintedPartyMons(void)
         if (!GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL))
             continue;
         if (GetMonData(mon, MON_DATA_IS_EGG, NULL))
-            continue;
-        if (GetMonData(mon, MON_DATA_HP, NULL) != 0)
             continue;
 
         held = GetMonData(mon, MON_DATA_HELD_ITEM, NULL);
@@ -198,33 +198,6 @@ bool32 RandolockeAnyLivingMonInBoxes(void)
     return FALSE;
 }
 
-// After a white-out the party is empty, which the game cannot cope with. Pull the first
-// living box Pokemon out so the player has something to walk around with.
-bool32 RandolockeMoveFirstLivingBoxMonToParty(void)
-{
-    u32 box, slot;
-
-    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
-    {
-        for (slot = 0; slot < IN_BOX_COUNT; slot++)
-        {
-            struct BoxPokemon *boxMon = GetBoxedMonPtr(box, slot);
-
-            if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES, NULL)
-             || GetBoxMonData(boxMon, MON_DATA_IS_EGG, NULL)
-             || RandolockeMonIsDead(boxMon))
-                continue;
-
-            BoxMonToMon(boxMon, &gParties[B_TRAINER_PLAYER][0]);
-            ZeroBoxMonData(boxMon);
-            CompactPartySlots();
-            CalculatePlayerPartyCount();
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-#endif // RANDOLOCKE_PERMADEATH
+#endif // RANDOLOCKE_WIPE_COSTS_PARTY
 
 #endif // RANDOLOCKE_NUZLOCKE_RULES

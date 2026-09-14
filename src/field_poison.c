@@ -83,8 +83,6 @@ static void Task_TryFieldPoisonWhiteOut(u8 taskId)
                 return;
             }
         }
-        // randolocke: poison kills for good too.
-        RandolockeBoxFaintedPartyMons();
         tState = 2; // Finished checking party
         break;
     case 1:

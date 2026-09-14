@@ -1,4 +1,7 @@
 #include "global.h"
+#include "constants/flags.h"
+#include "event_data.h"
+#include "config/randomizer.h"
 #include "main.h"
 #include "data.h"
 #include "move.h"
@@ -17,6 +20,45 @@ rng_value_t GeneratePartySeed(const struct Trainer *trainer)
     u32 seed = Crc32B((const u8 *)trainer, sizeof(struct Trainer)) ^ READ_OTID_FROM_SAVE;
     return LocalRandomSeed(seed);
 }
+
+#if RZ_TRAINER_EV_SCALING == TRUE
+// Trainer Pokemon get an EV spread that grows with the player's badge count. Which stats
+// it lands on is decided from the Pokemon's own base stats rather than fixed, because the
+// species may have been randomized into something that wants the other half of the sheet.
+// Only ordinary trainers reach here -- Frontier and Battle Tower parties are built
+// elsewhere -- so there is no facility check to make.
+static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
+{
+    static const u8 sEvsByBadge[] = RZ_TRAINER_EVS_BY_BADGE;
+    static const u16 sBadgeFlags[] = {
+        FLAG_BADGE01_GET, FLAG_BADGE02_GET, FLAG_BADGE03_GET, FLAG_BADGE04_GET,
+        FLAG_BADGE05_GET, FLAG_BADGE06_GET, FLAG_BADGE07_GET, FLAG_BADGE08_GET,
+    };
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    u32 badges = 0, i;
+    u8 ev;
+
+    for (i = 0; i < ARRAY_COUNT(sBadgeFlags); i++)
+    {
+        if (FlagGet(sBadgeFlags[i]))
+            badges++;
+    }
+    ev = sEvsByBadge[badges];
+    if (ev == 0)
+        return;
+
+    SetMonData(mon, MON_DATA_HP_EV, &ev);
+    SetMonData(mon, MON_DATA_SPEED_EV, &ev);
+    if (gSpeciesInfo[species].baseAttack >= gSpeciesInfo[species].baseSpAttack)
+        SetMonData(mon, MON_DATA_ATK_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_SPATK_EV, &ev);
+    if (gSpeciesInfo[species].baseDefense >= gSpeciesInfo[species].baseSpDefense)
+        SetMonData(mon, MON_DATA_DEF_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_SPDEF_EV, &ev);
+}
+#endif
 
 static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
 {
@@ -250,6 +292,10 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
         data = TYPE_MYSTERY;
         SetMonData(mon, MON_DATA_TERA_TYPE, &data);
     }
+
+    #if RZ_TRAINER_EV_SCALING == TRUE
+        RandolockeGiveTrainerEVs(mon);
+    #endif
 
     CalculateMonStats(mon);
     SetMonData(mon, MON_DATA_OT_NAME, trainer->name);

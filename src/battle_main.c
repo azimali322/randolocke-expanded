@@ -5311,18 +5311,6 @@ static void HandleEndTurn_FinishBattle(void)
             if (!changedForm && B_RECALCULATE_STATS >= GEN_5)
                 CalculateMonStats(&gParties[B_TRAINER_PLAYER][i]);
         }
-        // randolocke: permadeath. After held items are restored and stats recalculated,
-        // anything that fainted is boxed for good. Excludes the battle types where the
-        // party is not really yours, or where a loss is scripted.
-        if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK
-                                | BATTLE_TYPE_RECORDED_LINK
-                                | BATTLE_TYPE_FIRST_BATTLE
-                                | BATTLE_TYPE_CATCH_TUTORIAL
-                                | BATTLE_TYPE_INGAME_PARTNER
-                                | BATTLE_TYPE_FRONTIER
-                                | BATTLE_TYPE_SAFARI)))
-            RandolockeBoxFaintedPartyMons();
-
         RecordedBattle_SetPlaybackFinished();
         if (gTestRunnerEnabled)
             TestRunner_Battle_AfterLastTurn();

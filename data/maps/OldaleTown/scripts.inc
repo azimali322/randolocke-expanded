@@ -210,7 +210,45 @@ OldaleTown_EventScript_BlockedPath::
 	releaseall
 	end
 
+@ randolocke: once the adventure has properly started -- Birch's five POKe BALLS, which is
+@ also when the nuzlocke rules begin -- the old man hands over the CAP CANDY and the
+@ REPELLANT. He checks each one, so it is safe to talk to him again.
 OldaleTown_EventScript_NotBlockingPath::
+	setvar VAR_0x8009, 0
+	setvar VAR_0x8008, ITEM_CAP_CANDY
+	call OldaleTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_REPELLANT
+	call OldaleTown_EventScript_GiveKeyItemIfMissing
+	goto_if_eq VAR_0x8009, 0, OldaleTown_EventScript_OldManNothingToGive
+	msgbox OldaleTown_Text_OldManTakeThese, MSGBOX_DEFAULT
+	release
+	end
+
+OldaleTown_EventScript_GiveKeyItemIfMissing::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, OldaleTown_EventScript_KeyItemAlreadyHeld
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, OldaleTown_EventScript_KeyItemAlreadyHeld
+	setvar VAR_0x8009, 1
+	return
+
+OldaleTown_EventScript_KeyItemAlreadyHeld::
+	return
+
+OldaleTown_EventScript_OldManNothingToGive::
+	msgbox OldaleTown_Text_FinishedSketchingFootprints, MSGBOX_DEFAULT
+	release
+	end
+
+OldaleTown_Text_OldManTakeThese:
+	.string "I'm too old for the road now, so take\n"
+	.string "these off my hands.\p"
+	.string "The CAP CANDY brings a POKéMON up to\n"
+	.string "whatever the badges will allow.\p"
+	.string "The REPELLANT never empties. Press it\n"
+	.string "once to switch it on, once to stop.$"
+
+OldaleTown_EventScript_Unused_NotBlockingPath::
 	msgbox OldaleTown_Text_FinishedSketchingFootprints, MSGBOX_DEFAULT
 	release
 	end

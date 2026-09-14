@@ -689,6 +689,11 @@ bool8 AreLegendariesInSootopolisPreventingEncounters(void)
 
 bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 {
+    // randolocke: after a wipe the party is empty until the player reaches a PC. A wild
+    // battle with nothing to send out would be unwinnable and unrunnable, so suppress it.
+    if (CalculatePlayerPartyCount() == 0)
+        return FALSE;
+
     u32 headerId;
     enum TimeOfDay timeOfDay;
     struct Roamer *roamer;
@@ -877,6 +882,9 @@ void RockSmashWildEncounter(void)
 
 bool8 SweetScentWildEncounter(void)
 {
+    if (CalculatePlayerPartyCount() == 0)
+        return FALSE;
+
     s16 x, y;
     u32 headerId;
     enum TimeOfDay timeOfDay;

@@ -395,18 +395,24 @@ static void (*const sMovementStatusHandler[])(struct LinkPlayerObjectEvent *, st
 // code
 void DoWhiteOut(void)
 {
-    #if RANDOLOCKE_RUN_OVER_ON_WIPE == TRUE
+    #if RANDOLOCKE_WIPE_COSTS_PARTY == TRUE
         if (RandolockeNuzlockeActive())
         {
-            // Everything is down. If a living Pokemon is left in a box, it takes over;
-            // if nothing is, the run is finished and the game goes back to the title.
-            // The save is deliberately left alone -- it is the record of the run.
-            if (!RandolockeAnyLivingMonInBoxes())
-            {
-                DoSoftReset();
-                return;
-            }
-            RandolockeMoveFirstLivingBoxMonToParty();
+            // The whole party is down, so the whole party is lost: boxed and marked.
+            RandolockeBoxWipedParty();
+
+            // If nothing living is left anywhere, the run is finished and the game goes
+            // back to the title. The save is deliberately left alone -- it is the record
+            // of the run, and restarting is the player's call.
+            #if RANDOLOCKE_RUN_OVER_ON_WIPE == TRUE
+                if (!RandolockeAnyLivingMonInBoxes())
+                {
+                    DoSoftReset();
+                    return;
+                }
+            #endif
+            // Otherwise the player walks out of the Pokemon Center with an empty party
+            // and picks a new team off the PC.
         }
     #endif
     RunScriptImmediately(EventScript_WhiteOut);

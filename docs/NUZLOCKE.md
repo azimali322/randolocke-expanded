@@ -5,6 +5,16 @@ Everything here is enforced by the game. Settings live in `include/config/randol
 The flag is **inverted on purpose**: clear means the rules are *on*, so a save made before
 the rules existed gets them without a new game.
 
+## 0. When the rules start
+
+Nothing applies until **Birch hands over the five Poké Balls** — after the Route 103 rival
+battle and the walk back to the lab. That moment sets `FLAG_ADVENTURE_STARTED`, which is
+what gates the whole system.
+
+Before it you have one Pokémon, no balls, and a rival battle you are meant to be able to
+lose, so there is nothing to rule on. The starter is not an area catch, and losing the
+first battle costs you nothing.
+
 ## 1. Catching
 
 | Rule | Behaviour |
@@ -22,16 +32,23 @@ and a later Linoone is refused; catch the Linoone first and the Zigzagoon is ref
 
 ## 2. Death
 
-A Pokémon that faints is **gone**. At the end of the battle it is:
+**An individual faint is just a faint.** Heal at a Pokémon Center and carry on — no
+permadeath per Pokémon.
 
-1. stripped of its held item, which goes back to your bag
-2. marked as dead
+What costs you is a **wipe**: every Pokémon in your party down at once. Then the whole
+party is
+
+1. stripped of held items, which go back to your bag
+2. marked
 3. moved into a PC box
 4. removed from your party
 
-Field poison kills the same way. Once marked, a Pokémon **cannot be withdrawn, moved or
-shifted** — the PC says "This POKéMON is gone for good." It *can* be released, so the box
-can be tidied.
+and you walk out of the Pokémon Center with **nothing** and pick a new team off the PC.
+A marked Pokémon **cannot be withdrawn, moved or shifted** — the PC says "This POKéMON is
+gone for good." It *can* be released, so the box can be tidied. Eggs are spared: they were
+never in the fight.
+
+Wild encounters are suppressed while your party is empty, so the walk to the PC is safe.
 
 Becoming Champion ends the run, and from that point the mark stops being enforced: every
 Pokémon you lost is yours again.
@@ -43,9 +60,7 @@ shows a Marine Ribbon.
 
 ### What is not covered
 
-The battle types where the party is not really yours are exempt: link, recorded link, the
-first battle, Wally's tutorial, in-game partner battles, the Battle Frontier, and the
-Safari Zone. Losing a Pokémon in any of those does not kill it.
+Anything before `FLAG_ADVENTURE_STARTED`, including the scripted Route 103 rival battle.
 
 ## 3. Wiping
 
@@ -53,7 +68,7 @@ When the whole party is down:
 
 | Situation | What happens |
 | --- | --- |
-| A living Pokémon is left in a box | The first one is moved into your party, then the usual white-out: back to the last Pokémon Center |
+| A living Pokémon is left in a box | Your whole party is boxed and marked, then the usual white-out: back to the last Pokémon Center, empty-handed. Withdraw a new team |
 | Nothing living is left anywhere | **The run is over.** The game returns to the title screen |
 
 The save is never deleted. Load it and you are standing at the last Pokémon Center with an
@@ -91,7 +106,36 @@ there and re-run `tools/randolocke/scale_trainers.py` to bring the trainers with
 The 8-badge cap of 63 deliberately covers the whole Elite Four, so the run ends with you
 level-capped against a Champion at your own level rather than above it.
 
-## 5. What is *not* enforced
+## 5. Trainer EVs
+
+Not one of the 856 trainers in `trainers.party` specifies EVs, so in vanilla Emerald every
+trainer Pokémon — gym leaders included — runs on **zero EVs**. The player has no EV cap and
+can train freely, which turns any boss into a pushover the moment you bother to.
+
+`RZ_TRAINER_EV_SCALING` gives trainers a spread that grows with your badge count:
+
+| Badges | EVs per stat |
+| --- | --- |
+| 0 | 12 |
+| 1 | 24 |
+| 2 | 36 |
+| 3 | 48 |
+| 4 | 60 |
+| 5 | 72 |
+| 6 | 80 |
+| 7 | 100 |
+| 8 | 128 |
+
+Four stats get it: HP, Speed, and whichever of Attack/Sp. Attack and Defense/Sp. Defense
+the Pokémon is actually better at. That last part matters here specifically — the species
+is randomized, so a fixed spread would land on the wrong half of the sheet about half the
+time. Ported from `pokeemerald_rando_enh`, where it is the "scaling EVs" challenge.
+
+The player is **not** capped (`B_EV_CAP_TYPE = EV_CAP_NONE`): EV training is worth doing,
+it just is not free wins any more. Vitamins are in the mart, and the move relearner shows
+Attack and Sp. Attack EVs so you can see what a Pokémon has been fed.
+
+## 6. What is *not* enforced
 
 Deliberately left to you, because the game cannot tell intent:
 
