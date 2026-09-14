@@ -6182,7 +6182,13 @@ static void PartyMenuTryEvolution(u8 taskId)
     {
         GetEvolutionTargetSpecies(mon, EVO_MODE_NORMAL, ITEM_NONE, NULL, &canStopEvo, DO_EVO);
         FreePartyPointers();
-        if (GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_RareCandy && gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && CheckBagHasItem(gSpecialVar_ItemId, 1))
+        // randolocke: the Cap Candy and the Endless Candy are never consumed and are used
+        // repeatedly on the same Pokemon, so they want the Rare Candy's behaviour of coming
+        // back to the party menu rather than closing it after an evolution.
+        if ((GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_RareCandy
+          || GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_CapCandy
+          || GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_EndlessCandy)
+         && gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && CheckBagHasItem(gSpecialVar_ItemId, 1))
             gCB2_AfterEvolution = CB2_ReturnToPartyMenuUsingRareCandy;
         else
             gCB2_AfterEvolution = gPartyMenu.exitCallback;

@@ -580,12 +580,13 @@ static const union TextColor sHealthBoxTextColor =
 };
 
 #if RANDOLOCKE_FIRST_ENCOUNTER_BADGE == TRUE
-// The first-encounter badge, drawn in the healthbox's own palette. Foreground 2 is the
-// darker entry the box uses for its outline, which reads as a ring around the digit.
+// The first-encounter badge. Foreground 2 turned out to be nearly invisible against the
+// box, so this is the same pairing the HP numbers use -- which is legible by definition,
+// since that is what it was chosen for.
 static const union TextColor sRandolockeBadgeTextColor =
 {
     .background = 0,
-    .foreground = 2,
+    .foreground = 1,
     .shadow = 3,
     .accent = 0
 };

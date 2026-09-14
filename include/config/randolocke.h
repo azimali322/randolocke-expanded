@@ -48,7 +48,9 @@
 #define RANDOLOCKE_DUAL_REGISTERED_ITEMS  TRUE
 
 // Frames SELECT must be held before the second item fires, at 60fps.
-#define RANDOLOCKE_SELECT_HOLD_FRAMES     20
+// A third of a second was far too twitchy at fast-forward speeds -- a normal tap read
+// as a hold. One second, matching pokeemerald_rando_enh.
+#define RANDOLOCKE_SELECT_HOLD_FRAMES     60
 
 // --- Regi caves -------------------------------------------------------------
 

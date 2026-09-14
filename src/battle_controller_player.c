@@ -2448,6 +2448,40 @@ static bool32 RandolockeMoveIsStab(enum Move move, enum BattlerId battler)
     return FALSE;
 }
 
+// The arrows came out black because a {COLOR} code indexes the *window's* palette, and
+// palette 5 has nothing green or red at those entries. What works is the trick the PP
+// counter already uses: overwrite the palette entry the window draws its text with.
+// Entry 13 is that entry -- see sBattleTextOnWindowsInfo[B_WIN_PP].color.foreground.
+static void RandolockeSetEffectivenessColor(u32 foeEffectiveness)
+{
+    static u16 sDefaultColor = 0;
+    u16 color;
+
+    if (sDefaultColor == 0)
+        sDefaultColor = gPlttBufferUnfaded[BG_PLTT_ID(5) + 13];
+
+    switch (foeEffectiveness)
+    {
+    case EFFECTIVENESS_EXTREMELY_EFFECTIVE:
+    case EFFECTIVENESS_SUPER_EFFECTIVE:
+        color = RGB(6, 30, 6);      // green
+        break;
+    case EFFECTIVENESS_NOT_VERY_EFFECTIVE:
+        color = RGB(31, 20, 0);     // orange
+        break;
+    case EFFECTIVENESS_MOSTLY_INEFFECTIVE:
+    case EFFECTIVENESS_NO_EFFECT:
+        color = RGB(31, 6, 6);      // red
+        break;
+    default:
+        color = sDefaultColor;
+        break;
+    }
+
+    gPlttBufferUnfaded[BG_PLTT_ID(5) + 13] = color;
+    gPlttBufferFaded[BG_PLTT_ID(5) + 13] = color;
+}
+
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
     // randolocke: arrows rather than the stock circles and triangles, so the direction
@@ -2455,12 +2489,12 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
     // pokeemerald_rando_enh shows. A doubled arrow marks the 4x and 0.25x extremes.
     static const u8 noIcon[] =  _("");
     static const u8 effectiveIcon[] =  _("{CIRCLE_HOLLOW}");
-    static const u8 extremeleyEffectiveIcon[] =  _("{COLOR}{GREEN}{UP_ARROW_2}{UP_ARROW_2}");
-    static const u8 superEffectiveIcon[] =  _("{COLOR}{GREEN}{UP_ARROW_2}");
-    static const u8 notVeryEffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}");
-    static const u8 mostlyIneffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}{DOWN_ARROW_2}");
-    static const u8 immuneIcon[] =  _("{COLOR}{RED}{BIG_MULT_X}");
-    static const u8 stabIcon[] =  _("{COLOR}{RED}{CIRCLE_DOT}");
+    static const u8 extremeleyEffectiveIcon[] =  _("{UP_ARROW_2}{UP_ARROW_2}");
+    static const u8 superEffectiveIcon[] =  _("{UP_ARROW_2}");
+    static const u8 notVeryEffectiveIcon[] =  _("{DOWN_ARROW_2}");
+    static const u8 mostlyIneffectiveIcon[] =  _("{DOWN_ARROW_2}{DOWN_ARROW_2}");
+    static const u8 immuneIcon[] =  _("{BIG_MULT_X}");
+    static const u8 stabIcon[] =  _("{CIRCLE_DOT}");
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     u8 *txtPtr;
 
@@ -2503,6 +2537,8 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
         // so which of four attacks is actually boosted is genuinely not obvious.
         if (RandolockeMoveIsStab(moveInfo->moves[gMoveSelectionCursor[battler]], battler))
             StringAppend(gDisplayedStringBattle, stabIcon);
+
+        RandolockeSetEffectivenessColor(foeEffectiveness);
     }
 
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP);

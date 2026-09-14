@@ -1,4 +1,5 @@
 #include "global.h"
+#include "constants/opponents.h"
 #include "config/randomizer.h"
 #include "main.h"
 #include "malloc.h"
@@ -263,7 +264,15 @@ static bool32 IsSmartBattle(void)
 // no longer a fair fight once levels, EVs and movesets have all been scaled up.
 static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
 {
-    enum TrainerClassID class = GetTrainerClassFromId(trainerId);
+    enum TrainerClassID class;
+
+    // Partner and other synthetic ids live past the end of the trainer table; looking one
+    // up asserts. The battle test suite fights trainer 865 -- TRAINER_PARTNER(1) -- in its
+    // multi-battle tests, which is how this surfaced.
+    if (trainerId >= TRAINERS_COUNT)
+        return 0;
+
+    class = GetTrainerClassFromId(trainerId);
 
     if (class == TRAINER_CLASS_CHAMPION)
         return RZ_AI_CHAMPION;
