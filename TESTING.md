@@ -969,6 +969,41 @@ See `docs/NUZLOCKE.md`.
 
 ---
 
+## Phase 20 — BST, IVs, AI, tutors
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T20.1 | **Similar-BST substitution** | New game, survey Route 101 | Small, weak species — no Rayquaza in the starting grass |
+| T20.2 | Late routes scale up | Survey Victory Road | Strong species; the BST band moved with the originals |
+| T20.3 | **Legendary sites ignore BST** | Reach Sky Pillar | Still a legendary, because those twelve force legend-aware |
+| T20.4 | Mode is switchable | Set var `0x404E` to 0 | Back to anything-goes on new rolls |
+| T20.5 | **Caught Pokémon have 31s** | Catch anything, check the summary IVs | 31 in all six |
+| T20.6 | Starters too | New game, check your starter | 31 in all six |
+| T20.7 | Gifts too | Take any gift Pokémon | 31 in all six |
+| T20.8 | Hatched eggs too | Hatch the Wynaut egg | 31 in all six |
+| T20.9 | **Trainers are NOT given 31s** | Fight a trainer, compare damage against a known 31-IV target | Trainer Pokémon still roll their own IVs |
+| T20.10 | The alternative mode | Set `RANDOLOCKE_PLAYER_IVS` to `RANDOLOCKE_IVS_RANDOLOCKE`, rebuild | Starters/gifts get 3 perfect IVs; caught Pokémon roll random |
+| T20.11 | **A cave is one area** | Catch on Granite Cave 1F, go to B1F, try again | Refused — one region map section is one area |
+| T20.12 | Magma Hideout | Catch on one floor, try another | Refused. This is the case Randolocke's notes call out |
+| T20.13 | Different routes still separate | Catch on Route 101, then Route 103 | Allowed |
+| T20.14 | **One catch per area actually blocks now** | Catch on Route 101, meet another there, open the bag | Balls refused. This never worked before Phase 20 |
+| T20.15 | **Bosses fight properly** | Fight Roxanne | Switches sensibly, targets KOs, saves her ace for last |
+| T20.16 | The Champion is omniscient | Fight Wallace | Plays around your moves and abilities as if it knows them |
+| T20.17 | Route trainers are competent, not brutal | Fight a Youngster | Avoids bad moves and goes for KOs, but no switching games |
+| T20.18 | Admins and rivals sit between | Fight an Aqua Admin or your rival | Smarter switching than a Youngster, less than a leader |
+| T20.19 | Config off | Set `RZ_TRAINER_AI_TIERS` to `FALSE`, rebuild | Back to the vanilla AI |
+| T20.20 | **Tutors teach randomized moves** | Talk to any of the ten tutors with flag `0x2E` set | Offers something other than its vanilla move |
+| T20.21 | **The offer names the right move** | Read the tutor's dialogue | The flavour line plays, then "I can teach X" naming what is actually taught |
+| T20.22 | The prompt agrees | Say yes | "Which POKéMON should learn X?" — the same X |
+| T20.23 | It teaches what it said | Teach it | The Pokémon learns X |
+| T20.24 | No duplicates among tutors | Check all ten | Ten different moves |
+| T20.25 | **No overlap with TMs** | Compare the ten tutor moves against the 50 TMs | No move appears in both |
+| T20.26 | Stable across a reload | Note all ten, soft reset, check again | Identical |
+| T20.27 | Flag off is vanilla | Clear flag `0x2E` | Swagger, Rollout, Fury Cutter, Mimic, Metronome, Sleep Talk, Substitute, Dynamic Punch, Double-Edge, Explosion — and the text still reads correctly |
+| T20.28 | Once-only tutors still are | Teach one, come back | Refuses, as in vanilla |
+
+---
+
 ## Phase 9 — Ship
 
 Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.

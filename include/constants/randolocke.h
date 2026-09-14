@@ -8,4 +8,7 @@
 #define RANDOLOCKE_AREA_BYTES   50
 #define RANDOLOCKE_MAX_AREAS    (RANDOLOCKE_AREA_BYTES * 8)
 
+// Emerald's move tutors. See gRandolockeTutorMoves.
+#define RANDOLOCKE_TUTOR_COUNT  10
+
 #endif // GUARD_CONSTANTS_RANDOLOCKE_H

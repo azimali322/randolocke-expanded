@@ -2472,6 +2472,19 @@ bool8 ScrCmd_cleartrainerflag(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// randolocke: the move tutor's move lives in VAR_0x8005. Rewrite it, and buffer the name
+// of whatever it ends up being into STR_VAR_1 so the tutor can say it out loud -- the
+// vanilla messages name the move in their own text, which would otherwise be a lie.
+void RandolockeTutorMove(struct ScriptContext *ctx)
+{
+    #if RANDOMIZER_AVAILABLE == TRUE
+        enum Move move = RandomizeTutorMove(VarGet(VAR_0x8005));
+
+        VarSet(VAR_0x8005, move);
+        StringCopy(gStringVar1, GetMoveName(move));
+    #endif
+}
+
 bool8 ScrCmd_setwildbattle(struct ScriptContext *ctx)
 {
     enum Species species = ScriptReadHalfword(ctx);

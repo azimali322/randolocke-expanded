@@ -200,6 +200,7 @@
 #define RANDOLOCKE_DEFAULT_LEARNSET         TRUE   // the 21-move level-up learnsets
 #define RANDOLOCKE_DEFAULT_BERRY_TREES      TRUE   // what grows on berry trees
 #define RANDOLOCKE_DEFAULT_TM_MOVES         TRUE   // which move each TM teaches
+#define RANDOLOCKE_DEFAULT_TUTOR_MOVES      TRUE   // which move each move tutor teaches
 
 // How species are substituted. Also only applied to new games; the debug menu writes the
 // same var (RANDOMIZER_VAR_SPECIES_MODE).

@@ -133,6 +133,32 @@
 // EVs per stat, by badges earned. 252 is the per-stat maximum.
 #define RZ_TRAINER_EVS_BY_BADGE   { 12, 24, 36, 48, 60, 72, 80, 100, 128 }
 
+// --- Trainer AI ---------------------------------------------------------------
+
+// Measured from trainers.party: 640 trainers run Check Bad Move alone and 173 run Basic
+// Trainer -- and every boss is in the second group. Archie, Matt, Shelly and the gym
+// leaders all fight with the weakest AI in the game, which is the single largest
+// difficulty gap left once the levels and EVs are scaled.
+//
+// If TRUE, AI flags are raised at battle start by trainer importance rather than edited
+// into the data file, so the tiers stay one readable place and trainers.party stays a
+// diff of levels and parties.
+//
+//   every trainer   Check Bad Move, Try To Faint, Check Viability
+//   notable         + HP Aware, Smart Mon Choices, Try To 2HKO
+//   boss            + Smart Switching, Ace Pokemon, Weigh Ability Prediction
+//   Champion        + Omniscient
+//
+// "Notable" is by trainer class: rivals, the Aqua and Magma admins, and the Elite Four.
+// Bosses are the `Boss: Yes` tag from Phase 7c.
+#define RZ_TRAINER_AI_TIERS         TRUE
+
+#define RZ_AI_BASE      (AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_TRY_TO_FAINT | AI_FLAG_CHECK_VIABILITY)
+#define RZ_AI_NOTABLE   (RZ_AI_BASE | AI_FLAG_HP_AWARE | AI_FLAG_SMART_MON_CHOICES | AI_FLAG_TRY_TO_2HKO)
+#define RZ_AI_BOSS      (RZ_AI_NOTABLE | AI_FLAG_SMART_SWITCHING | AI_FLAG_ACE_POKEMON \
+                         | AI_FLAG_WEIGH_ABILITY_PREDICTION)
+#define RZ_AI_CHAMPION  (RZ_AI_BOSS | AI_FLAG_OMNISCIENT)
+
 // --- Berry trees ------------------------------------------------------------
 
 // Berries are randomized where they are found, at berry trees, rather than in the field
@@ -159,6 +185,11 @@
 // vanilla TM->tier grouping in sTmTiers no longer describes anything, so a found TM is
 // picked uniformly and the spread comes from this assignment instead.
 #define RZ_TM_MOVES_TIER_MODE       RZ_TIER_MODE_MOVES
+
+// Reassigns what each of Emerald's ten move tutors teaches. Drawn through the same bands
+// as TMs, with no duplicates and no overlap with the TM list -- a tutor that teaches a
+// move you can already buy on a reusable TM is a wasted tutor.
+#define RZ_TUTOR_MOVES_TIER_MODE    RZ_TM_MOVES_TIER_MODE
 
 // --- Learnset randomization -------------------------------------------------
 
@@ -246,6 +277,10 @@
 
 #ifndef FORCE_RANDOMIZE_TM_MOVES
 #define RANDOMIZER_FLAG_TM_MOVES                      FLAG_UNUSED_0x02A
+#endif
+
+#ifndef FORCE_RANDOMIZE_TUTOR_MOVES
+#define RANDOMIZER_FLAG_TUTOR_MOVES                   FLAG_UNUSED_0x02E
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

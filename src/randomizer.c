@@ -134,6 +134,12 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
             #else
                 return FlagGet(RANDOMIZER_FLAG_BERRY_TREES);
             #endif
+        case RANDOMIZE_TUTOR_MOVES:
+            #ifdef FORCE_RANDOMIZE_TUTOR_MOVES
+                return FORCE_RANDOMIZE_TUTOR_MOVES;
+            #else
+                return FlagGet(RANDOMIZER_FLAG_TUTOR_MOVES);
+            #endif
         case RANDOMIZE_TM_MOVES:
             #ifdef FORCE_RANDOMIZE_TM_MOVES
                 return FORCE_RANDOMIZE_TM_MOVES;
@@ -518,6 +524,78 @@ enum Move RandomizeTMMove(u16 tmIndex)
         RzBuildTmMoveTable();
 
     return sRzTmMoves[tmIndex - 1];
+}
+
+// Emerald's ten move tutors, in the order data/scripts/move_tutors.inc lists them. The
+// table is keyed by the vanilla move because that is all the tutor script has to hand.
+const enum Move gRandolockeTutorMoves[RANDOLOCKE_TUTOR_COUNT] =
+{
+    MOVE_SWAGGER, MOVE_ROLLOUT, MOVE_FURY_CUTTER, MOVE_MIMIC, MOVE_METRONOME,
+    MOVE_SLEEP_TALK, MOVE_SUBSTITUTE, MOVE_DYNAMIC_PUNCH, MOVE_DOUBLE_EDGE, MOVE_EXPLOSION,
+};
+
+static EWRAM_DATA u16 sRzTutorMoves[RANDOLOCKE_TUTOR_COUNT] = {0};
+static EWRAM_DATA bool8 sRzTutorMovesBuilt = FALSE;
+
+static void RzBuildTutorMoveTable(void)
+{
+    struct Sfc32State state;
+    u32 i, j;
+
+    // The TM table has to exist first, so tutors can avoid what it already covers.
+    if (!sRzTmMovesBuilt)
+        RzBuildTmMoveTable();
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, 0x7C7002, GetRandomizerSeed());
+
+    for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
+    {
+        u32 attempts;
+
+        sRzTutorMoves[i] = MOVE_NONE;
+        for (attempts = 0; attempts < 128 && sRzTutorMoves[i] == MOVE_NONE; attempts++)
+        {
+            u16 move = RzWeightedPickMode(&state, sTmMoveTiers, ARRAY_COUNT(sTmMoveTiers),
+                                          NULL, 0, RZ_TUTOR_MOVES_TIER_MODE);
+            bool32 dupe = FALSE;
+
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+                continue;
+            for (j = 0; j < i; j++)
+            {
+                if (sRzTutorMoves[j] == move)
+                    dupe = TRUE;
+            }
+            // A tutor that teaches something a reusable TM already covers is wasted.
+            for (j = 0; j < NUM_TECHNICAL_MACHINES; j++)
+            {
+                if (sRzTmMoves[j] == move)
+                    dupe = TRUE;
+            }
+            if (!dupe)
+                sRzTutorMoves[i] = move;
+        }
+        // A slot the pool could not fill stays MOVE_NONE and keeps its vanilla move.
+    }
+    sRzTutorMovesBuilt = TRUE;
+}
+
+enum Move RandomizeTutorMove(enum Move move)
+{
+    u32 i;
+
+    if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TUTOR_MOVES))
+        return move;
+
+    if (!sRzTutorMovesBuilt)
+        RzBuildTutorMoveTable();
+
+    for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
+    {
+        if (gRandolockeTutorMoves[i] == move)
+            return sRzTutorMoves[i] != MOVE_NONE ? sRzTutorMoves[i] : move;
+    }
+    return move;
 }
 
 u16 RandomizeTMMoveReverse(enum Move move)

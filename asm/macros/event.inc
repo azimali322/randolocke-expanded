@@ -2775,14 +2775,17 @@
 	.if \flagId
 		goto_if_set \flagId, \taughtJmp
 	.endif
-	msgbox \wantTeachingMsg, MSGBOX_YESNO
+	@ randolocke: resolve the move first, so the offer can name the one actually taught.
+	setvar VAR_0x8005, \moveId
+	callnative RandolockeTutorMove
+	msgbox \wantTeachingMsg, MSGBOX_DEFAULT
+	msgbox MoveTutor_Text_RandolockeOffer, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, \declinedJmp
 	.if \flagId
 		call MoveTutor_EventScript_CanOnlyBeLearnedOnce
 		goto_if_eq VAR_RESULT, NO, \declinedJmp
 	.endif
-	msgbox \monSelectMsg, MSGBOX_DEFAULT
-	setvar VAR_0x8005, \moveId
+	msgbox MoveTutor_Text_RandolockeWhichMon, MSGBOX_DEFAULT
 	call MoveTutor_EventScript_OpenBox
 	goto_if_eq VAR_RESULT, FALSE, \declinedJmp
 	.if \flagId

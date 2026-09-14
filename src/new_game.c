@@ -283,6 +283,9 @@ static void RandolockeApplyNewGameDefaults(void)
     #if RANDOLOCKE_DEFAULT_TM_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TM_MOVES)
         FlagSet(RANDOMIZER_FLAG_TM_MOVES);
     #endif
+    #if RANDOLOCKE_DEFAULT_TUTOR_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TUTOR_MOVES)
+        FlagSet(RANDOMIZER_FLAG_TUTOR_MOVES);
+    #endif
     VarSet(RANDOMIZER_VAR_SPECIES_MODE, RANDOLOCKE_DEFAULT_SPECIES_MODE);
 #endif
 }
