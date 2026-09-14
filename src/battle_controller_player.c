@@ -2426,6 +2426,28 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
     return foeEffectiveness; // fallthrough for any other circumstance
 }
 
+// True when the move's type matches one of the user's own, i.e. it gets the same-type
+// attack bonus. Uses the battler's live types, so a Tera or a type-changing ability is
+// accounted for the same way the damage calculation would.
+static bool32 RandolockeMoveIsStab(enum Move move, enum BattlerId battler)
+{
+    enum Type types[3];
+    enum Type moveType;
+    u32 i;
+
+    if (move == MOVE_NONE || IsBattleMoveStatus(move))
+        return FALSE;
+
+    moveType = GetMoveType(move);
+    GetBattlerTypes(battler, FALSE, types);
+    for (i = 0; i < ARRAY_COUNT(types); i++)
+    {
+        if (types[i] == moveType && moveType != TYPE_MYSTERY)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
     // randolocke: arrows rather than the stock circles and triangles, so the direction
@@ -2438,10 +2460,15 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
     static const u8 notVeryEffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}");
     static const u8 mostlyIneffectiveIcon[] =  _("{COLOR}{RED}{DOWN_ARROW_2}{DOWN_ARROW_2}");
     static const u8 immuneIcon[] =  _("{COLOR}{RED}{BIG_MULT_X}");
+    static const u8 stabIcon[] =  _("{COLOR}{RED}{CIRCLE_DOT}");
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     u8 *txtPtr;
 
-    txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfacePP);
+    // The "PP " label is dropped here on purpose. With B_SHOW_EFFECTIVENESS on, the PP
+    // *number* is already replaced by the icon, so the label describes nothing -- and the
+    // window is only 32px, which two arrows plus a STAB dot will not share with it.
+    txtPtr = gDisplayedStringBattle;
+    txtPtr[0] = EOS;
 
     if (!IsBattleMoveStatus(moveInfo->moves[gMoveSelectionCursor[battler]]))
     {
@@ -2470,6 +2497,12 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
             StringCopy(txtPtr, noIcon);
             break;
         }
+
+        // randolocke: and a filled red dot when the move gets the same-type bonus. With
+        // randomized movesets you cannot tell a Pokemon's own types from its move list,
+        // so which of four attacks is actually boosted is genuinely not obvious.
+        if (RandolockeMoveIsStab(moveInfo->moves[gMoveSelectionCursor[battler]], battler))
+            StringAppend(gDisplayedStringBattle, stabIcon);
     }
 
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP);

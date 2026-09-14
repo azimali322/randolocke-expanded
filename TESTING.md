@@ -1087,6 +1087,13 @@ Stats → IVs → EVs, then **SELECT** to edit in place.
 | T23.8 | Status moves | Point at a status move | No icon — effectiveness does not apply |
 | T23.9 | **Doubles picks the right target** | In a double battle, choose a target, then look at the icon | It reflects the selected target, not the other one |
 | T23.10 | The L-button detail view still works | Press L on the move list | Unchanged |
+| T23.11a | **STAB shows a red dot** | Point at a move whose type matches your Pokémon's | A filled red circle after the effectiveness icon |
+| T23.11b | Non-STAB shows none | Point at a move of an unrelated type | No dot |
+| T23.11c | Both indicators together | A super-effective STAB move | Green up arrow **and** the red dot |
+| T23.11d | 4x STAB fits the window | A doubled-weakness STAB move | Two arrows and the dot, nothing clipped |
+| T23.11e | Status moves get neither | Point at a status move | No arrow, no dot |
+| T23.11f | Dual types both count | A Pokémon with two types, one move of each | Both show the dot |
+| T23.11g | The PP label is gone | Look at the window | Icons only — the PP number was already replaced, so the label described nothing |
 
 ### The post-capture softlock
 
