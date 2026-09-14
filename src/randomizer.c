@@ -143,6 +143,13 @@ struct RzTier
 // Picks a tier in proportion to weight, then an entry uniformly inside it. `accept` may
 // reject an entry (wrong type, already dealt, and so on); on repeated rejection the caller
 // falls back to its own uniform path, so a filter that matches nothing cannot hang.
+// Off means uniform across the whole pool, which is the same thing as weighting each
+// band by how many entries it holds.
+static inline u32 RzTierWeight(const struct RzTier *tier, u32 mode)
+{
+    return (mode == RZ_TIER_OFF) ? tier->count : tier->weight;
+}
+
 static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tiers,
                               u32 tierCount, bool32 (*accept)(u16, u32), u32 arg, u32 mode)
 {
@@ -157,7 +164,7 @@ static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tie
     for (i = 0; i < tierCount; i++)
     {
         if (tiers[i].count != 0)
-            total += tiers[i].weight;
+            total += RzTierWeight(&tiers[i], mode);
     }
     if (total == 0)
         return 0;
@@ -171,7 +178,7 @@ static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tie
         {
             if (tiers[i].count == 0)
                 continue;
-            acc += tiers[i].weight;
+            acc += RzTierWeight(&tiers[i], mode);
             if (roll < acc)
             {
                 u16 pick = tiers[i].entries[RandomizerNextRange(state, tiers[i].count)];
@@ -240,6 +247,21 @@ static const struct RzTier sMoveTiers[] =
     RZ_TIER(sMoveTierNiche,        RZ_MOVE_W_NICHE),
     RZ_TIER(sMoveTierBad,          RZ_MOVE_W_BAD),
     RZ_TIER(sMoveTierHomeless,     RZ_MOVE_W_HOMELESS),
+};
+
+// The bands a randomized TM may teach from. Bad and Pokemon Homeless are absent by
+// design, mirroring what gen_tm_tiers.py does to the vanilla TM list: a TM is permanent
+// under I_REUSABLE_TMS, so a bad one is dead weight in the bag forever. The TM weights
+// rather than the move weights, for the same reason - a TM should lean much harder
+// toward good moves than a one-off move roll does. Over 50 TMs this aims at roughly
+// 5 Meta Defining, 15 Staples, 25 Filler and 5 Niche; only 4 Meta Defining moves exist,
+// so in practice all four become TMs and the spare draw spills into Staples.
+static const struct RzTier sTmMoveTiers[] =
+{
+    RZ_TIER(sMoveTierMetaDefining, RZ_TM_W_META_DEFINING),
+    RZ_TIER(sMoveTierStaples,      RZ_TM_W_STAPLES),
+    RZ_TIER(sMoveTierFiller,       RZ_TM_W_FILLER),
+    RZ_TIER(sMoveTierNiche,        RZ_TM_W_NICHE),
 };
 
 u32 GetRandomizerSeed(void)
@@ -442,7 +464,7 @@ static void RzBuildTmMoveTable(void)
         sRzTmMoves[i] = MOVE_NONE;
         for (attempts = 0; attempts < 128 && sRzTmMoves[i] == MOVE_NONE; attempts++)
         {
-            u16 move = RzWeightedPickMode(&state, sMoveTiers, ARRAY_COUNT(sMoveTiers),
+            u16 move = RzWeightedPickMode(&state, sTmMoveTiers, ARRAY_COUNT(sTmMoveTiers),
                                           NULL, 0, RZ_TM_MOVES_TIER_MODE);
             bool32 dupe = FALSE;
 
@@ -493,6 +515,26 @@ u16 RandomizeTMMoveReverse(enum Move move)
     return ITEM_NONE;
 }
 
+// Which TM a pickup becomes. Normally weighted by sTmTiers, which groups TM items by the
+// tier of the move they teach *in vanilla*. Once RANDOMIZE_TM_MOVES re-points them that
+// grouping is stale - TM01 is not Focus Punch any more - and weighting by it would be
+// weighting by nothing. It does not need replacing, though: RzBuildTmMoveTable already
+// draws every TM's move through the same TM bands, so the 50 assigned moves are already
+// spread across them. A uniform pick over the assigned TMs reproduces that spread, and
+// reflects what this ROM actually contains rather than what vanilla did.
+static enum Item RzPickTmItem(struct Sfc32State *state)
+{
+    if (RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
+        return GetTMHMItemId(RandomizerNextRange(state, NUM_TECHNICAL_MACHINES) + 1);
+
+    #if RZ_TIER_WEIGHTED_ITEMS == TRUE
+        return RzWeightedPickMode(state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0,
+                                  RZ_TIER_MODE_TMS);
+    #else
+        return ITEM_NONE;
+    #endif
+}
+
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)
 {
     struct Sfc32State state;
@@ -514,12 +556,9 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
     // teaches. HMs never reach here: ShouldRandomizeItem() rejects them above.
     if (IsItemTMHM(itemId))
     {
-        #if RZ_TIER_WEIGHTED_ITEMS == TRUE
-            result = RzWeightedPickMode(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0,
-                                        RZ_TIER_MODE_TMS);
-            if (result != ITEM_NONE)
-                return result;
-        #endif
+        result = RzPickTmItem(&state);
+        if (result != ITEM_NONE)
+            return result;
         return RandomizerNextRange(&state, RANDOMIZER_MAX_TM - ITEM_TM01 + 1) + ITEM_TM01;
     }
 
@@ -536,8 +575,7 @@ enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localI
 
             if (RandomizerNextRange(&state, total) < RZ_ITEM_W_TM_BAND)
             {
-                result = RzWeightedPickMode(&state, sTmTiers, ARRAY_COUNT(sTmTiers), NULL, 0,
-                                        RZ_TIER_MODE_TMS);
+                result = RzPickTmItem(&state);
                 if (result != ITEM_NONE)
                     return result;
                 continue;

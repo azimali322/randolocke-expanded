@@ -538,3 +538,129 @@ SlateportCity_Harbor_Text_HandedScannerToStern:
 SlateportCity_Harbor_Text_ThisWillHelpResearch:
 	.string "CAPT. STERN: Thanks, {PLAYER}{KUN}!\n"
 	.string "This will help our research a lot!$"
+
+@ randolocke: the v1.1 legendary-location map seller. The "maps" are the four event
+@ tickets, otherwise reachable only through Mystery Gift. Selling one has to set the
+@ matching FLAG_ENABLE_SHIP_* as well - the S.S. Tidal menu checks the item AND the flag.
+@ You sail from Lilycove, not here; this is only where the maps are sold.
+SlateportCity_Harbor_EventScript_MapSeller::
+	lock
+	faceplayer
+	goto_if_unset RANDOLOCKE_MAP_SELLER_BADGE, SlateportCity_Harbor_EventScript_MapSellerNotYet
+	msgbox SlateportCity_Harbor_Text_MapSellerIntro, MSGBOX_DEFAULT
+SlateportCity_Harbor_EventScript_MapSellerMenu::
+	dynmultipush SlateportCity_Harbor_Text_MapEon, 0
+	dynmultipush SlateportCity_Harbor_Text_MapOldSea, 1
+	dynmultipush SlateportCity_Harbor_Text_MapAurora, 2
+	dynmultipush SlateportCity_Harbor_Text_MapMystic, 3
+	dynmultipush gText_Exit, 4
+	dynmultistack 0, 0, FALSE, 5, FALSE, 0, DYN_MULTICHOICE_CB_NONE
+	switch VAR_RESULT
+	case 0, SlateportCity_Harbor_EventScript_MapSellEon
+	case 1, SlateportCity_Harbor_EventScript_MapSellOldSea
+	case 2, SlateportCity_Harbor_EventScript_MapSellAurora
+	case 3, SlateportCity_Harbor_EventScript_MapSellMystic
+	goto SlateportCity_Harbor_EventScript_MapSellerDone
+
+SlateportCity_Harbor_EventScript_MapSellEon::
+	setvar VAR_0x8008, ITEM_EON_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_SOUTHERN_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellOldSea::
+	setvar VAR_0x8008, ITEM_OLD_SEA_MAP
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_FARAWAY_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellAurora::
+	setvar VAR_0x8008, ITEM_AURORA_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_BIRTH_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellMystic::
+	setvar VAR_0x8008, ITEM_MYSTIC_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_NAVEL_ROCK
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+@ Takes the map in VAR_0x8008. Leaves VAR_RESULT TRUE only if the player now has it and
+@ did not already, so the caller knows whether to set the ship flag.
+SlateportCity_Harbor_EventScript_MapSellerTryBuy::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, SlateportCity_Harbor_EventScript_MapSellerAlreadyHave
+	checkmoney RANDOLOCKE_MAP_PRICE
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerNoMoney
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerNoRoom
+	removemoney RANDOLOCKE_MAP_PRICE
+	msgbox SlateportCity_Harbor_Text_MapSellerThanks, MSGBOX_DEFAULT
+	setvar VAR_RESULT, TRUE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerAlreadyHave::
+	msgbox SlateportCity_Harbor_Text_MapSellerAlreadyHave, MSGBOX_DEFAULT
+	setvar VAR_RESULT, FALSE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerNoMoney::
+	msgbox SlateportCity_Harbor_Text_MapSellerNoMoney, MSGBOX_DEFAULT
+	setvar VAR_RESULT, FALSE
+	return
+
+@ giveitem has already said the bag is full; just report the failure.
+SlateportCity_Harbor_EventScript_MapSellerNoRoom::
+	setvar VAR_RESULT, FALSE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerDone::
+	release
+	end
+
+SlateportCity_Harbor_EventScript_MapSellerNotYet::
+	msgbox SlateportCity_Harbor_Text_MapSellerNotYet, MSGBOX_DEFAULT
+	release
+	end
+
+SlateportCity_Harbor_Text_MapSellerIntro:
+	.string "I chart the places the ferries won't\n"
+	.string "admit exist.\p"
+	.string "One POKé each. I'm not in it for the\n"
+	.string "money - I want someone to go and look.\p"
+	.string "The S.S. TIDAL sails for them out of\n"
+	.string "LILYCOVE.$"
+
+SlateportCity_Harbor_Text_MapSellerNotYet:
+	.string "Charts? For you?\p"
+	.string "Come back when the GYM LEADERS of\n"
+	.string "HOENN have all had their say.$"
+
+SlateportCity_Harbor_Text_MapEon:
+	.string "SOUTHERN ISLAND$"
+
+SlateportCity_Harbor_Text_MapOldSea:
+	.string "FARAWAY ISLAND$"
+
+SlateportCity_Harbor_Text_MapAurora:
+	.string "BIRTH ISLAND$"
+
+SlateportCity_Harbor_Text_MapMystic:
+	.string "NAVEL ROCK$"
+
+SlateportCity_Harbor_Text_MapSellerThanks:
+	.string "Take it to LILYCOVE HARBOR.\n"
+	.string "The sailor there will know it.$"
+
+SlateportCity_Harbor_Text_MapSellerAlreadyHave:
+	.string "You have that one already.\n"
+	.string "I only drew the once.$"
+
+SlateportCity_Harbor_Text_MapSellerNoMoney:
+	.string "One POKé. One!\p"
+	.string "Come back when you've found a coin.$"

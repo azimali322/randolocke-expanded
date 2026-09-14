@@ -821,7 +821,10 @@ predictable from its number, the only way to shop your own bag is to read the mo
 | T13.7 | Move tutors are unaffected | Talk to any move tutor | Vanilla moves |
 | T13.8 | HMs are untouched | Check HM01–HM08 | Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall, Dive |
 | T13.9 | Marts sell the re-pointed move | Buy a TM from any mart | The bag shows the randomized move |
-| T13.10 | Bands are respected | With 0x2A set, survey 20 TMs | No Bad or Pokemon Homeless moves; mostly Meta Defining / Staples / Good |
+| T13.10 | **Bands are respected** | With 0x2A set, survey all 50 TMs | **No Bad and no Pokemon Homeless moves at all** — those two bands are excluded from `sTmMoveTiers`, not merely made rare |
+| T13.10b | The spread matches the TM weights | Same survey, bucket by tier | Roughly 4 Meta Defining (all of them), ~15 Staples, ~25 Filler, ~5 Niche |
+| T13.10c | **Found TMs are uniform once moves are randomized** | 0x2A set, collect 20 field TMs | Any of TM01–TM50, evenly. The tier spread lives in the assignment now, not in which TM number drops |
+| T13.10d | Found TMs are tier-weighted when moves are *not* randomized | 0x2A clear, 0x21 set, collect 20 field TMs | Only TMs whose vanilla move is Meta Defining / Staples / Filler / Niche |
 | T13.11 | Reverse lookup is consistent | Use a move-relearner or a battle that names the TM's move | Names agree with the bag panel |
 
 ### The bag move panel
@@ -850,6 +853,48 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 | T13.28 | Wally's tutorial bag | Play the Wally catching tutorial | No regression |
 | T13.29 | **Sell / deposit screens** | Sell a TM at a mart; deposit one in the PC | Panel behaves, money window does not overlap it |
 | T13.30 | Config off | Set `RANDOLOCKE_TM_HOVER_INFO` to `FALSE`, rebuild | Panel appears only after pressing A, as in stock 1.17 |
+
+---
+
+## Phase 15 — v1.1 NPCs
+
+### Oldale financier
+
+One-time ₽999,999 gift. `RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN` (0x2B) records that he paid.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T15.1 | **He exists** | Walk into Oldale Town | A GENTLEMAN standing at (6, 12), facing down |
+| T15.2 | He pays | Talk to him | ₽999,999, item fanfare, then his second line |
+| T15.3 | **Once only** | Talk to him again | The "that was everything I had" line, no more money |
+| T15.4 | Flag is set | Debug → Flags, read 0x2B | Set after the first conversation, clear before it |
+| T15.5 | Survives a reload | Take the money, save, soft reset, talk again | Still refuses |
+| T15.6 | He does not block anything | Walk around him | No collision problem, no NPC overlap |
+
+### Slateport map seller
+
+Sells the four event tickets at ₽1 each, from the 8th badge. Located in Slateport
+**Harbor** — the tickets are used from **Lilycove** Harbor.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T15.7 | **Locked before the 8th badge** | Enter Slateport Harbor early, talk to the man at (13, 12) | Turns you away — no menu |
+| T15.8 | **Opens at the 8th badge** | Debug → Flags, set `FLAG_BADGE08_GET`. Talk to him | A five-option menu: SOUTHERN ISLAND, FARAWAY ISLAND, BIRTH ISLAND, NAVEL ROCK, EXIT |
+| T15.9 | Buying works | Pick SOUTHERN ISLAND with money in hand | ₽1 deducted, EON TICKET in the Key Items pocket |
+| T15.10 | **The ship flag is set too** | After T15.9, debug → Flags, read `FLAG_ENABLE_SHIP_SOUTHERN_ISLAND` | Set. Without it the S.S. Tidal ignores the ticket |
+| T15.11 | The menu loops | Buy one, do not press B | The menu reappears so you can buy the next |
+| T15.12 | EXIT closes it | Pick EXIT | Conversation ends |
+| T15.13 | B closes it | Press B on the menu | Conversation ends, nothing bought |
+| T15.14 | **Already owned** | Buy the same ticket twice | "You have that one already", no second charge |
+| T15.15 | No money | Set money to 0, try to buy | Refused, no ticket |
+| T15.16 | All four | Buy every ticket | Four Key Items, all four `FLAG_ENABLE_SHIP_*` set |
+| T15.17 | **Southern Island reachable** | With the Eon Ticket, talk to the Lilycove sailor | SOUTHERN ISLAND appears in the destination list |
+| T15.18 | Faraway Island | Same with the Old Sea Map | FARAWAY ISLAND appears — Mew |
+| T15.19 | Birth Island | Same with the Aurora Ticket | BIRTH ISLAND appears — Deoxys |
+| T15.20 | Navel Rock | Same with the Mystic Ticket | NAVEL ROCK appears — Ho-Oh and Lugia |
+| T15.21 | **The legendaries are randomized** | Flag 0x23 set, reach one of the islands | Not Mew / Deoxys / Lugia — a randomized species |
+| T15.22 | Harbour scenes still work | Replay the Team Aqua submarine scene at Slateport Harbor | Unchanged; the seller does not stand in the way |
+| T15.23 | Hidden patrons unaffected | Before beating the game, check the harbour | The vanilla patrons are still hidden by their flag; the seller is always visible |
 
 ---
 

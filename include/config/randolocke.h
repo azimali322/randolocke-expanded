@@ -73,6 +73,19 @@
 // pokeemerald_rando_enh, where randomized TMs made this close to essential.
 #define RANDOLOCKE_TM_HOVER_INFO        TRUE
 
+// --- v1.1 NPCs --------------------------------------------------------------
+
+// Set once the Oldale financier has handed over his money, so he only does it once.
+#define RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN  FLAG_UNUSED_0x02B
+
+// Badge the Slateport harbour map seller waits for. Randolocke's other legendary
+// unlocks land after Sootopolis, which is the eighth badge.
+#define RANDOLOCKE_MAP_SELLER_BADGE         FLAG_BADGE08_GET
+
+// What each "legendary location map" costs. They are the four event tickets, which are
+// otherwise unobtainable without Mystery Gift; the price is nominal on purpose.
+#define RANDOLOCKE_MAP_PRICE                1
+
 // --- New game defaults ------------------------------------------------------
 
 // Randolocke is meant to be randomized out of the box, but tertu's randomizer defaults

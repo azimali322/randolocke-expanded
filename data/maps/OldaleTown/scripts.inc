@@ -395,3 +395,37 @@ OldaleTown_Text_TownSign:
 	.string "OLDALE TOWN\n"
 	.string "“Where things start off scarce.”$"
 
+
+@ randolocke: the v1.1 Oldale financier. One-time, so he is a leg-up rather than a
+@ money faucet - the cheap mart still has to be worth walking to.
+OldaleTown_EventScript_Financier::
+	lock
+	faceplayer
+	goto_if_set RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN, OldaleTown_EventScript_FinancierDone
+	msgbox OldaleTown_Text_FinancierOffer, MSGBOX_DEFAULT
+	addmoney 999999
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox OldaleTown_Text_FinancierGave, MSGBOX_DEFAULT
+	setflag RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN
+	release
+	end
+
+OldaleTown_EventScript_FinancierDone::
+	msgbox OldaleTown_Text_FinancierDone, MSGBOX_DEFAULT
+	release
+	end
+
+OldaleTown_Text_FinancierOffer:
+	.string "Money? I have far too much of it.\p"
+	.string "You, though - you look like someone\n"
+	.string "about to attempt something foolish.\p"
+	.string "Here. Take all of it.$"
+
+OldaleTown_Text_FinancierGave:
+	.string "Spend it on POKé BALLS.\n"
+	.string "You'll need them more than I do.$"
+
+OldaleTown_Text_FinancierDone:
+	.string "That was everything I had.\n"
+	.string "Do try to make it last.$"

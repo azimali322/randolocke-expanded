@@ -127,9 +127,16 @@
 
 // --- TM moves ---------------------------------------------------------------
 
-// Reassigns what each TM teaches, drawn from the tier-weighted move pool with no
-// duplicates. Safe here because Phase 6 set ALL_TEACHABLES globally, so no Pokemon's
-// compatibility depends on which move a given TM carries. HMs are never touched.
+// Reassigns what each TM teaches. Drawn through the RZ_TM_W_* bands above, not the move
+// bands: Bad and Pokemon Homeless are excluded outright, exactly as they are from the
+// vanilla TM list, because a TM is permanent under I_REUSABLE_TMS. No duplicates - a
+// second TM for a move you already have is dead weight. Safe here because Phase 6 set
+// ALL_TEACHABLES globally, so no Pokemon's compatibility depends on which move a given
+// TM carries. HMs are never touched.
+//
+// Note this also takes over the TM *pickup* weighting: with TM moves reassigned, the
+// vanilla TM->tier grouping in sTmTiers no longer describes anything, so a found TM is
+// picked uniformly and the spread comes from this assignment instead.
 #define RZ_TM_MOVES_TIER_MODE       RZ_TIER_MODE_MOVES
 
 // --- Learnset randomization -------------------------------------------------
