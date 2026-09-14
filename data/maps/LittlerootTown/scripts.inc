@@ -245,8 +245,7 @@ LittlerootTown_EventScript_FatMan::
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
-@ randolocke: the PORTA HEAL, the ENDLESS CANDY and the CAP CANDY -- all three candies in
-@ one place. The REPELLANT comes from the old man in Oldale.
+@ randolocke: all four key items, from one person you meet before leaving town.
 LittlerootTown_EventScript_Boy::
 	lock
 	faceplayer
@@ -256,6 +255,8 @@ LittlerootTown_EventScript_Boy::
 	setvar VAR_0x8008, ITEM_ENDLESS_CANDY
 	call LittlerootTown_EventScript_GiveKeyItemIfMissing
 	setvar VAR_0x8008, ITEM_CAP_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_REPELLANT
 	call LittlerootTown_EventScript_GiveKeyItemIfMissing
 	goto_if_eq VAR_0x8009, 0, LittlerootTown_EventScript_BoyNothingToGive
 	msgbox LittlerootTown_Text_BoyKeepThemSafe, MSGBOX_DEFAULT

@@ -62,27 +62,46 @@ static void MarkAreaUsed(u32 area)
 // Walks to the family root first, so catching an Ivysaur blocks a later Bulbasaur.
 static bool32 FamilyAlreadyCaught(enum Species species)
 {
-    // Deep enough for any real family; the guard stops a cyclic evolution table hanging.
+    // Walks the evolution family looking for anything already registered as caught.
+    //
+    // The graph is data, not something to trust: regional forms and branching evolutions
+    // can reach the same species twice, and a table that pointed back at an ancestor would
+    // make a naive breadth-first walk run forever -- which, in the middle of a capture,
+    // is a hung game. So: a seen-set, a bounded queue, and a hard iteration cap. Any of
+    // the three alone would do; together the loop cannot fail to terminate.
     #define RANDOLOCKE_MAX_FAMILY   24
-    enum Species stack[RANDOLOCKE_MAX_FAMILY];
-    u32 depth = 0;
-    u32 guard;
+    enum Species queue[RANDOLOCKE_MAX_FAMILY];
+    enum Species seen[RANDOLOCKE_MAX_FAMILY];
+    u32 depth = 0, seenCount = 0, steps, i;
 
-    for (guard = 0; guard < RANDOLOCKE_MAX_FAMILY; guard++)
+    if (species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
+
+    for (steps = 0; steps < RANDOLOCKE_MAX_FAMILY; steps++)
     {
         enum Species pre = GetSpeciesPreEvolution(species);
 
-        if (pre == SPECIES_NONE)
+        if (pre == SPECIES_NONE || pre >= NUM_SPECIES)
             break;
         species = pre;
     }
 
-    stack[depth++] = species;
-    while (depth != 0)
+    queue[depth++] = species;
+    for (steps = 0; steps < RANDOLOCKE_MAX_FAMILY * 4 && depth != 0; steps++)
     {
         const struct Evolution *evos;
-        enum Species cur = stack[--depth];
-        u32 i;
+        enum Species cur = queue[--depth];
+        bool32 alreadySeen = FALSE;
+
+        for (i = 0; i < seenCount; i++)
+        {
+            if (seen[i] == cur)
+                alreadySeen = TRUE;
+        }
+        if (alreadySeen)
+            continue;
+        if (seenCount < ARRAY_COUNT(seen))
+            seen[seenCount++] = cur;
 
         if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(cur), FLAG_GET_CAUGHT))
             return TRUE;
@@ -92,8 +111,8 @@ static bool32 FamilyAlreadyCaught(enum Species species)
             continue;
         for (i = 0; evos[i].method != EVOLUTIONS_END; i++)
         {
-            if (depth < ARRAY_COUNT(stack))
-                stack[depth++] = evos[i].targetSpecies;
+            if (depth < ARRAY_COUNT(queue) && evos[i].targetSpecies < NUM_SPECIES)
+                queue[depth++] = evos[i].targetSpecies;
         }
     }
     return FALSE;

@@ -41,7 +41,11 @@
 // still uses the first. Registering pushes the previous first item into the second slot,
 // so two registrations fill both without any new bag UI.
 // WARNING: this adds a field to SaveBlock1 and therefore changes the save layout.
-#define RANDOLOCKE_DUAL_REGISTERED_ITEMS  TRUE
+// Turned off: the two-slot behaviour did not work reliably in play -- registering a
+// Porta Heal would not take. Back to the base game's single registered item until the
+// pokeemerald_rando_enh version (separate tap/hold icons, and a prompt explaining the
+// hold) can be ported properly.
+#define RANDOLOCKE_DUAL_REGISTERED_ITEMS  FALSE
 
 // Frames SELECT must be held before the second item fires, at 60fps.
 #define RANDOLOCKE_SELECT_HOLD_FRAMES     20
@@ -116,6 +120,13 @@
 
 // How many IVs a starter or gift is guaranteed under RANDOLOCKE_IVS_RANDOLOCKE.
 #define RANDOLOCKE_GIFT_PERFECT_IVS 3
+
+// --- Berries ------------------------------------------------------------------
+
+// Multiplier on how many berries a tree gives when harvested. Randomized berry trees mean
+// you rarely get the one you wanted twice, so a bigger handful of each is worth more than
+// a second trip. Capped at 255, which is the field's limit.
+#define RANDOLOCKE_BERRY_YIELD_MULTIPLIER   4
 
 // --- Nuzlocke rules ----------------------------------------------------------
 

@@ -107,7 +107,10 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_MID;
     gSaveBlock2Ptr->optionsWindowFrameType = 0;
     gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_MONO;
-    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
+    // randolocke: SET, not SHIFT. Being offered a free switch every time a trainer's
+    // Pokemon faints is the single biggest difficulty giveaway in the game, and this is
+    // a challenge hack. Still changeable in the options menu.
+    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SET;
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
 }
