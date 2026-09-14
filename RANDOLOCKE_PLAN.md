@@ -497,9 +497,11 @@ largely covered by the cheap mart), the Slateport legendary-location map seller,
 post-Sootopolis Regi / Kyogre / Groudon unlocks.
 
 ### Phase 9 — Ship
-- [ ] Full playthrough test to at least Gym 3
-- [ ] Save/reload stability testing (randomization must be stable)
-- [ ] Produce distribution patch against `baserom.gba`
+- [ ] Full playthrough test to at least Gym 3 — **yours to run**, see TESTING.md T9.13
+- [ ] Save/reload stability testing (randomization must be stable) — **yours**, T9.14–T9.16
+- [x] Produce distribution patch against `baserom.gba` ✅ `tools/randolocke/make_bps.py`
+      writes BPS without needing Flips, and verifies its own output by applying it back.
+      0.9.0 patches are in `dist/` (gitignored). See `docs/RELEASING.md`
 - [ ] Credits: RHH, pret, tertu-m, Zetraphes, Istorian, PChal/Pointcrow
 
 ### Phase 11 — Cheap ball shop

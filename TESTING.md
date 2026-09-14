@@ -856,6 +856,46 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 
 ---
 
+## Phase 9 — Ship
+
+Build and patching are done; see `docs/RELEASING.md`. What remains is yours to run.
+
+### Credits
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T9.1 | **Randolocke credits appear** | Beat the Elite Four and watch the credits | Five new pages right after the title card: RANDOLOCKE EXPANDED, Original Randolocke / Istorian, Randomizer / tertu-m / Zetraphes, Built On / pokeemerald-expansion / RHH and pret, Inspiration / PChal / Pointcrow |
+| T9.2 | The original roll still plays | Keep watching | The Game Freak staff roll follows, unchanged |
+| T9.3 | Scene pacing is not broken | Watch the whole sequence | The bike scenes and Pokémon interludes still land — `PAGE_INTERVAL` is `PAGE_COUNT / 9`, and five extra pages shift it slightly |
+| T9.4 | No text overflow | Read each new page | Nothing clipped at the screen edges |
+
+### Patch and distribution
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T9.5 | **The patch applies** | Apply `randolocke-expanded-0.9.0.bps` to a fresh vanilla Emerald at <https://www.marcrobledo.com/RomPatcher.js/> | Succeeds |
+| T9.6 | Result checksum | CRC32 the output | `c165e622` for the release patch, `359e5b0f` for the test patch |
+| T9.7 | **The patched ROM boots** | Load it in mGBA | Title screen, new game works |
+| T9.8 | Wrong base is refused | Try to apply it to a different ROM | Rejected — the patch stores the source checksum |
+| T9.9 | Flips agrees | Apply the same patch with Flips instead | Identical output |
+| T9.10 | **The release build has no debug menu** | On the release patch, hold R and press START | Nothing opens |
+| T9.11 | **…and is still randomized** | New game on the release patch, walk into grass | Randomized encounters. This is the whole point of Phase 14 |
+| T9.12 | The test build does have it | Same on the test patch | The debug menu opens |
+
+### The playthrough
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T9.13 | **Reach Gym 3** | Play the release build to Dewford or beyond | No crashes, no softlocks, no missing NPCs |
+| T9.14 | **Randomization is stable across a reload** | Note a wild table, a trainer's party and an ability. Save, soft reset, reload | All identical |
+| T9.15 | Stable across a power cycle | Same, but File → Reset in mGBA rather than a save state | All identical |
+| T9.16 | Save states agree | Save state before an encounter, reload it several times | The same species each time |
+| T9.17 | §R regressions | Run the §R rows on the release build | All pass |
+| T9.18 | Level caps hold all the way | Check the cap at each badge | 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 / 63, then 100 |
+| T9.19 | No save corruption | Play for an hour, save often, reload | No "save file is corrupted" |
+
+---
+
 ## Phase 17 — Terrain
 
 Layout edits made by writing `data/layouts/*/map.bin` directly and checking the result

@@ -1,6 +1,12 @@
 enum
 {
     PAGE_TITLE,
+    // randolocke: this hack's own credits, shown before the original staff roll
+    PAGE_RANDOLOCKE_TITLE,
+    PAGE_RANDOLOCKE_DESIGN,
+    PAGE_RANDOLOCKE_RANDOMIZER,
+    PAGE_RANDOLOCKE_BASE,
+    PAGE_RANDOLOCKE_INSPIRATION,
     PAGE_DIRECTOR,
     PAGE_ART_DIRECTOR,
     PAGE_WORLD_DIRECTOR,
@@ -63,6 +69,20 @@ enum
 #define ENTRIES_PER_PAGE 5
 
 static const u8 sCreditsText_EmptyString[]                    = _("");
+// randolocke
+static const u8 sCreditsText_RandolockeExpanded[]             = _("RANDOLOCKE EXPANDED");
+static const u8 sCreditsText_ARandomizerHack[]                = _("A randomizer hack");
+static const u8 sCreditsText_OriginalRandolocke[]             = _("Original Randolocke");
+static const u8 sCreditsText_Istorian[]                       = _("Istorian");
+static const u8 sCreditsText_Randomizer[]                     = _("Randomizer");
+static const u8 sCreditsText_Tertu[]                          = _("tertu-m");
+static const u8 sCreditsText_Zetraphes[]                      = _("Zetraphes");
+static const u8 sCreditsText_BuiltOn[]                        = _("Built On");
+static const u8 sCreditsText_PokeemeraldExpansion[]           = _("pokeemerald-expansion");
+static const u8 sCreditsText_RHHAndPret[]                     = _("RHH and pret");
+static const u8 sCreditsText_Inspiration[]                    = _("Inspiration");
+static const u8 sCreditsText_PChal[]                          = _("PChal");
+static const u8 sCreditsText_Pointcrow[]                      = _("Pointcrow");
 static const u8 sCreditsText_PkmnEmeraldVersion[]             = _("POKéMON EMERALD VERSION");
 static const u8 sCreditsText_Credits[]                        = _("Credits");
 static const u8 sCreditsText_ExecutiveDirector[]              = _("Executive Director");
@@ -222,6 +242,20 @@ static const u8 sCreditsText_NicolaPrattBarlow[]              = _("Nicola Pratt-
 static const u8 sCreditsText_ShellieDow[]                     = _("Shellie Dow");
 static const u8 sCreditsText_ErikJohnson[]                    = _("Erik Johnson");
 static const struct CreditsEntry sCreditsEntry_EmptyString                      = { 0, FALSE, sCreditsText_EmptyString};
+// randolocke
+static const struct CreditsEntry sCreditsEntry_RandolockeExpanded               = { 9,  TRUE, sCreditsText_RandolockeExpanded};
+static const struct CreditsEntry sCreditsEntry_ARandomizerHack                  = {10, FALSE, sCreditsText_ARandomizerHack};
+static const struct CreditsEntry sCreditsEntry_OriginalRandolocke               = { 9,  TRUE, sCreditsText_OriginalRandolocke};
+static const struct CreditsEntry sCreditsEntry_Istorian                         = {12, FALSE, sCreditsText_Istorian};
+static const struct CreditsEntry sCreditsEntry_Randomizer                       = {11,  TRUE, sCreditsText_Randomizer};
+static const struct CreditsEntry sCreditsEntry_Tertu                            = {12, FALSE, sCreditsText_Tertu};
+static const struct CreditsEntry sCreditsEntry_Zetraphes                        = {12, FALSE, sCreditsText_Zetraphes};
+static const struct CreditsEntry sCreditsEntry_BuiltOn                          = {12,  TRUE, sCreditsText_BuiltOn};
+static const struct CreditsEntry sCreditsEntry_PokeemeraldExpansion             = { 8, FALSE, sCreditsText_PokeemeraldExpansion};
+static const struct CreditsEntry sCreditsEntry_RHHAndPret                       = {11, FALSE, sCreditsText_RHHAndPret};
+static const struct CreditsEntry sCreditsEntry_Inspiration                      = {11,  TRUE, sCreditsText_Inspiration};
+static const struct CreditsEntry sCreditsEntry_PChal                            = {12, FALSE, sCreditsText_PChal};
+static const struct CreditsEntry sCreditsEntry_Pointcrow                        = {12, FALSE, sCreditsText_Pointcrow};
 static const struct CreditsEntry sCreditsEntry_PkmnEmeraldVersion               = { 7,  TRUE, sCreditsText_PkmnEmeraldVersion};
 static const struct CreditsEntry sCreditsEntry_Credits                          = {11,  TRUE, sCreditsText_Credits};
 static const struct CreditsEntry sCreditsEntry_ExecutiveDirector                = { 8,  TRUE, sCreditsText_ExecutiveDirector};
@@ -389,6 +423,41 @@ static const struct CreditsEntry *const sCreditsEntryPointerTable[PAGE_COUNT][EN
         &sCreditsEntry_PkmnEmeraldVersion,
         &sCreditsEntry_Credits,
         _,
+        _
+    },
+    [PAGE_RANDOLOCKE_TITLE] = {
+        _,
+        &sCreditsEntry_RandolockeExpanded,
+        &sCreditsEntry_ARandomizerHack,
+        _,
+        _
+    },
+    [PAGE_RANDOLOCKE_DESIGN] = {
+        _,
+        &sCreditsEntry_OriginalRandolocke,
+        &sCreditsEntry_Istorian,
+        _,
+        _
+    },
+    [PAGE_RANDOLOCKE_RANDOMIZER] = {
+        _,
+        &sCreditsEntry_Randomizer,
+        &sCreditsEntry_Tertu,
+        &sCreditsEntry_Zetraphes,
+        _
+    },
+    [PAGE_RANDOLOCKE_BASE] = {
+        _,
+        &sCreditsEntry_BuiltOn,
+        &sCreditsEntry_PokeemeraldExpansion,
+        &sCreditsEntry_RHHAndPret,
+        _
+    },
+    [PAGE_RANDOLOCKE_INSPIRATION] = {
+        _,
+        &sCreditsEntry_Inspiration,
+        &sCreditsEntry_PChal,
+        &sCreditsEntry_Pointcrow,
         _
     },
     [PAGE_DIRECTOR] = {
