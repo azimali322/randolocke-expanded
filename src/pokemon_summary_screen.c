@@ -201,6 +201,9 @@ EWRAM_DATA u8 gLastViewedMonIndex = 0;
 static EWRAM_DATA u8 sMoveSlotToReplace = 0;
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
 static EWRAM_DATA bool8 sRandolockeStatsOverlayVisible = FALSE;
+// The five shared type-icon sprites are all spoken for on the moves page -- four moves
+// plus the one being learned -- so the overlay makes two of its own.
+static EWRAM_DATA u8 sRandolockeOverlayTypeSpriteIds[2] = {0};
 // Zero-initialised because EWRAM_DATA lands in .sbss; ShowPokemonSummaryScreen sets it
 // to WINDOW_NONE before anything reads it.
 static EWRAM_DATA u8 sRandolockeStatsOverlayWindowId = 0;
@@ -788,18 +791,23 @@ static const u8 sButtons_Gfx[][4 * TILE_SIZE_4BPP] = {
 // 24x16 rather than the A and B buttons' 16x16, because the word is longer.
 static const u8 sSelectButton_Gfx[] = INCGFX_U8("graphics/summary_screen/select_button.png", ".4bpp");
 
-// Sits exactly over the Pokemon's picture. baseBlock is past the last label window
-// (PSS_LABEL_WINDOW_PROMPT_RELEARN ends at 821) and well inside bg 0's 1024 tiles.
+// Sits over the Pokemon's picture and the dex number row above it -- the two type icons
+// needed another sixteen pixels, and "No000" is the one thing in that column worth
+// covering. It stops short of the nickname at tile row 12. baseBlock is past the last
+// label window (PSS_LABEL_WINDOW_PROMPT_RELEARN ends at 821) and well inside bg 0's
+// 1024 tiles.
 static const struct WindowTemplate sRandolockeStatsOverlayTemplate =
 {
     .bg = 0,
     .tilemapLeft = 0,
-    .tilemapTop = 4,
+    .tilemapTop = 2,
     .width = 10,
-    .height = 8,
+    .height = 10,
     .paletteNum = 6,
     .baseBlock = 822,
 };
+
+#define RZ_STATS_OVERLAY_TOP    (2 * TILE_HEIGHT)   // screen y of the window's first row
 #endif
 
 static void (*const sTextPrinterFunctions[])(void) =
@@ -1361,6 +1369,8 @@ void ShowPokemonSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, 
     #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
     sRandolockeStatsOverlayVisible = FALSE;
     sRandolockeStatsOverlayWindowId = WINDOW_NONE;
+    sRandolockeOverlayTypeSpriteIds[0] = SPRITE_NONE;
+    sRandolockeOverlayTypeSpriteIds[1] = SPRITE_NONE;
     #endif
     SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
 
@@ -5175,14 +5185,78 @@ static void RandolockePrintOverlayStat(u8 windowId, const u8 *label, u32 stat, s
     AddTextPrinterParameterized4(windowId, FONT_NARROW, x + 20, y, 0, 0, sColors, 0, statStr);
 }
 
+// The type icons are 32x16 sprites drawn from the same sheet the move list uses. They
+// are created here rather than borrowed from spriteIds[]: SPRITE_ARR_ID_TYPE onward is
+// fully occupied on this page. Priority 0 because the overlay window is on bg 0, and an
+// object only draws in front of a background whose priority is no lower than its own --
+// gSpriteTemplate_MoveTypes' own priority of 1 would put these behind the panel.
+static void RandolockeSetOverlayTypeIcon(u32 slot, enum Type type, u32 x, u32 y)
+{
+    u8 *spriteId = &sRandolockeOverlayTypeSpriteIds[slot];
+    struct Sprite *sprite;
+
+    if (*spriteId == SPRITE_NONE)
+    {
+        *spriteId = CreateSprite(&gSpriteTemplate_MoveTypes, 0, 0, 2);
+        if (*spriteId == SPRITE_NONE)
+            return;
+    }
+
+    sprite = &gSprites[*spriteId];
+    StartSpriteAnim(sprite, type);
+    sprite->oam.paletteNum = gTypesInfo[type].palette;
+    sprite->oam.priority = 0;
+    sprite->x = x + 16;
+    sprite->y = y + 8;
+    sprite->invisible = FALSE;
+}
+
+static void RandolockeDestroyOverlayTypeIcons(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sRandolockeOverlayTypeSpriteIds); i++)
+    {
+        if (sRandolockeOverlayTypeSpriteIds[i] != SPRITE_NONE)
+        {
+            // Only the sprite. The tiles and palette belong to the move list's icons.
+            DestroySprite(&gSprites[sRandolockeOverlayTypeSpriteIds[i]]);
+            sRandolockeOverlayTypeSpriteIds[i] = SPRITE_NONE;
+        }
+    }
+}
+
+// Both types side by side, or one centred when the Pokemon has a single type. 32px each
+// inside an 80px panel, so a pair leaves 8px of margin either side.
+static void RandolockeShowOverlayTypes(enum Species species)
+{
+    enum Type type1 = GetSpeciesType(species, 0);
+    enum Type type2 = GetSpeciesType(species, 1);
+    u32 y = RZ_STATS_OVERLAY_TOP + 2;
+
+    if (type1 == type2)
+    {
+        RandolockeSetOverlayTypeIcon(0, type1, 24, y);
+        if (sRandolockeOverlayTypeSpriteIds[1] != SPRITE_NONE)
+            gSprites[sRandolockeOverlayTypeSpriteIds[1]].invisible = TRUE;
+    }
+    else
+    {
+        RandolockeSetOverlayTypeIcon(0, type1, 8, y);
+        RandolockeSetOverlayTypeIcon(1, type2, 42, y);
+    }
+}
+
 static void RandolockeShowStatsOverlay(void)
 {
+    // Window-relative. Rows 2..17 are where the type icons sit, so the stats start below
+    // them and the ability closes the panel out at 63 + 14 of the window's 80.
     #define RZ_STATS_COL1_X  3
     #define RZ_STATS_COL2_X 43
-    #define RZ_STATS_ROW1_Y  2
-    #define RZ_STATS_ROW2_Y 16
-    #define RZ_STATS_ROW3_Y 30
-    #define RZ_STATS_ABILITY_Y 45
+    #define RZ_STATS_ROW1_Y 20
+    #define RZ_STATS_ROW2_Y 34
+    #define RZ_STATS_ROW3_Y 48
+    #define RZ_STATS_ABILITY_Y 63
     #define RZ_STATS_WIDTH  (10 * TILE_WIDTH)
 
     struct Pokemon *mon = &sMonSummaryScreen->currentMon;
@@ -5237,6 +5311,8 @@ static void RandolockeShowStatsOverlay(void)
                                      sAbilityColors, 0, gAbilitiesInfo[ability].name);
     }
 
+    RandolockeShowOverlayTypes(GetMonData(mon, MON_DATA_SPECIES));
+
     PutWindowTilemap(windowId);
     CopyWindowToVram(windowId, COPYWIN_FULL);
     ScheduleBgCopyTilemapToVram(0);
@@ -5260,6 +5336,7 @@ static void RandolockeHideStatsOverlay(void)
     #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
     RandolockeSetFriendshipHeartVisible(TRUE);
     #endif
+    RandolockeDestroyOverlayTypeIcons();
 
     if (sRandolockeStatsOverlayWindowId != WINDOW_NONE)
     {

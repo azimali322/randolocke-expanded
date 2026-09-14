@@ -1239,7 +1239,11 @@ branch, so the Pokémon also never reached the evolution check.
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
 | T27.20 | **The prompt is visible** | Level a Pokémon into "which move should be forgotten?" | Top right reads SELECT + "Stats", not "Ⓐ INFO" |
-| T27.21 | **SELECT shows the numbers** | Press SELECT | The picture is replaced by HP / ATK / DEF / SpA / SpD / SPE and the ability |
+| T27.21 | **SELECT shows the numbers** | Press SELECT | The picture is replaced by the Pokémon's type icons, HP / ATK / DEF / SpA / SpD / SPE, and the ability |
+| T27.21b | **Dual types sit side by side** | A two-type Pokémon | Both icons across the top of the panel, inside the margins |
+| T27.21c | A single type is centred | A one-type Pokémon | One icon, centred. No leftover second icon |
+| T27.21d | The icons are in front | Open the overlay | Icons drawn over the white panel, not hidden behind it |
+| T27.21e | They do not linger | Open the overlay, close it, change page, reopen | No stray type icons anywhere on screen |
 | T27.22 | The numbers are the real ones | Compare with the skills page afterwards | Identical |
 | T27.23 | Nature colouring | A Pokémon with a non-neutral nature | Raised stat red, lowered stat blue, rest black |
 | T27.24 | **Hidden nature wins** | A Pokémon given a Mint or a rolled hidden nature | The colours follow the *hidden* nature, which is what moved the numbers |
