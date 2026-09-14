@@ -357,13 +357,13 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
-#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
-static bool32 RandolockeRollAvailable(void);
-#endif
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+static bool32 RandolockeNatureRollAvailable(void);
 static void RandolockeTryRollNature(void);
 #endif
 #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
+static bool32 RandolockeAbilityRollOnStart(void);
+static bool32 RandolockeAbilityRollOnSelect(void);
 static void RandolockeTryRollAbility(void);
 #endif
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
@@ -1970,25 +1970,23 @@ static void Task_HandleInput(u8 taskId)
             BeginCloseSummaryScreen(taskId);
         }
         #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-        else if (JOY_NEW(SELECT_BUTTON) && RandolockeRollAvailable())
+        else if (JOY_NEW(SELECT_BUTTON) && RandolockeNatureRollAvailable())
         {
             RandolockeTryRollNature();
         }
         #endif
         #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
-        // START is free here. The move relearner takes it, but only on the move pages.
-        else if (JOY_NEW(START_BUTTON) && RandolockeRollAvailable())
+        else if (JOY_NEW(SELECT_BUTTON) && RandolockeAbilityRollOnSelect())
+        {
+            RandolockeTryRollAbility();
+        }
+        // START is free on the info page. The move relearner takes it, but only on the
+        // move pages.
+        else if (JOY_NEW(START_BUTTON) && RandolockeAbilityRollOnStart())
         {
             RandolockeTryRollAbility();
         }
         #endif
-        else if (DEBUG_POKEMON_SPRITE_VISUALIZER && JOY_NEW(SELECT_BUTTON) && !gMain.inBattle)
-        {
-            sMonSummaryScreen->callback = CB2_Pokemon_Sprite_Visualizer;
-            StopPokemonAnimations();
-            PlaySE(SE_SELECT);
-            CloseSummaryScreen(taskId);
-        }
         else if (ShouldShowMoveRelearner() && IS_MOVE_PAGE(sMonSummaryScreen->currPageIndex))
         {
             HandleMoveRelearnerInput(taskId);
@@ -3927,16 +3925,40 @@ static void PrintMonTrainerMemo(void)
 // ability. Separate buttons on purpose: aiming for a spread means keeping the half you
 // like while working on the other. Party Pokemon only, because RandolockeEditTarget
 // indexes monList.mons, which is not where a boxed Pokemon lives.
-static bool32 RandolockeRollAvailable(void)
+// Everything except which page we are on.
+static bool32 RandolockeRollAllowed(void)
 {
     return sMonSummaryScreen != NULL
         && !sMonSummaryScreen->isBoxMon
         && sMonSummaryScreen->mode == SUMMARY_MODE_NORMAL
-        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO
         && !sMonSummaryScreen->summary.isEgg
         // Rental Pokemon are not the player's to re-roll.
         && InBattleFactory() != TRUE
         && InSlateportBattleTent() != TRUE;
+}
+
+// The nature rolls on the info page, where the Trainer Memo prints the result.
+static bool32 RandolockeNatureRollAvailable(void)
+{
+    return RandolockeRollAllowed()
+        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO;
+}
+
+// The ability rolls from two places. START on the info page, beside where it is printed;
+// and SELECT on the skills page, which is where the numbers it has to suit are shown --
+// but only in the plain stats view, because the IV and EV views need SELECT for the stat
+// editor.
+static bool32 RandolockeAbilityRollOnStart(void)
+{
+    return RandolockeRollAllowed()
+        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO;
+}
+
+static bool32 RandolockeAbilityRollOnSelect(void)
+{
+    return RandolockeRollAllowed()
+        && sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS
+        && sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_STATS;
 }
 
 // Every roll is paid for. Free and unlimited, natures and abilities stopped being
@@ -4027,11 +4049,17 @@ static void RandolockeTryRollAbility(void)
     CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
     sMonSummaryScreen->summary.abilityNum = chosen;
 
-    // The ability's name and its description share one window.
-    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
-    PrintMonAbilityName();
-    PrintMonAbilityDescription();
-    ScheduleBgCopyTilemapToVram(0);
+    // Only on the info page: sPageInfoTemplate's windows are positioned for that page, and
+    // AddWindowFromTemplateList would happily open one on top of the skills layout. Rolling
+    // from the skills page is deliberately quiet -- press left to read the result.
+    if (sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO)
+    {
+        // The ability's name and its description share one window.
+        FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
+        PrintMonAbilityName();
+        PrintMonAbilityDescription();
+        ScheduleBgCopyTilemapToVram(0);
+    }
     PlaySE(SE_SELECT);
 }
 #endif

@@ -1199,12 +1199,14 @@ art is the same, doubled, and it fills the picture frame's bottom-right corner e
 | --- | --- | --- | --- |
 | T30.7 | **SELECT rolls the nature** | Summary → info page → SELECT | Trainer Memo changes to "Naive (Modest) nature," — original, then the new hidden one. The ability does **not** change |
 | T30.7b | **START rolls the ability** | Same page → START | ABILITY line and its description change. The nature does **not** change |
-| T30.7c | They are independent | Roll a nature you want, then press START several times | The nature stays put while the ability cycles |
-| T30.7d | One-ability species | A species with a single ability across all slots | Failure sound, nothing changes, nothing charged |
-| T30.7e | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
-| T30.7f | **Each roll costs ₽5,000** | Note your money, press SELECT, check again | Down ₽5,000. Same for START |
-| T30.7g | Broke means no roll | Debug → set money below ₽5,000 → SELECT | Failure sound, nothing changes, money untouched |
-| T30.7h | START on the move pages is still RELEARN | Battle moves page → START | Opens the move relearner, not an ability roll |
+| T30.7c | **SELECT on the skills page rolls the ability** | Skills page in its plain stats view → SELECT | Confirmation sound. Press LEFT to the info page: the ability has changed |
+| T30.7d | **No debug page** | Skills page → SELECT, in *both* ROMs | Never the Bulbasaur sprite browser |
+| T30.7e | The IV/EV editor still owns SELECT | Skills page → A until it reads IVs or EVs → SELECT | Opens the stat editor, no ability roll |
+| T30.7f | They are independent | Roll a nature you want, then roll the ability several times | The nature stays put |
+| T30.7g | One-ability species | A species with a single ability across all slots | Failure sound, nothing changes |
+| T30.7h | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
+| T30.7i | **Rolling is free** | Note your money, roll several times | Money unchanged |
+| T30.7j | START on the move pages is still RELEARN | Battle moves page → START | Opens the move relearner, not an ability roll |
 | T30.8 | It never no-ops | Press SELECT repeatedly | The parenthetical changes every time; it never rolls the nature it already had |
 | T30.9 | **The stats follow** | Roll, then page right to skills | Numbers match the new nature; the raised stat is up, the lowered one down |
 | T30.10 | It persists | Roll, leave the summary, come back | Same hidden nature |

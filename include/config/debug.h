@@ -14,6 +14,11 @@
 #define DEBUG_AI_DELAY_TIMER            FALSE // If set to TRUE, displays the number of frames it takes for the AI to choose a move. Replaces the "What will PKMN do" text. Useful for devs or anyone who modifies the AI code and wants to see if it doesn't take too long to run.
 
 // Pokémon Debug
-#define DEBUG_POKEMON_SPRITE_VISUALIZER DISABLED_ON_RELEASE // Enables a debug menu for Pokémon sprites and icons, accessed by pressing Select in the summary screen.
+// randolocke: off in both builds. Its only way in is SELECT on the summary screen, and
+// SELECT there now rolls natures and abilities -- on the skills page in its plain stats
+// view it used to fall through to this and drop the player into a Bulbasaur sprite
+// browser. Nothing else reaches CB2_Pokemon_Sprite_Visualizer, so turning it off here
+// removes it entirely.
+#define DEBUG_POKEMON_SPRITE_VISUALIZER FALSE // Enables a debug menu for Pokémon sprites and icons, accessed by pressing Select in the summary screen.
 
 #endif // GUARD_CONFIG_DEBUG_H
