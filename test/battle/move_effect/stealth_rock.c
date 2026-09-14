@@ -8,7 +8,8 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Stealth Rock damage on switch in based on typing")
 {
-    u32 species, divisor;
+    enum Species species;
+    u32 divisor;
 
     PARAMETRIZE { species = SPECIES_CHARIZARD; divisor = 2; } // Fire / Flying
     PARAMETRIZE { species = SPECIES_PIDGEOT; divisor = 4; } // Flying
@@ -31,7 +32,7 @@ SINGLE_BATTLE_TEST("Stealth Rock damage on switch in based on typing")
     }
 }
 
-SINGLE_BATTLE_TEST("Stealth Rock damages the correct pokemon when Eject Button is triggered")
+SINGLE_BATTLE_TEST("Stealth Rock damages the correct Pokémon when Eject Button is triggered")
 {
     GIVEN {
         PLAYER(SPECIES_METAPOD) { Item(ITEM_EJECT_BUTTON); }
@@ -53,7 +54,7 @@ SINGLE_BATTLE_TEST("Stealth Rock damages the correct pokemon when Eject Button i
     }
 }
 
-DOUBLE_BATTLE_TEST("Stealth Rock damages the correct pokemon when Eject Button is triggered in double battle")
+DOUBLE_BATTLE_TEST("Stealth Rock damages the correct Pokémon when Eject Button is triggered in double battle")
 {
     GIVEN {
         PLAYER(SPECIES_METAPOD) { Item(ITEM_EJECT_BUTTON); }

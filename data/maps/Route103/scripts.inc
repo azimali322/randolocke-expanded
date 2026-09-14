@@ -1,5 +1,3 @@
-.set LOCALID_RIVAL, 2
-
 Route103_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route103_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, Route103_OnLoad
@@ -30,11 +28,11 @@ Route103_EventScript_RivalMay::
 	msgbox Route103_Text_MayRoute103Pokemon, MSGBOX_DEFAULT
 	closemessage
 	playbgm MUS_ENCOUNTER_MAY, TRUE
-	applymovement LOCALID_RIVAL, Common_Movement_FacePlayer
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_FacePlayer
 	waitmovement 0
-	applymovement LOCALID_RIVAL, Common_Movement_ExclamationMark
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_ExclamationMark
 	waitmovement 0
-	applymovement LOCALID_RIVAL, Common_Movement_Delay48
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_Delay48
 	waitmovement 0
 	msgbox Route103_Text_MayLetsBattle, MSGBOX_DEFAULT
 	switch VAR_STARTER_MON
@@ -47,11 +45,11 @@ Route103_EventScript_RivalBrendan::
 	msgbox Route103_Text_BrendanRoute103Pokemon, MSGBOX_DEFAULT
 	closemessage
 	playbgm MUS_ENCOUNTER_BRENDAN, TRUE
-	applymovement LOCALID_RIVAL, Common_Movement_FacePlayer
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_FacePlayer
 	waitmovement 0
-	applymovement LOCALID_RIVAL, Common_Movement_ExclamationMark
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_ExclamationMark
 	waitmovement 0
-	applymovement LOCALID_RIVAL, Common_Movement_Delay48
+	applymovement LOCALID_ROUTE103_RIVAL, Common_Movement_Delay48
 	waitmovement 0
 	msgbox Route103_Text_BrendanLetsBattle, MSGBOX_DEFAULT
 	switch VAR_STARTER_MON
@@ -110,36 +108,36 @@ Route103_EventScript_RivalExit::
 	end
 
 Route103_EventScript_RivalExitFacingNorth::
-	applymovement OBJ_EVENT_ID_PLAYER, Route103_Movement_WatchRivalExitFacingNorth
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExitFacingNorth1
+	applymovement LOCALID_PLAYER, Route103_Movement_WatchRivalExitFacingNorth
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExitFacingNorth1
 	waitmovement 0
 	playse SE_LEDGE
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExitFacingNorth2
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExitFacingNorth2
 	waitmovement 0
 	goto Route103_EventScript_RivalEnd
 	end
 
 Route103_EventScript_RivalExitFacingEastOrWest::
-	applymovement OBJ_EVENT_ID_PLAYER, Route103_Movement_WatchRivalExitFacingEastOrWest
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExit1
+	applymovement LOCALID_PLAYER, Route103_Movement_WatchRivalExitFacingEastOrWest
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExit1
 	waitmovement 0
 	playse SE_LEDGE
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExit2
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExit2
 	waitmovement 0
 	goto Route103_EventScript_RivalEnd
 	end
 
 Route103_EventScript_RivalExitFacingSouth::
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExit1
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExit1
 	waitmovement 0
 	playse SE_LEDGE
-	applymovement LOCALID_RIVAL, Route103_Movement_RivalExit2
+	applymovement LOCALID_ROUTE103_RIVAL, Route103_Movement_RivalExit2
 	waitmovement 0
 	goto Route103_EventScript_RivalEnd
 	end
 
 Route103_EventScript_RivalEnd::
-	removeobject LOCALID_RIVAL
+	removeobject LOCALID_ROUTE103_RIVAL
 	setvar VAR_BIRCH_LAB_STATE, 4
 	clearflag FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_RIVAL
 	setflag FLAG_DEFEATED_RIVAL_ROUTE103
@@ -353,3 +351,55 @@ Route103_Text_RouteSign:
 	.string "ROUTE 103\n"
 	.string "{DOWN_ARROW} OLDALE TOWN$"
 
+
+@ randolocke: the Old Rod fisherman, moved here from Dewford so fishing is available
+@ before the first badge. The Dewford object still exists but is hidden by
+@ RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN, which a new game sets - removing it
+@ outright would renumber the object local IDs that Mr. Briney's boat scene depends on.
+@ FLAG_RECEIVED_OLD_ROD is shared with him, so the rod can only ever be collected once.
+Route103_EventScript_OldRodFisherman::
+	lock
+	faceplayer
+	goto_if_set FLAG_RECEIVED_OLD_ROD, Route103_EventScript_OldRodHowsFishing
+	msgbox Route103_Text_OldRodGettingItch, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, Route103_EventScript_OldRodNoThanks
+	msgbox Route103_Text_OldRodGiveYouOne, MSGBOX_DEFAULT
+	giveitem ITEM_OLD_ROD
+	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	setflag FLAG_RECEIVED_OLD_ROD
+	msgbox Route103_Text_OldRodAdvice, MSGBOX_DEFAULT
+	release
+	end
+
+Route103_EventScript_OldRodNoThanks::
+	msgbox Route103_Text_OldRodThatsTooBad, MSGBOX_DEFAULT
+	release
+	end
+
+Route103_EventScript_OldRodHowsFishing::
+	msgbox Route103_Text_OldRodHowsFishing, MSGBOX_DEFAULT
+	release
+	end
+
+Route103_Text_OldRodGettingItch:
+	.string "I came up from DEWFORD for the quiet\n"
+	.string "water, and I brought a spare ROD.\p"
+	.string "Getting the itch to fish?$"
+
+Route103_Text_OldRodGiveYouOne:
+	.string "Then take this OLD ROD.\n"
+	.string "It's seen worse days than you have.$"
+
+Route103_Text_OldRodAdvice:
+	.string "Stand facing the water and use it.\p"
+	.string "Any water will do - even a pond in\n"
+	.string "somebody's front garden.$"
+
+Route103_Text_OldRodThatsTooBad:
+	.string "That's too bad, then.\n"
+	.string "The water's not going anywhere.$"
+
+Route103_Text_OldRodHowsFishing:
+	.string "How's the fishing?\p"
+	.string "Nothing bites the same twice around\n"
+	.string "here. Odd, that.$"

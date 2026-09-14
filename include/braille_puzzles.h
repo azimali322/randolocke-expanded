@@ -8,4 +8,12 @@ void DoBrailleDigEffect(void);
 void SetUpPuzzleEffectRegisteel(void);
 void SetUpPuzzleEffectRegirock(void);
 
+
+bool8 RandolockeFlashOpensRegirock(void);
+bool8 RandolockeFlashOpensRegice(void);
+bool8 RandolockeFlashOpensSealedOuter(void);
+bool8 RandolockeFlashOpensRegiDoors(void);
+void RandolockeOpenRegiceWall(void);
+void RandolockeOpenRegiDoors(void);
+
 #endif // GUARD_BRAILLE_PUZZLES_H

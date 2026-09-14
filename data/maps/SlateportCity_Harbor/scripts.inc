@@ -1,9 +1,3 @@
-.set LOCALID_CAPT_STERN, 4
-.set LOCALID_SS_TIDAL, 5
-.set LOCALID_GRUNT, 6
-.set LOCALID_ARCHIE, 7
-.set LOCALID_SUBMARINE, 8
-
 SlateportCity_Harbor_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, SlateportCity_Harbor_OnTransition
 	.byte 0
@@ -21,8 +15,8 @@ SlateportCity_Harbor_EventScript_ShowSSTidal::
 
 SlateportCity_Harbor_EventScript_ReadyAquaEscapeScene::
 	savebgm MUS_ENCOUNTER_AQUA
-	setobjectxyperm LOCALID_CAPT_STERN, 12, 13
-	setobjectmovementtype LOCALID_CAPT_STERN, MOVEMENT_TYPE_FACE_LEFT
+	setobjectxyperm LOCALID_SLATEPORT_HARBOR_CAPT_STERN, 12, 13
+	setobjectmovementtype LOCALID_SLATEPORT_HARBOR_CAPT_STERN, MOVEMENT_TYPE_FACE_LEFT
 	setflag FLAG_HIDE_SLATEPORT_CITY_HARBOR_PATRONS
 	return
 
@@ -47,26 +41,26 @@ SlateportCity_Harbor_EventScript_AquaEscapeTrigger2::
 SlateportCity_Harbor_EventScript_AquaEscapeTrigger3::
 	lockall
 	setvar VAR_0x8008, 3
-	applymovement OBJ_EVENT_ID_PLAYER, SlateportCity_Harbor_Movement_PlayerWalkUp
+	applymovement LOCALID_PLAYER, SlateportCity_Harbor_Movement_PlayerWalkUp
 	waitmovement 0
 	goto SlateportCity_Harbor_EventScript_AquaEscapeScene
 	end
 
 SlateportCity_Harbor_EventScript_AquaEscapeScene::
-	applymovement LOCALID_ARCHIE, Common_Movement_WalkInPlaceFasterDown
+	applymovement LOCALID_SLATEPORT_HARBOR_ARCHIE, Common_Movement_WalkInPlaceFasterDown
 	waitmovement 0
-	applymovement LOCALID_GRUNT, Common_Movement_WalkInPlaceFasterDown
-	applymovement OBJ_EVENT_ID_PLAYER, Common_Movement_WalkInPlaceFasterUp
+	applymovement LOCALID_SLATEPORT_HARBOR_GRUNT, Common_Movement_WalkInPlaceFasterDown
+	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterUp
 	waitmovement 0
 	msgbox SlateportCity_Harbor_Text_ArchieYouAgainHideoutInLilycove, MSGBOX_DEFAULT
 	closemessage
-	applymovement LOCALID_GRUNT, SlateportCity_Harbor_Movement_AquaBoardSub
-	applymovement LOCALID_ARCHIE, SlateportCity_Harbor_Movement_AquaBoardSub
-	applymovement LOCALID_SUBMARINE, SlateportCity_Harbor_Movement_SubmarineExit
+	applymovement LOCALID_SLATEPORT_HARBOR_GRUNT, SlateportCity_Harbor_Movement_AquaBoardSub
+	applymovement LOCALID_SLATEPORT_HARBOR_ARCHIE, SlateportCity_Harbor_Movement_AquaBoardSub
+	applymovement LOCALID_SLATEPORT_HARBOR_SUBMARINE, SlateportCity_Harbor_Movement_SubmarineExit
 	waitmovement 0
-	removeobject LOCALID_GRUNT
-	removeobject LOCALID_ARCHIE
-	removeobject LOCALID_SUBMARINE
+	removeobject LOCALID_SLATEPORT_HARBOR_GRUNT
+	removeobject LOCALID_SLATEPORT_HARBOR_ARCHIE
+	removeobject LOCALID_SLATEPORT_HARBOR_SUBMARINE
 	setvar VAR_SLATEPORT_HARBOR_STATE, 2
 	setflag FLAG_MET_TEAM_AQUA_HARBOR
 	setflag FLAG_HIDE_LILYCOVE_MOTEL_SCOTT
@@ -78,29 +72,29 @@ SlateportCity_Harbor_EventScript_AquaEscapeScene::
 	closemessage
 	setflag FLAG_HIDE_AQUA_HIDEOUT_1F_GRUNT_1_BLOCKING_ENTRANCE
 	setflag FLAG_HIDE_AQUA_HIDEOUT_1F_GRUNT_2_BLOCKING_ENTRANCE
-	copyobjectxytoperm LOCALID_CAPT_STERN
-	setobjectmovementtype LOCALID_CAPT_STERN, MOVEMENT_TYPE_FACE_RIGHT
+	copyobjectxytoperm LOCALID_SLATEPORT_HARBOR_CAPT_STERN
+	setobjectmovementtype LOCALID_SLATEPORT_HARBOR_CAPT_STERN, MOVEMENT_TYPE_FACE_RIGHT
 	releaseall
 	end
 
 SlateportCity_Harbor_EventScript_SternApproachPlayer0::
-	applymovement LOCALID_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer0
+	applymovement LOCALID_SLATEPORT_HARBOR_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer0
 	waitmovement 0
-	applymovement OBJ_EVENT_ID_PLAYER, Common_Movement_WalkInPlaceFasterDown
+	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterDown
 	waitmovement 0
 	return
 
 SlateportCity_Harbor_EventScript_SternApproachPlayer1::
-	applymovement LOCALID_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer1
+	applymovement LOCALID_SLATEPORT_HARBOR_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer1
 	waitmovement 0
-	applymovement OBJ_EVENT_ID_PLAYER, Common_Movement_WalkInPlaceFasterRight
+	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterRight
 	waitmovement 0
 	return
 
 SlateportCity_Harbor_EventScript_SternApproachPlayer::
-	applymovement LOCALID_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer
+	applymovement LOCALID_SLATEPORT_HARBOR_CAPT_STERN, SlateportCity_Harbor_Movement_SternApproachPlayer
 	waitmovement 0
-	applymovement OBJ_EVENT_ID_PLAYER, Common_Movement_WalkInPlaceFasterRight
+	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterRight
 	waitmovement 0
 	return
 
@@ -234,8 +228,8 @@ SlateportCity_Harbor_EventScript_BoardFerry::
 	call_if_eq VAR_FACING, DIR_NORTH, SlateportCity_Harbor_EventScript_BoardFerryNorth
 	call_if_eq VAR_FACING, DIR_EAST, SlateportCity_Harbor_EventScript_BoardFerryEast
 	delay 30
-	hideobjectat OBJ_EVENT_ID_PLAYER, 0
-	setvar VAR_0x8004, LOCALID_SS_TIDAL
+	hideplayer
+	setvar VAR_0x8004, LOCALID_SLATEPORT_HARBOR_SS_TIDAL
 	call Common_EventScript_FerryDepart
 	return
 
@@ -245,12 +239,12 @@ SlateportCity_Harbor_EventScript_CancelDestinationSelect::
 	end
 
 SlateportCity_Harbor_EventScript_BoardFerryEast::
-	applymovement OBJ_EVENT_ID_PLAYER, SlateportCity_Harbor_Movement_BoardFerryEast
+	applymovement LOCALID_PLAYER, SlateportCity_Harbor_Movement_BoardFerryEast
 	waitmovement 0
 	return
 
 SlateportCity_Harbor_EventScript_BoardFerryNorth::
-	applymovement OBJ_EVENT_ID_PLAYER, SlateportCity_Harbor_Movement_BoardFerryNorth
+	applymovement LOCALID_PLAYER, SlateportCity_Harbor_Movement_BoardFerryNorth
 	waitmovement 0
 	return
 
@@ -544,3 +538,129 @@ SlateportCity_Harbor_Text_HandedScannerToStern:
 SlateportCity_Harbor_Text_ThisWillHelpResearch:
 	.string "CAPT. STERN: Thanks, {PLAYER}{KUN}!\n"
 	.string "This will help our research a lot!$"
+
+@ randolocke: the v1.1 legendary-location map seller. The "maps" are the four event
+@ tickets, otherwise reachable only through Mystery Gift. Selling one has to set the
+@ matching FLAG_ENABLE_SHIP_* as well - the S.S. Tidal menu checks the item AND the flag.
+@ You sail from Lilycove, not here; this is only where the maps are sold.
+SlateportCity_Harbor_EventScript_MapSeller::
+	lock
+	faceplayer
+	goto_if_unset RANDOLOCKE_MAP_SELLER_BADGE, SlateportCity_Harbor_EventScript_MapSellerNotYet
+	msgbox SlateportCity_Harbor_Text_MapSellerIntro, MSGBOX_DEFAULT
+SlateportCity_Harbor_EventScript_MapSellerMenu::
+	dynmultipush SlateportCity_Harbor_Text_MapEon, 0
+	dynmultipush SlateportCity_Harbor_Text_MapOldSea, 1
+	dynmultipush SlateportCity_Harbor_Text_MapAurora, 2
+	dynmultipush SlateportCity_Harbor_Text_MapMystic, 3
+	dynmultipush gText_Exit, 4
+	dynmultistack 0, 0, FALSE, 5, FALSE, 0, DYN_MULTICHOICE_CB_NONE
+	switch VAR_RESULT
+	case 0, SlateportCity_Harbor_EventScript_MapSellEon
+	case 1, SlateportCity_Harbor_EventScript_MapSellOldSea
+	case 2, SlateportCity_Harbor_EventScript_MapSellAurora
+	case 3, SlateportCity_Harbor_EventScript_MapSellMystic
+	goto SlateportCity_Harbor_EventScript_MapSellerDone
+
+SlateportCity_Harbor_EventScript_MapSellEon::
+	setvar VAR_0x8008, ITEM_EON_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_SOUTHERN_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellOldSea::
+	setvar VAR_0x8008, ITEM_OLD_SEA_MAP
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_FARAWAY_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellAurora::
+	setvar VAR_0x8008, ITEM_AURORA_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_BIRTH_ISLAND
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+SlateportCity_Harbor_EventScript_MapSellMystic::
+	setvar VAR_0x8008, ITEM_MYSTIC_TICKET
+	call SlateportCity_Harbor_EventScript_MapSellerTryBuy
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerMenu
+	setflag FLAG_ENABLE_SHIP_NAVEL_ROCK
+	goto SlateportCity_Harbor_EventScript_MapSellerMenu
+
+@ Takes the map in VAR_0x8008. Leaves VAR_RESULT TRUE only if the player now has it and
+@ did not already, so the caller knows whether to set the ship flag.
+SlateportCity_Harbor_EventScript_MapSellerTryBuy::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, SlateportCity_Harbor_EventScript_MapSellerAlreadyHave
+	checkmoney RANDOLOCKE_MAP_PRICE
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerNoMoney
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_Harbor_EventScript_MapSellerNoRoom
+	removemoney RANDOLOCKE_MAP_PRICE
+	msgbox SlateportCity_Harbor_Text_MapSellerThanks, MSGBOX_DEFAULT
+	setvar VAR_RESULT, TRUE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerAlreadyHave::
+	msgbox SlateportCity_Harbor_Text_MapSellerAlreadyHave, MSGBOX_DEFAULT
+	setvar VAR_RESULT, FALSE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerNoMoney::
+	msgbox SlateportCity_Harbor_Text_MapSellerNoMoney, MSGBOX_DEFAULT
+	setvar VAR_RESULT, FALSE
+	return
+
+@ giveitem has already said the bag is full; just report the failure.
+SlateportCity_Harbor_EventScript_MapSellerNoRoom::
+	setvar VAR_RESULT, FALSE
+	return
+
+SlateportCity_Harbor_EventScript_MapSellerDone::
+	release
+	end
+
+SlateportCity_Harbor_EventScript_MapSellerNotYet::
+	msgbox SlateportCity_Harbor_Text_MapSellerNotYet, MSGBOX_DEFAULT
+	release
+	end
+
+SlateportCity_Harbor_Text_MapSellerIntro:
+	.string "I chart the places the ferries won't\n"
+	.string "admit exist.\p"
+	.string "One POKé each. I'm not in it for the\n"
+	.string "money - I want someone to go and look.\p"
+	.string "The S.S. TIDAL sails for them out of\n"
+	.string "LILYCOVE.$"
+
+SlateportCity_Harbor_Text_MapSellerNotYet:
+	.string "Charts? For you?\p"
+	.string "Come back when the GYM LEADERS of\n"
+	.string "HOENN have all had their say.$"
+
+SlateportCity_Harbor_Text_MapEon:
+	.string "SOUTHERN ISLAND$"
+
+SlateportCity_Harbor_Text_MapOldSea:
+	.string "FARAWAY ISLAND$"
+
+SlateportCity_Harbor_Text_MapAurora:
+	.string "BIRTH ISLAND$"
+
+SlateportCity_Harbor_Text_MapMystic:
+	.string "NAVEL ROCK$"
+
+SlateportCity_Harbor_Text_MapSellerThanks:
+	.string "Take it to LILYCOVE HARBOR.\n"
+	.string "The sailor there will know it.$"
+
+SlateportCity_Harbor_Text_MapSellerAlreadyHave:
+	.string "You have that one already.\n"
+	.string "I only drew the once.$"
+
+SlateportCity_Harbor_Text_MapSellerNoMoney:
+	.string "One POKé. One!\p"
+	.string "Come back when you've found a coin.$"

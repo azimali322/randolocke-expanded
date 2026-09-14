@@ -15,25 +15,13 @@ EWRAM_DATA static volatile bool8 sRngLoopUnlocked;
 #define STREAM1 1
 #define STREAM2 29
 
-// A variant of SFC32 that lets you change the stream.
-// stream can be any odd number.
-static inline u32 _SFC32_Next_Stream(struct Sfc32State *state, const u8 stream)
-{
-    const u32 result = state->a + state->b + state->ctr;
-    state->ctr += stream;
-    state->a = state->b ^ (state->b >> 9);
-    state->b = state->c * 9;
-    state->c = result + ((state->c << 21) | (state->c >> 11));
-    return result;
-}
-
 static void SFC32_Seed(struct Sfc32State *state, u32 seed, u8 stream)
 {
     u32 i;
     state->a = state->b = 0;
     state->c = seed;
     state->ctr = stream;
-    for(i = 0; i < 16; i++)
+    for (i = 0; i < 16; i++)
     {
         _SFC32_Next_Stream(state, stream);
     }
@@ -166,21 +154,24 @@ __attribute__((weak, alias("RandomUniformExceptDefault")))
 u32 RandomUniformExcept(enum RandomTag, u32 lo, u32 hi, bool32 (*reject)(u32));
 
 __attribute__((weak, alias("RandomWeightedArrayDefault")))
-u32 RandomWeightedArray(enum RandomTag tag, u32 sum, u32 n, const u8 *weights);
+u32 RandomWeightedArray(enum RandomTag tag, u32 sum, u32 n, const u16 *weights);
 
 __attribute__((weak, alias("RandomElementArrayDefault")))
 const void *RandomElementArray(enum RandomTag tag, const void *array, size_t size, size_t count);
 
 u32 RandomUniformDefault(enum RandomTag tag, u32 lo, u32 hi)
 {
+    assertf(lo <= hi);
     return lo + (((hi - lo + 1) * Random()) >> 16);
 }
 
 u32 RandomUniformExceptDefault(enum RandomTag tag, u32 lo, u32 hi, bool32 (*reject)(u32))
 {
+    assertf(lo <= hi);
     LOOP_RANDOM_START;
     while (TRUE)
     {
+        // TODO: assertf to abort after too many iterations.
         u32 n = lo + (((hi - lo + 1) * LOOP_RANDOM) >> 16);
         if (!reject(n))
             return n;
@@ -188,21 +179,24 @@ u32 RandomUniformExceptDefault(enum RandomTag tag, u32 lo, u32 hi, bool32 (*reje
     LOOP_RANDOM_END;
 }
 
-u32 RandomWeightedArrayDefault(enum RandomTag tag, u32 sum, u32 n, const u8 *weights)
+u32 RandomWeightedArrayDefault(enum RandomTag tag, u32 sum, u32 n, const u16 *weights)
 {
-    s32 i, targetSum;
+    assertf(n > 0);
+    assertf(sum <= MAX_u16);
+    u32 i, targetSum;
     targetSum = (sum * Random()) >> 16;
     for (i = 0; i < n - 1; i++)
     {
-        targetSum -= weights[i];
-        if (targetSum < 0)
+        if (targetSum < weights[i])
             return i;
+        targetSum -= weights[i];
     }
     return n - 1;
 }
 
 const void *RandomElementArrayDefault(enum RandomTag tag, const void *array, size_t size, size_t count)
 {
+    assertf(count > 0);
     return (const u8 *)array + size * RandomUniformDefault(tag, 0, count - 1);
 }
 
@@ -219,8 +213,45 @@ u8 RandomWeightedIndex(u8 *weights, u8 length)
     for (i = 0; i < length; i++)
     {
         weightSum += weights[i];
-        if (randomValue <= weightSum)
+        if (randomValue < weightSum)
             return i;
     }
     return 0;
+}
+
+// Returns the index instead; don't call with no set bits
+u32 RandomBitIndex(enum RandomTag tag, u32 bits)
+{
+  u8 setIndexes[32];
+  u32 n = 0;
+  for (u32 i = 0; i < 32; i++)
+  {
+    if (bits & (1 << i))
+      setIndexes[n++] = i;
+  }
+
+  if (n == 0)
+    return 0; // This is a little awkward, there are no set bits!
+  else
+    return setIndexes[RandomUniform(tag, 0, n-1)];
+}
+
+u32 Crc32B (const u8 *data, u32 size)
+{
+   s32 i, j;
+   u32 byte, crc, mask;
+
+   i = 0;
+   crc = 0xFFFFFFFF;
+   for (i = 0; i < size; ++i)
+   {
+        byte = data[i];
+        crc = crc ^ byte;
+        for (j = 7; j >= 0; --j)
+        {
+            mask = -(crc & 1);
+            crc = (crc >> 1) ^ (0xEDB88320 & mask);
+        }
+   }
+   return ~crc;
 }

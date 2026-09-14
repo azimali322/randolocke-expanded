@@ -1,6 +1,10 @@
 #include "global.h"
+#include "config/randomizer.h"
+#include "config/randolocke.h"
+#include "clock.h"
 #include "new_game.h"
 #include "random.h"
+#include "clock.h"
 #include "pokemon.h"
 #include "roamer.h"
 #include "pokemon_size_record.h"
@@ -19,6 +23,7 @@
 #include "event_data.h"
 #include "money.h"
 #include "trainer_hill.h"
+#include "trainer_tower.h"
 #include "tv.h"
 #include "coins.h"
 #include "text.h"
@@ -39,6 +44,7 @@
 #include "pokemon_jump.h"
 #include "decoration_inventory.h"
 #include "secret_base.h"
+#include "string_util.h"
 #include "player_pc.h"
 #include "field_specials.h"
 #include "berry_powder.h"
@@ -47,14 +53,18 @@
 #include "constants/map_groups.h"
 #include "constants/items.h"
 #include "difficulty.h"
+#include "randomizer.h"
+#include "follower_npc.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
+extern const u8 EventScript_ResetAllMapFlagsFrlg[];
 
 static void ClearFrontierRecord(void);
 static void WarpToTruck(void);
 static void ResetMiniGamesRecords(void);
 static void ResetItemFlags(void);
 static void ResetDexNav(void);
+static void RandolockeApplyNewGameDefaults(void);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
@@ -104,7 +114,6 @@ static void SetDefaultOptions(void)
 
 static void ClearPokedexFlags(void)
 {
-    gUnusedPokedexU8 = 0;
     memset(&gSaveBlock1Ptr->dexCaught, 0, sizeof(gSaveBlock1Ptr->dexCaught));
     memset(&gSaveBlock1Ptr->dexSeen, 0, sizeof(gSaveBlock1Ptr->dexSeen));
 }
@@ -130,7 +139,10 @@ static void ClearFrontierRecord(void)
 
 static void WarpToTruck(void)
 {
-    SetWarpDestination(MAP_GROUP(INSIDE_OF_TRUCK), MAP_NUM(INSIDE_OF_TRUCK), WARP_ID_NONE, -1, -1);
+    if (IS_FRLG)
+        SetWarpDestination(MAP_GROUP(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), MAP_NUM(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), WARP_ID_NONE, 6, 6);
+    else
+        SetWarpDestination(MAP_GROUP(MAP_INSIDE_OF_TRUCK), MAP_NUM(MAP_INSIDE_OF_TRUCK), WARP_ID_NONE, -1, -1);
     WarpIntoMap();
 }
 
@@ -152,9 +164,15 @@ void ResetMenuAndMonGlobals(void)
 
 void NewGameInitData(void)
 {
+#if IS_FRLG
+    u8 rivalName[PLAYER_NAME_LENGTH + 1];
+#endif
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
 
+#if IS_FRLG
+    StringCopy(rivalName, gSaveBlock1Ptr->rivalName);
+#endif
     gDifferentSaveFile = TRUE;
     gSaveBlock2Ptr->encryptionKey = 0;
     ZeroPlayerPartyMons();
@@ -182,7 +200,7 @@ void NewGameInitData(void)
     ClearPlayerLinkBattleRecords();
     InitSeedotSizeRecord();
     InitLotadSizeRecord();
-    gPlayerPartyCount = 0;
+    gPartiesCount[B_TRAINER_PLAYER] = 0;
     ZeroPlayerPartyMons();
     ResetPokemonStorageSystem();
     DeactivateAllRoamers();
@@ -196,8 +214,15 @@ void NewGameInitData(void)
     InitDewfordTrend();
     ResetFanClub();
     ResetLotteryCorner();
+    UpdateDailySeed();
     WarpToTruck();
-    RunScriptImmediately(EventScript_ResetAllMapFlags);
+    if (IS_FRLG)
+        RunScriptImmediately(EventScript_ResetAllMapFlagsFrlg);
+    else
+        RunScriptImmediately(EventScript_ResetAllMapFlags);
+#if IS_FRLG
+        StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
+#endif
     ResetMiniGamesRecords();
     InitUnionRoomChatRegisteredTexts();
     InitLilycoveLady();
@@ -207,10 +232,59 @@ void NewGameInitData(void)
     ClearMysteryGift();
     WipeTrainerNameRecords();
     ResetTrainerHillResults();
+    ResetTrainerTowerResults();
     ResetContestLinkResults();
     SetCurrentDifficultyLevel(DIFFICULTY_NORMAL);
     ResetItemFlags();
     ResetDexNav();
+    ClearFollowerNPCData();
+    RandolockeApplyNewGameDefaults();
+}
+
+// A fresh Randolocke save is randomized from the start, and has the moved-NPC flags
+// already applied. Runs after InitEventData(), which clears every flag and var, so this
+// is the last word on them. Existing saves are never touched - loading one keeps whatever
+// it was already set to.
+static void RandolockeApplyNewGameDefaults(void)
+{
+    // The Old Rod fisherman lives on Route 103 now, not in Dewford.
+    FlagSet(RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN);
+
+#if RANDOMIZER_AVAILABLE == TRUE && RANDOLOCKE_RANDOMIZE_ON_NEW_GAME == TRUE
+    // A feature compiled as FORCE_RANDOMIZE_* ignores its flag entirely, so there is no
+    // flag to set for it.
+    #if RANDOLOCKE_DEFAULT_WILD_MON == TRUE && !defined(FORCE_RANDOMIZE_WILD_MON)
+        FlagSet(RANDOMIZER_FLAG_WILD_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_TRAINER_MON == TRUE && !defined(FORCE_RANDOMIZE_TRAINER_MON)
+        FlagSet(RANDOMIZER_FLAG_TRAINER_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_FIXED_MON == TRUE && !defined(FORCE_RANDOMIZE_FIXED_MON)
+        FlagSet(RANDOMIZER_FLAG_FIXED_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_STARTER_GIFT_MON == TRUE && !defined(FORCE_RANDOMIZE_STARTER_AND_GIFT_MON)
+        FlagSet(RANDOMIZER_FLAG_STARTER_AND_GIFT_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_EGG_MON == TRUE && !defined(FORCE_RANDOMIZE_EGG_MON)
+        FlagSet(RANDOMIZER_FLAG_EGG_MON);
+    #endif
+    #if RANDOLOCKE_DEFAULT_ABILITIES == TRUE && !defined(FORCE_RANDOMIZE_ABILITIES)
+        FlagSet(RANDOMIZER_FLAG_ABILITIES);
+    #endif
+    #if RANDOLOCKE_DEFAULT_FIELD_ITEMS == TRUE && !defined(FORCE_RANDOMIZE_FIELD_ITEMS)
+        FlagSet(RANDOMIZER_FLAG_FIELD_ITEMS);
+    #endif
+    #if RANDOLOCKE_DEFAULT_LEARNSET == TRUE && !defined(FORCE_RANDOMIZE_LEARNSET)
+        FlagSet(RANDOMIZER_FLAG_LEARNSET);
+    #endif
+    #if RANDOLOCKE_DEFAULT_BERRY_TREES == TRUE && !defined(FORCE_RANDOMIZE_BERRY_TREES)
+        FlagSet(RANDOMIZER_FLAG_BERRY_TREES);
+    #endif
+    #if RANDOLOCKE_DEFAULT_TM_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TM_MOVES)
+        FlagSet(RANDOMIZER_FLAG_TM_MOVES);
+    #endif
+    VarSet(RANDOMIZER_VAR_SPECIES_MODE, RANDOLOCKE_DEFAULT_SPECIES_MODE);
+#endif
 }
 
 static void ResetMiniGamesRecords(void)
