@@ -139,7 +139,7 @@ Attack and Sp. Attack EVs so you can see what a Pokémon has been fed.
 
 Deliberately left to you, because the game cannot tell intent:
 
-- **Nicknaming** — forced on (`RANDOLOCKE_FORCE_NICKNAME`), but the name is yours
+- **Nicknaming** — the base game's optional prompt. `RANDOLOCKE_FORCE_NICKNAME` makes it mandatory if you want the convention enforced; it ships off
 - **Set battle style** — an options-menu choice
 - **Item restrictions in battle** — the var `0x40F7` can disable the Bag in battles if you
   want that (1 = trainer battles, 2 = all)

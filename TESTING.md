@@ -790,8 +790,8 @@ python3 tools/randolocke/gen_berry_tiers.py
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| V.1 | **Forced nickname** | Catch a Pokémon | Goes **straight to the naming screen** — no "Do you want to nickname?" prompt |
-| V.2 | Naming still cancellable | Press B on the naming screen | Keeps the species name, no crash |
+| V.1 | **Nicknaming is optional** | Catch a Pokémon | The base game's "Do you want to give it a nickname?" prompt. `RANDOLOCKE_FORCE_NICKNAME` ships `FALSE` |
+| V.2 | Saying no works | Answer no | Keeps the species name, no crash |
 | V.3 | **Bag disabled in trainer battles** | Debug → Vars, set `VAR_UNUSED_0x40F7` to 1. Enter a trainer battle | The Bag is unusable |
 | V.4 | Wild battles unaffected at 1 | Same var at 1, enter a wild battle | Bag still usable |
 | V.5 | Value 2 disables both | Set the var to 2 | Bag unusable in wild battles too |
@@ -988,7 +988,9 @@ See `docs/NUZLOCKE.md`.
 | T20.13 | Different routes still separate | Catch on Route 101, then Route 103 | Allowed |
 | T20.14 | **One catch per area actually blocks now** | Catch on Route 101, meet another there, open the bag | Balls refused. This never worked before Phase 20 |
 | T20.15 | **Bosses fight properly** | Fight Roxanne | Switches sensibly, targets KOs, saves her ace for last |
-| T20.16 | The Champion is omniscient | Fight Wallace | Plays around your moves and abilities as if it knows them |
+| T20.16 | **Every boss is omniscient** | Fight any gym leader | Plays around your moves, abilities and held items as if it has seen them — no Surf into Water Absorb, no setting up on your revenge killer |
+| T20.16b | The Champion reads ahead too | Fight Wallace | Also anticipates your switches and the move you are about to pick |
+| T20.16c | Ordinary trainers are not omniscient | Fight a Youngster | Still walks into your immunities the first time |
 | T20.17 | Route trainers are competent, not brutal | Fight a Youngster | Avoids bad moves and goes for KOs, but no switching games |
 | T20.18 | Admins and rivals sit between | Fight an Aqua Admin or your rival | Smarter switching than a Youngster, less than a leader |
 | T20.19 | Config off | Set `RZ_TRAINER_AI_TIERS` to `FALSE`, rebuild | Back to the vanilla AI |
@@ -1001,6 +1003,24 @@ See `docs/NUZLOCKE.md`.
 | T20.26 | Stable across a reload | Note all ten, soft reset, check again | Identical |
 | T20.27 | Flag off is vanilla | Clear flag `0x2E` | Swagger, Rollout, Fury Cutter, Mimic, Metronome, Sleep Talk, Substitute, Dynamic Punch, Double-Edge, Explosion — and the text still reads correctly |
 | T20.28 | Once-only tutors still are | Teach one, come back | Refuses, as in vanilla |
+
+---
+
+## Phase 21 — Hidden nature roller
+
+Debug menu → Edit Pokémon → **Roll Hidden Nature**. "Set Hidden Nature" already existed
+for picking one deliberately; this is the dice version.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T21.1 | **It rolls** | Pick a party Pokémon, Roll Hidden Nature | A message naming the Pokémon and its new nature |
+| T21.2 | **It always changes** | Roll the same Pokémon ten times | Never lands on the nature it already had |
+| T21.3 | Stats update immediately | Note Attack, roll into an Adamant or Modest | Attack changes on the spot — no level-up needed |
+| T21.4 | The summary agrees | Open the summary after rolling | The new nature is shown |
+| T21.5 | Eggs are skipped | Choose an egg | Nothing happens, no crash |
+| T21.6 | Cancelling is safe | Back out of the party menu | Nothing changes |
+| T21.7 | The true nature is untouched | Roll the hidden nature, then check "Set Nature" | The personality-derived nature is unchanged; only the hidden one moved |
+| T21.8 | It persists | Roll, save, reset, reload | The rolled nature is still there |
 
 ---
 

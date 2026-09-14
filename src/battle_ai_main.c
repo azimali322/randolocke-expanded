@@ -271,6 +271,8 @@ static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
     if (IsBossTrainerBattle(trainerId))
         return RZ_AI_BOSS;
 
+    // Gym leaders and the Elite Four are all Boss: Yes, so they were handled above; these
+    // are the untagged notables -- rivals and the Aqua/Magma admins.
     switch (class)
     {
     case TRAINER_CLASS_RIVAL:

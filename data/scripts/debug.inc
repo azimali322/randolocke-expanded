@@ -843,3 +843,19 @@ Debug_EventScript_TellTheTime_Text_0:
 
 DebugEventScript_PrintWeekday_Text_0:
 	.string "Time of day: {STR_VAR_1}$"
+
+@ randolocke: roll a different hidden nature onto a party Pokemon.
+Debug_EventScript_RollHiddenNature::
+	special ChoosePartyMon
+	goto_if_ge VAR_0x8004, PARTY_SIZE, Debug_EventScript_RollHiddenNatureClose
+	specialvar VAR_RESULT, ScriptGetPartyMonSpecies
+	goto_if_eq VAR_RESULT, SPECIES_EGG, Debug_EventScript_RollHiddenNatureClose
+	callnative RandolockeRollHiddenNature
+	msgbox Debug_Text_RolledHiddenNature, MSGBOX_DEFAULT
+Debug_EventScript_RollHiddenNatureClose:
+	releaseall
+	end
+
+Debug_Text_RolledHiddenNature:
+	.string "{STR_VAR_1}'s hidden nature is now\n"
+	.string "{STR_VAR_2}.$"

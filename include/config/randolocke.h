@@ -61,9 +61,10 @@
 
 // --- Nuzlocke options -------------------------------------------------------
 
-// If TRUE, catching a Pokemon goes straight to the naming screen instead of asking. A
-// nuzlocke convention: naming a Pokemon is what makes losing it mean something.
-#define RANDOLOCKE_FORCE_NICKNAME       TRUE
+// If TRUE, catching a Pokemon goes straight to the naming screen instead of asking.
+// A nuzlocke convention, but conventions are not rules: left FALSE so catching behaves
+// like the base game and asks. Nothing else depends on it.
+#define RANDOLOCKE_FORCE_NICKNAME       FALSE
 
 // --- Bag TM panel -----------------------------------------------------------
 

@@ -146,8 +146,14 @@
 //
 //   every trainer   Check Bad Move, Try To Faint, Check Viability
 //   notable         + HP Aware, Smart Mon Choices, Try To 2HKO
-//   boss            + Smart Switching, Ace Pokemon, Weigh Ability Prediction
-//   Champion        + Omniscient
+//   boss            + Smart Switching, Ace Pokemon, Omniscient
+//   Champion        + move and switch prediction
+//
+// Omniscience means the AI knows your moves, abilities and held items without having seen
+// them: it will not Surf into a Water Absorb it has never met, and it will not set up on
+// something that outspeeds and KOs it. All 55 boss trainers get it -- the gym leaders,
+// the Elite Four, Archie, Maxie and their admins. Weigh Ability Prediction is dropped
+// from the boss tier because omniscience supersedes it.
 //
 // "Notable" is by trainer class: rivals, the Aqua and Magma admins, and the Elite Four.
 // Bosses are the `Boss: Yes` tag from Phase 7c.
@@ -156,8 +162,11 @@
 #define RZ_AI_BASE      (AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_TRY_TO_FAINT | AI_FLAG_CHECK_VIABILITY)
 #define RZ_AI_NOTABLE   (RZ_AI_BASE | AI_FLAG_HP_AWARE | AI_FLAG_SMART_MON_CHOICES | AI_FLAG_TRY_TO_2HKO)
 #define RZ_AI_BOSS      (RZ_AI_NOTABLE | AI_FLAG_SMART_SWITCHING | AI_FLAG_ACE_POKEMON \
-                         | AI_FLAG_WEIGH_ABILITY_PREDICTION)
-#define RZ_AI_CHAMPION  (RZ_AI_BOSS | AI_FLAG_OMNISCIENT)
+                         | AI_FLAG_OMNISCIENT)
+// The Champion also reads ahead: which move you are about to use, and when you are about
+// to switch and to what. Both flags are documented as wanting omniscience, which it has.
+#define RZ_AI_CHAMPION  (RZ_AI_BOSS | AI_FLAG_PREDICT_MOVE | AI_FLAG_PREDICT_SWITCH \
+                         | AI_FLAG_PREDICT_INCOMING_MON)
 
 // --- Berry trees ------------------------------------------------------------
 

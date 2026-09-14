@@ -293,7 +293,7 @@ Pokémon strong and every Pokémon samey. Weighted is the one to actually play.
 | `RANDOLOCKE_DUAL_REGISTERED_ITEMS` | `TRUE` | A second key item registered to **held** SELECT; a tap still uses the first. **Changes the save layout** |
 | `RANDOLOCKE_SELECT_HOLD_FRAMES` | `20` | Frames SELECT must be held before the second item fires (60fps) |
 | `RANDOLOCKE_FLASH_OPENS_REGI_CAVES` | `TRUE` | Flash substitutes for the Braille puzzles at the Sealed Chamber, Desert Ruins and Island Cave. The original puzzles still work |
-| `RANDOLOCKE_FORCE_NICKNAME` | `TRUE` | Catching goes straight to the naming screen, no prompt |
+| `RANDOLOCKE_FORCE_NICKNAME` | `FALSE` | If TRUE, catching goes straight to the naming screen with no prompt. Off, so catching asks as the base game does |
 | `RANDOLOCKE_TM_HOVER_INFO` | `TRUE` | The bag's TM move panel follows the cursor instead of waiting for a selection, and shows a physical/special icon |
 
 ### The four custom key items

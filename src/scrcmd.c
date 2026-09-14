@@ -2472,6 +2472,33 @@ bool8 ScrCmd_cleartrainerflag(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// randolocke: re-roll a party Pokemon's hidden nature to a different one. "Set Hidden
+// Nature" already exists for picking one deliberately; this is for when you want the
+// dice to decide, which is the thing a randomizer run actually wants. Always lands on
+// something other than the current nature, so it is never a no-op.
+void RandolockeRollHiddenNature(struct ScriptContext *ctx)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
+    u32 current, nature;
+
+    if (gSpecialVar_0x8004 >= PARTY_SIZE
+     || !GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL)
+     || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+        return;
+
+    current = GetMonData(mon, MON_DATA_HIDDEN_NATURE, NULL);
+    do {
+        nature = Random() % NUM_NATURES;
+    } while (nature == current);
+
+    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+    CalculateMonStats(mon);
+
+    GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
+    StringGet_Nickname(gStringVar1);
+    StringCopy(gStringVar2, gNaturesInfo[nature].name);
+}
+
 // randolocke: the move tutor's move lives in VAR_0x8005. Rewrite it, and buffer the name
 // of whatever it ends up being into STR_VAR_1 so the tutor can say it out loud -- the
 // vanilla messages name the move in their own text, which would otherwise be a lie.
