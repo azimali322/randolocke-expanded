@@ -1188,14 +1188,19 @@ art is the same, doubled, and it fills the picture frame's bottom-right corner e
 | T30.2 | It sits in front of the Pokémon | A Pokémon whose sprite fills that corner — Wobbuffet, Snorlax | Heart drawn over the sprite, not behind it |
 | T30.3 | It is flush in the corner | Any Pokémon | Inside the striped area, not overlapping the green border |
 | T30.4 | The frames still step correctly | Compare a fresh catch with a walked one | Fill rises from the bottom through six steps |
-| T30.5 | **Gold at maximum** | Debug → Party… → Edit Pokemon → Set Friendship 255 | Whole heart turns gold |
+| T30.5 | **Gold only at the true maximum** | Debug → Party… → Edit Pokemon → Set Friendship 255 | Whole heart turns gold |
+| T30.5b | 254 is not gold | Set Friendship 254 | Full **red** heart, not gold. Gold has to mean "cannot go higher" |
+| T30.5c | **Empty at zero** | Set Friendship 0 | Dark interior, red outline, no fill. Use this to confirm the frames step at all |
 | T30.6 | Nothing else moved | Nickname, species, ball, level, gender mark | All still readable |
 
 ### SELECT re-rolls the hidden nature
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T30.7 | **SELECT rolls it** | Summary → info page → SELECT | Trainer Memo changes to "Naive (Modest) nature," — original, then the new hidden one |
+| T30.7 | **SELECT rolls nature and ability** | Summary → info page → SELECT | Trainer Memo changes to "Naive (Modest) nature," — original, then the new hidden one — and the ABILITY line above changes with it |
+| T30.7b | The ability description follows | Watch the line under the ability name | Describes the new ability, not the old one |
+| T30.7c | One-ability species keep theirs | A species with a single ability across all slots | Nature rolls, ability does not change |
+| T30.7d | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
 | T30.8 | It never no-ops | Press SELECT repeatedly | The parenthetical changes every time; it never rolls the nature it already had |
 | T30.9 | **The stats follow** | Roll, then page right to skills | Numbers match the new nature; the raised stat is up, the lowered one down |
 | T30.10 | It persists | Roll, leave the summary, come back | Same hidden nature |

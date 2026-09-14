@@ -133,8 +133,8 @@
 // --- Friendship heart ---------------------------------------------------------
 
 // If TRUE, the summary's info page shows a heart under the Pokemon's picture that fills
-// from the bottom as friendship rises, and turns gold at 250 -- the game's own definition
-// of maximum friendship. Graphic ported from pokeemerald_rando_enh.
+// from the bottom as friendship rises, and turns gold only at MAX_FRIENDSHIP, so a gold
+// heart means the value cannot go higher. Graphic ported from pokeemerald_rando_enh.
 #define RANDOLOCKE_FRIENDSHIP_HEART         TRUE
 
 // --- First-encounter badge ---------------------------------------------------
@@ -284,9 +284,11 @@
 #define RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS FALSE
 
 // SELECT on the summary's Pokemon Info page re-rolls that Pokemon's hidden nature -- the
-// one CalculateMonStats reads, so the one that actually moves its numbers -- and the
-// Trainer Memo right underneath shows the result as "Naive (Modest) nature,". The debug
-// menu's Roll Hidden Nature still works; this puts it where the nature is displayed.
+// one CalculateMonStats reads, so the one that actually moves its numbers -- along with
+// its ability. Both are shown on that page: the ability above, and the Trainer Memo
+// underneath reading "Naive (Modest) nature,". Rolling them together is deliberate, since
+// which ability is worth having usually depends on which stats the nature favours. The
+// debug menu's Roll Hidden Nature still works; this puts it where both are displayed.
 // Party Pokemon only, and never an egg. Re-rolling is unlimited and free, which is a
 // deliberate randomizer-run convenience rather than an oversight.
 #define RANDOLOCKE_SUMMARY_NATURE_ROLL      TRUE

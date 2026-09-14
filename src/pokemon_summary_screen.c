@@ -861,9 +861,13 @@ static const u32 sFriendshipHeart_Gfx[] = INCGFX_U32("graphics/summary_screen/fr
 #define TAG_FRIENDSHIP_HEART    30000
 #define FRIENDSHIP_HEART_FRAMES 7
 
-// The friendship value each frame takes over at. 250 is the game's own "max friendship"
-// line, so the gold heart means what a player would expect it to mean.
-static const u16 sFriendshipHeartThresholds[FRIENDSHIP_HEART_FRAMES] = { 0, 42, 85, 128, 170, 212, 250 };
+// The friendship value each frame takes over at. The gold frame is pinned to
+// MAX_FRIENDSHIP rather than to 250: gold has to mean "this is as high as it goes", or a
+// Pokemon sitting at 251 shows the same heart as one that is genuinely maxed and there is
+// no way to tell a full heart from a nearly-full one. The six red frames divide 0..254
+// evenly between them.
+static const u16 sFriendshipHeartThresholds[FRIENDSHIP_HEART_FRAMES] =
+    { 0, 43, 86, 128, 171, 214, MAX_FRIENDSHIP };
 
 static const struct OamData sOamData_FriendshipHeart =
 {
@@ -3922,6 +3926,33 @@ static bool32 RandolockeNatureRollAvailable(void)
         && InSlateportBattleTent() != TRUE;
 }
 
+// Moves to a different ability slot, skipping empty slots and any slot that would hand
+// back the ability the Pokemon already has -- plenty of species repeat one across two
+// slots. Hidden abilities are in the running. A species with only one ability keeps it.
+static void RandolockeRollAbility(struct Pokemon *mon)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
+    u32 current = GetMonData(mon, MON_DATA_ABILITY_NUM);
+    enum Ability currentAbility = GetAbilityBySpecies(species, current, FALSE);
+    u32 candidates[NUM_ABILITY_SLOTS];
+    u32 count = 0, i, chosen;
+
+    for (i = 0; i < NUM_ABILITY_SLOTS; i++)
+    {
+        enum Ability ability = GetAbilityBySpecies(species, i, FALSE);
+
+        if (i != current && ability != ABILITY_NONE && ability != currentAbility)
+            candidates[count++] = i;
+    }
+
+    if (count == 0)
+        return;
+
+    chosen = candidates[Random() % count];
+    SetMonData(mon, MON_DATA_ABILITY_NUM, &chosen);
+    sMonSummaryScreen->summary.abilityNum = chosen;
+}
+
 static void RandolockeRollNature(void)
 {
     struct Pokemon *mon = RandolockeEditTarget();
@@ -3935,15 +3966,22 @@ static void RandolockeRollNature(void)
     } while (nature == current);
 
     SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+    RandolockeRollAbility(mon);
     CalculateMonStats(mon);
     CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
     sMonSummaryScreen->summary.mintNature = nature;
 
     // AddWindowFromTemplateList hands back the window it already created and only clears
-    // it on the first call, so the old line has to be wiped or the new one prints over it.
+    // it on the first call, so the old text has to be wiped or the new prints over it.
+    // The ability's name and its description share one window.
+    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), PIXEL_FILL(0));
+    PrintMonAbilityName();
+    PrintMonAbilityDescription();
+
     FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
     BufferMonTrainerMemo();
     PrintMonTrainerMemo();
+
     ScheduleBgCopyTilemapToVram(0);
     PlaySE(SE_SELECT);
 }
