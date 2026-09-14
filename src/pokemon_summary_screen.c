@@ -356,10 +356,19 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
 static void UpdateMoveRelearnerState();
 static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+static bool32 RandolockeNatureRollAvailable(void);
+static void RandolockeRollNature(void);
+#endif
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
 static bool32 RandolockeStatsOverlayAvailable(void);
 static void RandolockeToggleStatsOverlay(void);
 static void RandolockeHideStatsOverlay(void);
+#endif
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+// The Pokemon being edited, which is the real party entry rather than the screen's own
+// working copy in currentMon. Both editors write here and then refresh the copy.
+static struct Pokemon *RandolockeEditTarget(void);
 #endif
 #if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE
 static bool32 RandolockeStatEditInput(u8 taskId);
@@ -842,8 +851,10 @@ static const u8 sMovesPPLayout[] = _("{PP}{DYNAMIC 0}/{DYNAMIC 1}");
 #define TAG_CATEGORY_ICONS 30004
 
 #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-// Seven 8x8 frames: an outline filling from the bottom up, and a gold heart at the top of
-// the range. Graphic ported from pokeemerald_rando_enh.
+// Seven 16x16 frames: an outline filling from the bottom up, and a gold heart at the top
+// of the range. Ported from pokeemerald_rando_enh at that fork's 8x8 and doubled -- at
+// eight pixels it was legible only if you already knew it was there, which is not much
+// use for something whose whole job is to be read at a glance.
 static const u16 sFriendshipHeart_Pal[] = INCBIN_U16("graphics/summary_screen/friendship_heart.gbapal");
 static const u32 sFriendshipHeart_Gfx[] = INCGFX_U32("graphics/summary_screen/friendship_heart.png", ".4bpp.lz");
 
@@ -858,18 +869,20 @@ static const struct OamData sOamData_FriendshipHeart =
 {
     .affineMode = ST_OAM_AFFINE_OFF,
     .objMode = ST_OAM_OBJ_NORMAL,
-    .shape = SPRITE_SHAPE(8x8),
-    .size = SPRITE_SIZE(8x8),
+    .shape = SPRITE_SHAPE(16x16),
+    .size = SPRITE_SIZE(16x16),
     .priority = 0,
 };
 
-static const union AnimCmd sAnim_FriendshipHeart_0[] = { ANIMCMD_FRAME(0, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_1[] = { ANIMCMD_FRAME(1, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_2[] = { ANIMCMD_FRAME(2, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_3[] = { ANIMCMD_FRAME(3, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_4[] = { ANIMCMD_FRAME(4, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_5[] = { ANIMCMD_FRAME(5, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_6[] = { ANIMCMD_FRAME(6, 0), ANIMCMD_END };
+// ANIMCMD_FRAME takes a tile offset, not a frame index, and a 16x16 4bpp frame is four
+// tiles -- the same convention sSpriteAnim_CategoryIcon* uses.
+static const union AnimCmd sAnim_FriendshipHeart_0[] = { ANIMCMD_FRAME( 0, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_1[] = { ANIMCMD_FRAME( 4, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_2[] = { ANIMCMD_FRAME( 8, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_3[] = { ANIMCMD_FRAME(12, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_4[] = { ANIMCMD_FRAME(16, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_5[] = { ANIMCMD_FRAME(20, 0), ANIMCMD_END };
+static const union AnimCmd sAnim_FriendshipHeart_6[] = { ANIMCMD_FRAME(24, 0), ANIMCMD_END };
 
 static const union AnimCmd *const sAnimTable_FriendshipHeart[] =
 {
@@ -881,7 +894,7 @@ static const union AnimCmd *const sAnimTable_FriendshipHeart[] =
 static const struct CompressedSpriteSheet sSpriteSheet_FriendshipHeart =
 {
     .data = sFriendshipHeart_Gfx,
-    .size = FRIENDSHIP_HEART_FRAMES * 32,
+    .size = FRIENDSHIP_HEART_FRAMES * 4 * TILE_SIZE_4BPP,
     .tag = TAG_FRIENDSHIP_HEART,
 };
 
@@ -1866,6 +1879,13 @@ static void HandleMoveRelearnerInput(u8 taskId)
     }
 }
 
+#if RANDOLOCKE_SUMMARY_STAT_EDITOR == TRUE || RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+static struct Pokemon *RandolockeEditTarget(void)
+{
+    return &sMonSummaryScreen->monList.mons[sMonSummaryScreen->curMonIndex];
+}
+#endif
+
 static void Task_HandleInput(u8 taskId)
 {
     if (MenuHelpers_ShouldWaitForLinkRecv() != TRUE && !gPaletteFade.active)
@@ -1939,6 +1959,12 @@ static void Task_HandleInput(u8 taskId)
             PlaySE(SE_SELECT);
             BeginCloseSummaryScreen(taskId);
         }
+        #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+        else if (JOY_NEW(SELECT_BUTTON) && RandolockeNatureRollAvailable())
+        {
+            RandolockeRollNature();
+        }
+        #endif
         else if (DEBUG_POKEMON_SPRITE_VISUALIZER && JOY_NEW(SELECT_BUTTON) && !gMain.inBattle)
         {
             sMonSummaryScreen->callback = CB2_Pokemon_Sprite_Visualizer;
@@ -2002,10 +2028,6 @@ static bool32 RandolockeStatEditAvailable(void)
         && !sMonSummaryScreen->summary.isEgg;
 }
 
-static struct Pokemon *RandolockeEditTarget(void)
-{
-    return &sMonSummaryScreen->monList.mons[sMonSummaryScreen->curMonIndex];
-}
 
 static u32 RandolockeTotalEVs(struct Pokemon *mon)
 {
@@ -3882,6 +3904,51 @@ static void PrintMonTrainerMemo(void)
     PrintTextOnWindow(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), gStringVar4, 0, 1, 0, 0);
 }
 
+#if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
+// randolocke: SELECT on the Pokemon Info page re-rolls the hidden nature. That is the
+// nature CalculateMonStats reads, so it is the one that moves the numbers, and the
+// Trainer Memo two lines down is where the result is already displayed -- "Naive
+// (Modest) nature,". Party Pokemon only: RandolockeEditTarget indexes monList.mons,
+// which is not what a boxed Pokemon is stored in.
+static bool32 RandolockeNatureRollAvailable(void)
+{
+    return sMonSummaryScreen != NULL
+        && !sMonSummaryScreen->isBoxMon
+        && sMonSummaryScreen->mode == SUMMARY_MODE_NORMAL
+        && sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO
+        && !sMonSummaryScreen->summary.isEgg
+        // Rental Pokemon are not the player's to re-roll.
+        && InBattleFactory() != TRUE
+        && InSlateportBattleTent() != TRUE;
+}
+
+static void RandolockeRollNature(void)
+{
+    struct Pokemon *mon = RandolockeEditTarget();
+    u32 current = GetMonData(mon, MON_DATA_HIDDEN_NATURE);
+    u32 nature;
+
+    // Always lands somewhere else, so a press is never a no-op the player cannot tell
+    // apart from a missed input.
+    do {
+        nature = Random() % NUM_NATURES;
+    } while (nature == current);
+
+    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+    CalculateMonStats(mon);
+    CopyMon(&sMonSummaryScreen->currentMon, mon, sizeof(struct Pokemon));
+    sMonSummaryScreen->summary.mintNature = nature;
+
+    // AddWindowFromTemplateList hands back the window it already created and only clears
+    // it on the first call, so the old line has to be wiped or the new one prints over it.
+    FillWindowPixelBuffer(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_MEMO), PIXEL_FILL(0));
+    BufferMonTrainerMemo();
+    PrintMonTrainerMemo();
+    ScheduleBgCopyTilemapToVram(0);
+    PlaySE(SE_SELECT);
+}
+#endif
+
 // randolocke: a Pokemon whose hidden nature has been changed -- by a Mint, or by the debug
 // menu's Roll Hidden Nature -- keeps its original nature in the memo while its *stats* use
 // the hidden one, which reads as a bug. Name both: "Docile (Modest) nature". Placeholder 5
@@ -4969,11 +5036,11 @@ static void RandolockeSetFriendshipHeart(void)
     {
         LoadCompressedSpriteSheet(&sSpriteSheet_FriendshipHeart);
         LoadSpritePalette(&sSpritePal_FriendshipHeart);
-        // Bottom-right of the picture frame, just above where the nickname starts
-        // (PSS_LABEL_WINDOW_PORTRAIT_NICKNAME sits at tile row 12, so y 96). The first
-        // pass put this at 76,64 -- the frame's right *edge*, halfway up, where an 8x8
-        // icon reads as a smudge on the border rather than as a heart.
-        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 68, 92, 0);
+        // Flush into the bottom-right corner of the picture frame, whose striped inner
+        // area is x 8..71, y 32..95 -- so a 16x16 sprite centred at (64, 88) fills the
+        // corner exactly. Subpriority 0 keeps it in front of the Pokemon's own sprite,
+        // which occupies the same 64x64 box and was what it kept disappearing into.
+        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 64, 88, 0);
         if (*spriteId == SPRITE_NONE)
             return;
     }

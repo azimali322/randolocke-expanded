@@ -1173,6 +1173,42 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 30 — A readable heart, and rolling natures where you can see them
+
+### The heart is 16x16 now
+
+At 8x8 it was legible only if you already knew it was there, and it sat in the same 64x64
+box as the Pokémon's own sprite, so it disappeared into whatever was drawn behind it. The
+art is the same, doubled, and it fills the picture frame's bottom-right corner exactly
+(the striped inner area is x 8..71, y 32..95).
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.1 | **It is obvious now** | Summary → info page | A clearly readable heart in the bottom-right corner of the picture |
+| T30.2 | It sits in front of the Pokémon | A Pokémon whose sprite fills that corner — Wobbuffet, Snorlax | Heart drawn over the sprite, not behind it |
+| T30.3 | It is flush in the corner | Any Pokémon | Inside the striped area, not overlapping the green border |
+| T30.4 | The frames still step correctly | Compare a fresh catch with a walked one | Fill rises from the bottom through six steps |
+| T30.5 | **Gold at maximum** | Debug → Party… → Edit Pokemon → Set Friendship 255 | Whole heart turns gold |
+| T30.6 | Nothing else moved | Nickname, species, ball, level, gender mark | All still readable |
+
+### SELECT re-rolls the hidden nature
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.7 | **SELECT rolls it** | Summary → info page → SELECT | Trainer Memo changes to "Naive (Modest) nature," — original, then the new hidden one |
+| T30.8 | It never no-ops | Press SELECT repeatedly | The parenthetical changes every time; it never rolls the nature it already had |
+| T30.9 | **The stats follow** | Roll, then page right to skills | Numbers match the new nature; the raised stat is up, the lowered one down |
+| T30.10 | It persists | Roll, leave the summary, come back | Same hidden nature |
+| T30.11 | …and through a save | Roll, save, reset, reload | Same hidden nature |
+| T30.12 | The move-select arrows follow | Roll, then reach the forget-a-move screen and press SELECT | Red/blue arrows match the rolled nature |
+| T30.13 | Not on other pages | SELECT on skills, battle moves, contest moves | Skills opens the IV/EV editor; the move pages do nothing. No nature roll |
+| T30.14 | Not on boxed Pokémon | PC → a boxed Pokémon's summary → SELECT | Nothing happens |
+| T30.15 | Not on eggs | An egg's summary → SELECT | Nothing happens |
+| T30.16 | Not on rentals | Battle Factory rental summary → SELECT | Nothing happens |
+| T30.17 | The debug action still works | Debug → Party… → Edit Pokemon → Roll Hidden Nature | Still rolls, still reports the new nature |
+
+---
+
 ## Phase 29 — Heart placement
 
 The heart was created at (76, 64) — the picture frame's right *edge*, halfway up — where

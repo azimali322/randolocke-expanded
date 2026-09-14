@@ -283,4 +283,12 @@
 // Set TRUE to let them be randomized like anything else.
 #define RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS FALSE
 
+// SELECT on the summary's Pokemon Info page re-rolls that Pokemon's hidden nature -- the
+// one CalculateMonStats reads, so the one that actually moves its numbers -- and the
+// Trainer Memo right underneath shows the result as "Naive (Modest) nature,". The debug
+// menu's Roll Hidden Nature still works; this puts it where the nature is displayed.
+// Party Pokemon only, and never an egg. Re-rolling is unlimited and free, which is a
+// deliberate randomizer-run convenience rather than an oversight.
+#define RANDOLOCKE_SUMMARY_NATURE_ROLL      TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H
