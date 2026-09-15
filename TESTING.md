@@ -1173,6 +1173,22 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 38 — Shiny rate 1 in 256
+
+`SHINY_ODDS` 8 → 256, out of 65536. Up from 1 in 8192, a 32x increase.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T38.1 | **Shinies actually appear** | Run through grass for a while | Roughly one in 256 encounters is shiny |
+| T38.2 | **The shiny clause is reachable now** | Meet a shiny in an area already used up | Catchable, and the badge shows |
+| T38.3 | A shiny does not consume the area | Catch it, then meet something else there | Still catchable — the shiny was a freebie |
+| T38.4 | A shiny dupe is still catchable | Meet a shiny whose family you already have | Catchable; the shiny clause outranks the dupe clause |
+| T38.5 | Rerolls still stack on top | Use a lure, or chain fish | Shinier than 1 in 256, as before |
+| T38.6 | Trainer Pokémon are unaffected | Fight trainers | Their Pokémon roll the same odds as any generated Pokémon; nothing special |
+| T38.7 | Sprites and palettes are fine | Catch one and view it | Shiny palette in battle, party, PC and summary |
+
+---
+
 ## Phase 37 — The first-encounter badge asks about the right Pokémon
 
 The badge appeared on second encounters and then vanished on the next health box redraw.
