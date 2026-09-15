@@ -1464,14 +1464,13 @@ past the end before this phase.
 
 ---
 
-## Phase 30 — A readable heart, and rolling natures where you can see them
+## Phase 30 — Rolling natures where you can see them
 
 ### The heart is 16x16 now
 
-At 8x8 it was legible only if you already knew it was there, and it sat in the same 64x64
-box as the Pokémon's own sprite, so it disappeared into whatever was drawn behind it. The
-art is the same, doubled, and it fills the picture frame's bottom-right corner exactly
-(the striped inner area is x 8..71, y 32..95).
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
@@ -1533,9 +1532,9 @@ what. The skills page's IV and EV views are the exception: SELECT stays the stat
 
 ## Phase 29 — Heart placement
 
-The heart was created at (76, 64) — the picture frame's right *edge*, halfway up — where
-an 8x8 icon reads as a smudge on the border. It belongs at (68, 92), bottom-right inside
-the frame and just above the nickname, which is where pokeemerald_rando_enh puts it.
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
@@ -1615,6 +1614,10 @@ branch, so the Pokémon also never reached the evolution check.
 ---
 
 ## Phase 26 — Friendship heart and a bigger bag
+
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |

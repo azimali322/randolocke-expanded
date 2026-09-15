@@ -139,7 +139,7 @@
 // a second trip. Capped at 255, which is the field's limit.
 #define RANDOLOCKE_BERRY_YIELD_MULTIPLIER   4
 
-// --- Friendship heart ---------------------------------------------------------
+// --- Friendship readout -------------------------------------------------------
 
 // The Pokemon's friendship, as a plain "X/255" on the skills page, in the bottom-right of
 // its picture where the filling heart used to be.
