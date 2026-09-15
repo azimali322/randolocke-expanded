@@ -228,6 +228,24 @@
 // keeps its Dewford fisherman; he is harmless, his script already handles "you have one".
 #define RANDOLOCKE_FLAG_HIDE_DEWFORD_OLD_ROD_FISHERMAN  FLAG_UNUSED_0x02C
 
+// --- Fishing -----------------------------------------------------------------
+
+// Easy fishing, ported from Modern Emerald's "EASIER FISHING" option: the rod reels
+// itself in. Once something bites the catch is yours -- there is no reaction window to
+// miss, so "It got away!" can no longer happen, and a stray A press during the dots no
+// longer cancels the cast. One round of dots is always enough too: the extra rounds that
+// can send a Super Rod through six of them are skipped.
+//
+// What it does not do is hand out a bite. Whether anything bites at all is still the roll
+// in Fishing_CheckForBite -- I_FISHING_BITE_ODDS, 25/50/75% by rod -- so "Not even a
+// nibble..." is still the usual answer to a bad cast. This only removes the part of
+// fishing that tests the player's thumb instead of their luck.
+#define RANDOLOCKE_EASY_FISHING             TRUE
+
+// How long "Oh! A bite!" stays up before the rod reels itself in, in frames. Pressing A
+// reels in immediately, so this is only the wait for a player who doesn't.
+#define RANDOLOCKE_EASY_FISHING_REEL_DELAY  24
+
 // --- v1.1 NPCs --------------------------------------------------------------
 
 // Set once the Oldale financier has handed over his money, so he only does it once.

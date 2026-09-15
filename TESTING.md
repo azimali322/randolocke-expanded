@@ -1173,6 +1173,45 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 42 — Easy fishing
+
+Ported from Modern Emerald's EASIER FISHING option. Once something bites, the rod reels
+itself in: "Oh! A bite!" holds for RANDOLOCKE_EASY_FISHING_REEL_DELAY frames (24, about
+four tenths of a second) and then the Pokémon is on the hook. Pressing A during that
+window reels in immediately, so nothing got slower for a player who was going to press it
+anyway.
+
+Three ways to lose a cast are gone with it:
+
+- **The reaction window.** Fishing_WaitForA used to send a slow thumb to FISHING_GOT_AWAY
+  after 30–36 frames. "It got away!" can no longer happen.
+- **The extra rounds.** Going straight to the hook skips FISHING_CHECK_MORE_DOTS, which
+  could send a Super Rod back through up to five more rounds of dots.
+- **The stray A press.** An A press during the dots used to cancel the cast outright.
+  DoesFishingMinigameAllowCancel now says no, so it does nothing.
+
+What did *not* change is whether anything bites. That is still the roll in
+Fishing_CheckForBite — I_FISHING_BITE_ODDS, 25% Old / 50% Good / 75% Super — so "Not even
+a nibble..." is still the usual answer to a bad cast, and fishing is still a way to burn
+an area's nuzlocke encounter on nothing.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T42.1 | **A bite is always landed** | Fish until "Oh! A bite!", then touch nothing | "Pokémon on the hook!" and a battle |
+| T42.2 | It got away is gone | Repeat T42.1 ten times, never pressing A | Never "It got away!" |
+| T42.3 | A still reels in early | Press A the instant the bite appears | Battle starts at once, no wait |
+| T42.4 | A during the dots does nothing | Mash A while the dots tick | Dots keep going; no "Not even a nibble" from the press |
+| T42.5 | **One round of dots** | Fish with the Super Rod ten times | Dots appear once per cast, never twice |
+| T42.6 | A miss still misses | Fish repeatedly with the Old Rod | "Not even a nibble..." still happens, roughly three casts in four |
+| T42.7 | Empty water still says so | Fish somewhere with no fishing table | "Not even a nibble..." |
+| T42.8 | The rod goes away cleanly | After a miss | Player stands up, the box closes, movement returns |
+| T42.9 | Surfing is unaffected | Fish while surfing | Same behaviour, surf blob intact afterwards |
+| T42.10 | The encounter is a real one | Land a fishing encounter on a fresh route | Randomized species, first-encounter badge, nuzlocke area consumed |
+| T42.11 | Old Rod on Route 103 | The relocated fisherman's rod | Works before the first badge, as Phase 17 expects |
+| T42.12 | Feebas still needs the spot | Fish the Route 119 tiles | Unchanged: easy fishing does not change what is in the water |
+
+---
+
 ## Phase 41 — Rolling a nature or ability takes a held button
 
 RZ_ABILITY_STABLE_ACROSS_EVOLUTION works: the randomized ability is seeded from the
