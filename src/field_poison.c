@@ -91,7 +91,14 @@ static void Task_TryFieldPoisonWhiteOut(u8 taskId)
             tState--;
         break;
     case 2:
-        if (AllMonsFainted())
+    {
+        // randolocke: the white-out decision has to be made while the fainted Pokemon are
+        // still in the party, so it is taken first and the boxing happens after it.
+        bool32 allFainted = AllMonsFainted();
+
+        RandolockeBoxFaintedMonsFromField();
+
+        if (allFainted)
         {
             // Battle facilities have their own white out script to handle the challenge loss
 #ifdef BUGFIX
@@ -111,6 +118,7 @@ static void Task_TryFieldPoisonWhiteOut(u8 taskId)
         ScriptContext_Enable();
         DestroyTask(taskId);
         break;
+    }
     }
 }
 

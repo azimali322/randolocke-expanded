@@ -185,6 +185,16 @@
 // attrition rather than drama. Becoming Champion ends the run and lifts the lock.
 #define RANDOLOCKE_WIPE_COSTS_PARTY         TRUE
 
+// The nuzlocke death rule: a Pokemon that reaches 0 HP is boxed at the end of the battle
+// and locked there for the rest of the run, instead of being walked off at a Pokemon
+// Center. Its held item comes off first and goes back to the bag, so the run does not
+// lose the item along with the holder, and so nothing valuable ends up locked in a box.
+//
+// Skipped where the party is not really the player's or cannot lose a Pokemon: Birch's
+// bag on Route 101, the Wally catching tutorial, Safari, link and recorded battles, an
+// in-game partner's team, and the Frontier.
+#define RANDOLOCKE_FAINT_COSTS_MON          TRUE
+
 // Where the "this one is gone" mark is stored. Substruct 3 is exactly full at 96 bits, so
 // there is no room for a new field without changing the size of every boxed Pokemon and
 // invalidating saves. marineRibbon is never distributed in Emerald, so it is free.

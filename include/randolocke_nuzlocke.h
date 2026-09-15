@@ -25,6 +25,8 @@ bool32 RandolockeNuzlockeActive(void);
 bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon);
 bool32 RandolockeDeadMonsAreLocked(void);
 void RandolockeBoxWipedParty(void);
+void RandolockeBoxFaintedMons(void);
+void RandolockeBoxFaintedMonsFromField(void);
 bool32 RandolockeAnyLivingMonInBoxes(void);
 u32 RandolockeCurrentArea(void);
 bool32 RandolockeAreaUsed(u32 area);
@@ -36,6 +38,8 @@ static inline void RandolockeNoteCatch(struct Pokemon *mon) { (void)mon; }
 static inline bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon) { (void)boxMon; return FALSE; }
 static inline bool32 RandolockeDeadMonsAreLocked(void) { return FALSE; }
 static inline void RandolockeBoxWipedParty(void) {}
+static inline void RandolockeBoxFaintedMons(void) {}
+static inline void RandolockeBoxFaintedMonsFromField(void) {}
 static inline bool32 RandolockeAnyLivingMonInBoxes(void) { return TRUE; }
 #endif
 

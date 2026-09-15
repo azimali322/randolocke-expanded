@@ -203,14 +203,17 @@ bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon)
     return GetBoxMonData(boxMon, RANDOLOCKE_MON_DATA_FAINTED, NULL) != 0;
 }
 
-// Called on a wipe, and only on a wipe. The whole party is boxed and marked; eggs are
-// spared, since they were never in the fight. Held items come back to the bag first.
-void RandolockeBoxWipedParty(void)
+// Boxes party Pokemon and marks them dead. Held items are taken off first and go back to
+// the bag, so a run does not lose its Leftovers along with the Pokemon holding them, and
+// so the item is not locked in a box the player can never withdraw from. Eggs are spared:
+// an egg was never in the fight.
+//
+// faintedOnly TRUE takes just the ones at 0 HP, which is what a faint costs. FALSE takes
+// the whole party, which is what a wipe costs.
+static void RandolockeBoxParty(bool32 faintedOnly)
 {
     u32 i;
-
-    if (!RandolockeNuzlockeActive())
-        return;
+    bool32 boxedAny = FALSE;
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
@@ -223,6 +226,8 @@ void RandolockeBoxWipedParty(void)
             continue;
         if (GetMonData(mon, MON_DATA_IS_EGG, NULL))
             continue;
+        if (faintedOnly && GetMonData(mon, MON_DATA_HP, NULL) != 0)
+            continue;
 
         held = GetMonData(mon, MON_DATA_HELD_ITEM, NULL);
         if (held != ITEM_NONE && AddBagItem(held, 1))
@@ -230,10 +235,61 @@ void RandolockeBoxWipedParty(void)
 
         SetMonData(mon, RANDOLOCKE_MON_DATA_FAINTED, &mark);
         if (CopyMonToPC(mon) == MON_GIVEN_TO_PC)
+        {
             ZeroMonData(mon);
+            boxedAny = TRUE;
+        }
     }
-    CompactPartySlots();
-    CalculatePlayerPartyCount();
+
+    if (boxedAny)
+    {
+        CompactPartySlots();
+        CalculatePlayerPartyCount();
+    }
+}
+
+// Called on a wipe, and only on a wipe: the whole party, whatever its HP.
+void RandolockeBoxWipedParty(void)
+{
+    if (!RandolockeNuzlockeActive())
+        return;
+
+    RandolockeBoxParty(FALSE);
+}
+
+// The nuzlocke death rule. A Pokemon that hits 0 HP is gone -- boxed at the end of the
+// battle and locked there for the rest of the run, rather than walking it off at the
+// nearest Pokemon Center.
+//
+// Battles the party is not really the player's, or cannot lose a Pokemon in, are skipped:
+// Birch's bag on Route 101, the Wally catching tutorial, Safari, link and recorded
+// battles, an in-game partner's team, and the Frontier, which runs on borrowed or rental
+// Pokemon and heals between rounds anyway.
+void RandolockeBoxFaintedMons(void)
+{
+    if (!RANDOLOCKE_FAINT_COSTS_MON || !RandolockeNuzlockeActive())
+        return;
+
+    if (gBattleTypeFlags & (BATTLE_TYPE_LINK
+                          | BATTLE_TYPE_FIRST_BATTLE
+                          | BATTLE_TYPE_CATCH_TUTORIAL
+                          | BATTLE_TYPE_INGAME_PARTNER
+                          | BATTLE_TYPE_RECORDED
+                          | BATTLE_TYPE_SAFARI
+                          | BATTLE_TYPE_FRONTIER))
+        return;
+
+    RandolockeBoxParty(TRUE);
+}
+
+// The same rule for a Pokemon that runs out of HP to field poison, where there is no
+// battle and so no battle type to check.
+void RandolockeBoxFaintedMonsFromField(void)
+{
+    if (!RANDOLOCKE_FAINT_COSTS_MON || !RandolockeNuzlockeActive())
+        return;
+
+    RandolockeBoxParty(TRUE);
 }
 
 bool32 RandolockeAnyLivingMonInBoxes(void)

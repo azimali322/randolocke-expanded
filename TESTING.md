@@ -1173,6 +1173,41 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 33 — A fainted Pokémon is gone
+
+The death rule. Until now only a **total wipe** boxed anything, so a Pokémon that fainted
+in a gym battle walked out of the Pokémon Center good as new. Anything that reaches 0 HP
+is now boxed at the end of the battle and locked there for the rest of the run.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T33.1 | **A faint boxes the Pokémon** | Let one faint in a trainer battle, then end the battle | It is gone from the party and sitting in the PC |
+| T33.2 | **It does not heal** | Go to a Pokémon Center afterwards | It is not in the party to be healed, and the box entry stays fainted |
+| T33.3 | **Its item comes back** | Faint a Pokémon holding an item | The item is in the bag, the boxed Pokémon holds nothing |
+| T33.4 | **It cannot be withdrawn** | PC → the boxed Pokémon → Withdraw | Refused with the locked message |
+| T33.5 | …nor moved or shifted | Try Move and Shift on it | Both refused |
+| T33.6 | It can still be released | Release it | Allowed — tidying the graveyard is permitted |
+| T33.7 | Survivors are untouched | Faint one of three, win the battle | The other two stay in the party at whatever HP they had |
+| T33.8 | The party closes up | Faint the lead of a full party | Slots compact, no gap, no duplicate |
+| T33.9 | **A whole party down still ends the run** | Lose with every Pokémon fainted and nothing living in the boxes | Soft reset to the title, save intact |
+| T33.10 | …but not while the PC has someone | Same, with a living Pokémon in a box | Walk out of the Center with an empty party and withdraw a new team |
+| T33.11 | **Field poison counts** | Let a poisoned Pokémon faint walking around | Boxed the same way, after the message |
+| T33.12 | Field poison to a whole party | Every remaining Pokémon poisoned to 0 | The normal white-out, then the run-over check |
+| T33.13 | Wild battles too | Faint against a wild Pokémon | Boxed |
+| T33.14 | Champion releases the graveyard | Beat the Champion, then open the PC | Dead Pokémon can be withdrawn again — the run is over |
+
+### Where it deliberately does not apply
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T33.15 | **Before the rules start** | Faint during the Route 103 rival battle, before the five Poké Balls | Nothing boxed |
+| T33.16 | Birch's bag | Route 101, the Zigzagoon battle | Nothing boxed |
+| T33.17 | The Wally tutorial | Petalburg Gym catching tutorial | Nothing boxed |
+| T33.18 | The Frontier | Lose a Battle Tower round | Nothing boxed — rentals and borrowed teams |
+| T33.19 | Nuzlocke switched off | Clear the rules flag, then faint one | Nothing boxed, heals normally |
+
+---
+
 ## Phase 32 — Any Pokémon learns any TM, HM or tutor move
 
 Compatibility is gone from the teaching path. This is a repair as much as a convenience:
