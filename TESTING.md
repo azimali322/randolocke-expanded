@@ -1173,6 +1173,29 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 39 — The legendary clause
+
+A legendary met in the wild is always catchable, on the same terms as a shiny: allowed in
+an area already used up, allowed even if its family is registered, and catching it does
+not consume the area.
+
+Decision order is now: shiny → legendary → duplicate → area used → allowed.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T39.1 | **A wild legendary in a used-up area** | Catch something on a route, then meet a legendary there | Catchable, and the badge shows |
+| T39.2 | **It does not consume the area** | Catch that legendary, then meet something else on the route | Still catchable — the legendary was a freebie |
+| T39.3 | A duplicate legendary is still allowed | Meet a wild legendary whose family is registered | Catchable; the clause outranks the dupe rule |
+| T39.4 | Sub-legendaries count | A wild Regi, Latias, bird or beast | Catchable |
+| T39.5 | Mythicals count | A wild Mew, Celebi, Jirachi, Deoxys | Catchable |
+| T39.6 | Ultra Beasts count | A wild Nihilego, Buzzwole and so on | Catchable |
+| T39.7 | **Ordinary Pokémon are unaffected** | A non-legendary in a used-up area | Still refused, same message as before |
+| T39.8 | Paradox Pokémon are not covered | A wild Great Tusk, Iron Valiant | Treated as ordinary. `isParadox` is a separate flag from the four the clause reads |
+| T39.9 | The twelve legendary sites still work | Rayquaza, the Regis, the Lati and so on | Unchanged — those maps have no wild encounter table, so they were never area-gated |
+| T39.10 | Trainers' legendaries | A trainer with a legendary | No change; trainer battles never reach the clause |
+
+---
+
 ## Phase 38 — Shiny rate 1 in 256
 
 `SHINY_ODDS` 8 → 256, out of 65536. Up from 1 in 8192, a 32x increase.

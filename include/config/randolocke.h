@@ -361,4 +361,17 @@
 // drawable again. When every TM is already owned the draw falls back to the plain one.
 #define RANDOLOCKE_TM_PICKUPS_NO_DUPES      TRUE
 
+// The legendary clause. A legendary met in the wild can always be caught, on the same
+// terms as the shiny clause: it is allowed even in an area already used up and even if
+// its family is already registered, and catching it does not consume the area.
+//
+// Species randomization can drop a legendary into any route's encounter table, and being
+// told "you already caught something here" while a Rayquaza stands in front of you is the
+// kind of moment a run is remembered for. The twelve legendary sites are unaffected --
+// those maps have no wild encounter table, so they were never area-gated to begin with.
+//
+// Counts the same four categories the randomizer's own legend-aware substitution does:
+// restricted legendaries, sub-legendaries, mythicals and Ultra Beasts.
+#define RANDOLOCKE_LEGENDARY_CLAUSE         TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

@@ -58,6 +58,20 @@ static void MarkAreaUsed(u32 area)
         gSaveBlock1Ptr->caughtInArea[area / 8] |= 1 << (area % 8);
 }
 
+// The four categories the randomizer's own legend-aware substitution treats as legendary,
+// so the clause covers exactly the set that substitution can drop onto a route. Mirrors
+// IsRandomizerLegendary; kept separate because that one is static to the randomizer.
+static bool32 RandolockeIsLegendary(enum Species species)
+{
+    if (species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
+
+    return gSpeciesInfo[species].isRestrictedLegendary
+        || gSpeciesInfo[species].isSubLegendary
+        || gSpeciesInfo[species].isMythical
+        || gSpeciesInfo[species].isUltraBeast;
+}
+
 // True if anything in this species' evolution family is already registered as caught.
 // Walks to the family root first, so catching an Ivysaur blocks a later Bulbasaur.
 static bool32 FamilyAlreadyCaught(enum Species species)
@@ -158,6 +172,13 @@ enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler)
     if (IsMonShiny(mon))
         return RANDOLOCKE_CATCH_OK;
 
+    // And the legendary clause on the same terms. Species randomization can put one in
+    // any route's encounter table.
+    #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
+    if (RandolockeIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
+        return RANDOLOCKE_CATCH_OK;
+    #endif
+
     if (FamilyAlreadyCaught(GetMonData(mon, MON_DATA_SPECIES)))
         return RANDOLOCKE_CATCH_DUPE;
 
@@ -201,14 +222,20 @@ bool32 RandolockeEncounterIsFirst(enum BattlerId battler)
     return RandolockeCatchRuleForBattler(battler) == RANDOLOCKE_CATCH_OK;
 }
 
-// Called once a wild Pokemon has actually been caught. A shiny or a duplicate does not
-// use the area up -- that is the whole point of the two clauses.
+// Called once a wild Pokemon has actually been caught. Anything the clauses let through
+// does not use the area up -- that is the whole point of them. Has to run before the dex
+// caught flag for this catch is written, or FamilyAlreadyCaught would see the Pokemon
+// that was just caught and no catch would ever mark an area; see the call site.
 void RandolockeNoteCatch(struct Pokemon *mon)
 {
     if (!RandolockeNuzlockeActive() || (gBattleTypeFlags & BATTLE_TYPE_CATCH_TUTORIAL))
         return;
     if (IsMonShiny(mon))
         return;
+    #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
+    if (RandolockeIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
+        return;
+    #endif
     if (FamilyAlreadyCaught(GetMonData(mon, MON_DATA_SPECIES)))
         return;
 
