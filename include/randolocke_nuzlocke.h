@@ -31,9 +31,13 @@ bool32 RandolockeAnyLivingMonInBoxes(void);
 u32 RandolockeCurrentArea(void);
 bool32 RandolockeAreaUsed(u32 area);
 enum RandolockeCatchRule RandolockeCatchRuleForBattle(void);
+enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler);
+bool32 RandolockeEncounterIsFirst(enum BattlerId battler);
 void RandolockeNoteCatch(struct Pokemon *mon);
 #else
 static inline enum RandolockeCatchRule RandolockeCatchRuleForBattle(void) { return RANDOLOCKE_CATCH_OK; }
+static inline enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler) { (void)battler; return RANDOLOCKE_CATCH_OK; }
+static inline bool32 RandolockeEncounterIsFirst(enum BattlerId battler) { (void)battler; return FALSE; }
 static inline void RandolockeNoteCatch(struct Pokemon *mon) { (void)mon; }
 static inline bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon) { (void)boxMon; return FALSE; }
 static inline bool32 RandolockeDeadMonsAreLocked(void) { return FALSE; }

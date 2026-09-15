@@ -1173,6 +1173,31 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 37 — The first-encounter badge asks about the right Pokémon
+
+The badge appeared on second encounters and then vanished on the next health box redraw.
+It was asking `GetCatchingBattler()` which Pokémon to judge, and during the battle intro
+that function's `IsBattlerAlive` check fails the left-hand opponent and falls through to
+the right-hand one — which in a single battle is not a battler at all, so the rule ran
+against a stale enemy party slot left over from an earlier battle. It now asks about the
+battler whose box is being drawn, and draws nothing at all while the data is unreadable.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T37.1 | **A first encounter is badged** | Enter a fresh area, meet a wild Pokémon | The badge is there from the moment the box appears |
+| T37.2 | **A second encounter is not** | Catch one, then meet another wild Pokémon in the same area | No badge, not even for a moment |
+| T37.3 | It does not appear on a redraw | Same, then open the bag and back out | Still no badge |
+| T37.4 | …and a real one does not vanish | A first encounter, then bag and back out | Badge still there |
+| T37.5 | **Straight after a trainer battle** | Fight a trainer, then meet a wild Pokémon in a used-up area | No badge. This is the case the stale party slot came from |
+| T37.6 | A dupe is not badged | Meet a wild Pokémon whose family is already caught | No badge |
+| T37.7 | A shiny is badged | Meet a shiny in a used-up area | Badge — the shiny clause still overrides |
+| T37.8 | Trainers never get one | Any trainer battle | No badge on their Pokémon |
+| T37.9 | Doubles | A wild double battle, one catchable and one not | The badge sits on the right box only |
+| T37.10 | Safari | Safari Zone | No badge |
+| T37.11 | The rules themselves are unchanged | Try to catch in a used-up area | Still refused, same message as before |
+
+---
+
 ## Phase 36 — TM pickups are drawn without replacement
 
 A randomized TM — found, hidden, or handed over by a gym leader — is now drawn from the

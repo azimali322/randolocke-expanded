@@ -937,13 +937,9 @@ static void RandolockeDrawEncounterBadge(u32 healthboxSpriteId, enum BattlerId b
     u32 spriteId2 = gSprites[healthboxSpriteId].oam.affineParam;
     s16 savedValue1, savedValue2;
 
-    if (IsOnPlayerSide(battler))
-        return;
-    if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_SAFARI | BATTLE_TYPE_FRONTIER))
-        return;
-    if (RandolockeCatchRuleForBattle() != RANDOLOCKE_CATCH_OK)
-        return;
-    if (!RandolockeNuzlockeActive())
+    // Asks about this battler specifically, and answers no while the battle is still
+    // setting up -- see RandolockeEncounterIsFirst.
+    if (!RandolockeEncounterIsFirst(battler))
         return;
 
     // The sprite text printer walks data[1] as a sprite chain; borrow it and put it back.

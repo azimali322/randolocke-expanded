@@ -119,7 +119,28 @@ static bool32 FamilyAlreadyCaught(enum Species species)
 }
 
 // Why a ball may or may not be thrown at the Pokemon currently opposite the player.
-enum RandolockeCatchRule RandolockeCatchRuleForBattle(void)
+// The wild Pokemon a given battler is, if it can be read yet. NULL while the battle is
+// still setting itself up.
+static struct Pokemon *RandolockeWildMon(enum BattlerId battler)
+{
+    struct Pokemon *mon;
+    u32 partyIndex;
+
+    if (battler >= MAX_BATTLERS_COUNT)
+        return NULL;
+
+    partyIndex = gBattlerPartyIndexes[battler];
+    if (partyIndex >= PARTY_SIZE)
+        return NULL;
+
+    mon = &gParties[B_TRAINER_OPPONENT_A][partyIndex];
+    if (!GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL))
+        return NULL;
+
+    return mon;
+}
+
+enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler)
 {
     struct Pokemon *mon;
     u32 area;
@@ -129,7 +150,9 @@ enum RandolockeCatchRule RandolockeCatchRuleForBattle(void)
      || (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_CATCH_TUTORIAL)))
         return RANDOLOCKE_CATCH_OK;
 
-    mon = &gParties[B_TRAINER_OPPONENT_A][gBattlerPartyIndexes[GetCatchingBattler()]];
+    mon = RandolockeWildMon(battler);
+    if (mon == NULL)
+        return RANDOLOCKE_CATCH_OK;   // let the throw happen rather than block progress
 
     // The shiny clause outranks everything, including a used-up area.
     if (IsMonShiny(mon))
@@ -143,6 +166,39 @@ enum RandolockeCatchRule RandolockeCatchRuleForBattle(void)
         return RANDOLOCKE_CATCH_AREA_USED;
 
     return RANDOLOCKE_CATCH_OK;
+}
+
+enum RandolockeCatchRule RandolockeCatchRuleForBattle(void)
+{
+    return RandolockeCatchRuleForBattler(GetCatchingBattler());
+}
+
+// Whether the health box for this battler should carry the first-encounter badge.
+//
+// Deliberately stricter than RandolockeCatchRuleForBattler, and about a specific battler
+// rather than "whichever one a ball would hit". The health box is drawn during the battle
+// intro, before gBattleMons is populated, and GetCatchingBattler decides via
+// IsBattlerAlive -- so at that moment it failed the left-hand opponent and fell through
+// to the right-hand one, which in a single battle is not a battler at all. The rule then
+// ran against a garbage Pokemon whose shiny bit read as set often enough to return
+// CATCH_OK, which is why the badge turned up on second encounters and vanished on the
+// next redraw once the real data had arrived.
+//
+// Anything unreadable now means no badge. A badge that appears a frame late is invisible;
+// one that appears wrongly is what was reported.
+bool32 RandolockeEncounterIsFirst(enum BattlerId battler)
+{
+    if (!RandolockeNuzlockeActive())
+        return FALSE;
+    if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_CATCH_TUTORIAL
+                          | BATTLE_TYPE_SAFARI | BATTLE_TYPE_FRONTIER))
+        return FALSE;
+    if (battler >= MAX_BATTLERS_COUNT || IsOnPlayerSide(battler))
+        return FALSE;
+    if (RandolockeWildMon(battler) == NULL)
+        return FALSE;
+
+    return RandolockeCatchRuleForBattler(battler) == RANDOLOCKE_CATCH_OK;
 }
 
 // Called once a wild Pokemon has actually been caught. A shiny or a duplicate does not
