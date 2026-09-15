@@ -1173,6 +1173,35 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 34 — A fainted Pokémon looks fainted in the PC
+
+Nothing on the storage screen said which Pokémon were dead; the only clue was the refusal
+when you tried to withdraw one. Three tells now, following pokeemerald_rando_enh, which
+dims the box icons and greys the portrait.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T34.1 | **The box icon is dimmed** | PC → a box holding fainted Pokémon | Their icons are see-through against the box wallpaper; living ones are solid |
+| T34.2 | **The portrait is grey** | Put the cursor on a fainted one | The PKMN DATA picture has the colour drained out of it |
+| T34.3 | **The panel says FAINTED** | Same | Where the held item would be, it reads FAINTED |
+| T34.4 | Living Pokémon are untouched | Move to a living one | Solid icon, full-colour portrait, its real held item |
+| T34.5 | It survives a page change | Scroll to another box and back | Still dimmed, still grey |
+| T34.6 | The grey does not leak | Hover a fainted one, then a living one | The living one is full colour, not grey |
+| T34.7 | …nor across a fade | Hover a fainted one, open the party view, come back | Still grey, not recoloured |
+| T34.8 | Item mode still dims | PC → MOVE ITEMS | Pokémon holding nothing are dimmed, as before |
+| T34.9 | Champion clears it | Beat the Champion, reopen the PC | Full colour, no FAINTED label, withdrawable |
+| T34.10 | Eggs are not affected | An egg in the same box | Normal egg icon and portrait |
+
+### Which refusal is which
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T34.11 | **Withdrawing a fainted Pokémon** | PC → a fainted one → Withdraw | "This POKéMON is gone for good." — *not* an egg message |
+| T34.12 | Releasing an egg | PC → an egg → Release | "You can't release an EGG." This is the vanilla egg rule and has nothing to do with fainting |
+| T34.13 | Releasing a fainted Pokémon | PC → a fainted one → Release | Allowed |
+
+---
+
 ## Phase 33 — A fainted Pokémon is gone
 
 The death rule. Until now only a **total wipe** boxed anything, so a Pokémon that fainted

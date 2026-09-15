@@ -489,6 +489,8 @@ struct PokemonStorageSystemData
     u8 displayMonMarkings;
     u8 displayMonLevel;
     bool8 displayMonIsEgg;
+    // randolocke: the Pokemon on display fainted and is locked in its box.
+    bool8 displayMonIsDead;
     u8 displayMonName[POKEMON_NAME_LENGTH + 1];
     u8 displayMonNameText[36];
     u8 displayMonSpeciesName[36];
@@ -4038,6 +4040,15 @@ static void LoadDisplayMonGfx(enum Species species, u32 pid, bool32 isEgg)
         LoadSpecialPokePicIsEgg(sStorage->tileBuffer, species, pid, TRUE, isEgg);
         CpuCopy32(sStorage->tileBuffer, sStorage->displayMonTilePtr, MON_PIC_SIZE);
         LoadPalette(sStorage->displayMonPalette, sStorage->displayMonPalOffset, PLTT_SIZE_4BPP);
+        // randolocke: grey rather than transparent for the portrait. The icon in the box
+        // is dimmed by the blend, but the portrait sits on a light panel where a blend
+        // barely reads -- and draining the colour out of it says "gone" more plainly than
+        // fading it would. Both buffers, or the next fade puts the colour back.
+        if (sStorage->displayMonIsDead)
+        {
+            TintPalette_GrayScale2(&gPlttBufferUnfaded[sStorage->displayMonPalOffset], 16);
+            TintPalette_GrayScale2(&gPlttBufferFaded[sStorage->displayMonPalOffset], 16);
+        }
         sStorage->displayMonSprite->invisible = FALSE;
     }
     else
@@ -4500,6 +4511,12 @@ static bool32 ShouldBoxmonSpriteBeTransparent(u32 boxId, u32 boxPosition)
         return TRUE;
     if (sStorage->boxOption == OPTION_SELECT_MON
      && IsBoxMonExcluded(GetBoxedMonPtr(boxId, boxPosition)))
+        return TRUE;
+    // randolocke: a Pokemon that fainted is still in its box but is not the player's to
+    // use, and nothing else on this screen says so. The blend registers are already set
+    // up for the item mode's dimming, so this costs nothing.
+    if (RandolockeDeadMonsAreLocked()
+     && RandolockeMonIsDead(GetBoxedMonPtr(boxId, boxPosition)))
         return TRUE;
     return FALSE;
 }
@@ -7033,6 +7050,7 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
     bool8 sanityIsBadEgg;
 
     sStorage->displayMonItemId = ITEM_NONE;
+    sStorage->displayMonIsDead = FALSE;
     gender = MON_MALE;
     sanityIsBadEgg = FALSE;
     if (mode == MODE_PARTY)
@@ -7056,6 +7074,10 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
             sStorage->displayMonPalette = GetMonFrontSpritePal(mon);
             gender = GetMonGender(mon);
             sStorage->displayMonItemId = GetMonData(mon, MON_DATA_HELD_ITEM);
+            // A dead Pokemon only turns up in the party when the boxes were full when it
+            // fainted, but it should still read as dead when it does.
+            if (RandolockeDeadMonsAreLocked() && RandolockeMonIsDead(&mon->box))
+                sStorage->displayMonIsDead = TRUE;
         }
     }
     else if (mode == MODE_BOX)
@@ -7081,6 +7103,8 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
             sStorage->displayMonPalette = GetMonSpritePalFromSpeciesAndPersonalityIsEgg(sStorage->displayMonSpecies, isShiny, sStorage->displayMonPersonality, sStorage->displayMonIsEgg);
             gender = GetGenderFromSpeciesAndPersonality(sStorage->displayMonSpecies, sStorage->displayMonPersonality);
             sStorage->displayMonItemId = GetBoxMonData(boxMon, MON_DATA_HELD_ITEM);
+            if (RandolockeDeadMonsAreLocked() && RandolockeMonIsDead(boxMon))
+                sStorage->displayMonIsDead = TRUE;
         }
     }
     else
@@ -7160,7 +7184,13 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
         txtPtr[0] = CHAR_SPACE;
         txtPtr[1] = EOS;
 
-        if (sStorage->displayMonItemId != ITEM_NONE)
+        // randolocke: the held item line is always blank for a Pokemon that fainted -- the
+        // item was taken off it when it was boxed -- so it is free to say so outright. The
+        // greyed portrait alone leaves room for doubt, and the only other place the state
+        // shows up is the refusal when you try to withdraw it.
+        if (sStorage->displayMonIsDead)
+            StringCopyPadded(sStorage->displayMonItemName, COMPOUND_STRING("FAINTED"), CHAR_SPACE, 8);
+        else if (sStorage->displayMonItemId != ITEM_NONE)
             StringCopyPadded(sStorage->displayMonItemName, GetItemName(sStorage->displayMonItemId), CHAR_SPACE, 8);
         else
             StringFill(sStorage->displayMonItemName, CHAR_SPACE, 8);
