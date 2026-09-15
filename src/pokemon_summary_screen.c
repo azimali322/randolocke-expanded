@@ -85,11 +85,7 @@
 #define PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER 17
 #define PSS_LABEL_WINDOW_PORTRAIT_NICKNAME 18 // The upper name
 #define PSS_LABEL_WINDOW_PORTRAIT_SPECIES 19 // The lower name
-// randolocke: the skills page's RIBBON slot now carries the ability, so its banner needs
-// a new caption. The word "RIBBON" has been blanked out of page_skills.bin and this
-// window prints over the bare banner with a transparent background.
-#define PSS_LABEL_WINDOW_SKILLS_ABILITY 20
-#define PSS_LABEL_WINDOW_END 21
+#define PSS_LABEL_WINDOW_END 20
 
 // Dynamic fields for the Pokémon Info page
 #define PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER 0
@@ -665,15 +661,6 @@ static const struct WindowTemplate sSummaryTemplate[] =
         .height = 4,
         .paletteNum = 6,
         .baseBlock = 431,
-    },
-    [PSS_LABEL_WINDOW_SKILLS_ABILITY] = {
-        .bg = 0,
-        .tilemapLeft = 22,
-        .tilemapTop = 3,
-        .width = 8,
-        .height = 2,
-        .paletteNum = 7,
-        .baseBlock = 922,   // past the stats overlay, which ends at 921
     },
     [PSS_LABEL_WINDOW_END] = DUMMY_WIN_TEMPLATE
 };
@@ -3611,18 +3598,6 @@ static void PrintPageNamesAndStats(void)
 
     ShowUtilityPrompt(SUMMARY_MODE_NORMAL);
 
-    #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
-    {
-        // Transparent background so the banner behind shows through, white on dark grey
-        // to match the captions baked into the page graphic either side of it.
-        static const u8 sAbilityCaptionColors[3] = { 0, 3, 4 };
-        FillWindowPixelBuffer(PSS_LABEL_WINDOW_SKILLS_ABILITY, PIXEL_FILL(0));
-        AddTextPrinterParameterized4(PSS_LABEL_WINDOW_SKILLS_ABILITY, FONT_SMALL,
-                                     0, 0, 0, 0, sAbilityCaptionColors, 0,
-                                     COMPOUND_STRING("ABILITY"));
-    }
-    #endif
-
     PrintTextOnWindow(PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL, gText_RentalPkmn, 0, 1, 0, 1);
     PrintTextOnWindow(PSS_LABEL_WINDOW_POKEMON_INFO_TYPE, gText_TypeSlash, 0, 1, 0, 0);
     statsXPos = 6 + GetStringCenterAlignXOffset(FONT_NORMAL, gText_HP4, 42);
@@ -3666,9 +3641,6 @@ static void PutPageWindowTilemaps(u8 page)
         break;
     case PSS_PAGE_SKILLS:
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
-        #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
-        PutWindowTilemap(PSS_LABEL_WINDOW_SKILLS_ABILITY);
-        #endif
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -3725,9 +3697,6 @@ static void ClearPageWindowTilemaps(u8 page)
         ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_RELEARN);
         break;
     case PSS_PAGE_SKILLS:
-        #if RANDOLOCKE_SKILLS_PAGE_ABILITY == TRUE
-        ClearWindowTilemap(PSS_LABEL_WINDOW_SKILLS_ABILITY);
-        #endif
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -5198,11 +5167,12 @@ static void RandolockeSetFriendshipHeart(void)
     {
         LoadCompressedSpriteSheet(&sSpriteSheet_FriendshipHeart);
         LoadSpritePalette(&sSpritePal_FriendshipHeart);
-        // Flush into the bottom-right corner of the picture frame, whose striped inner
-        // area is x 8..71, y 32..95 -- so a 16x16 sprite centred at (64, 88) fills the
-        // corner exactly. Subpriority 0 keeps it in front of the Pokemon's own sprite,
-        // which occupies the same 64x64 box and was what it kept disappearing into.
-        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 64, 88, 0);
+        // Bottom-right of the picture frame, whose striped inner area is x 8..71,
+        // y 32..95. Centred at (64, 84) rather than flush in the corner at (64, 88): the
+        // art fills rows 0..13 of its 16x16 box, so at 88 its point sat on the frame's
+        // last row and read as though the heart had been cut off there. Subpriority 0
+        // keeps it in front of the Pokemon's own sprite, which shares the same 64x64 box.
+        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 64, 84, 0);
         if (*spriteId == SPRITE_NONE)
             return;
     }

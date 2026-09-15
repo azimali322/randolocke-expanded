@@ -1262,7 +1262,8 @@ art is the same, doubled, and it fills the picture frame's bottom-right corner e
 | --- | --- | --- | --- |
 | T30.1 | **It is obvious now** | Summary → info page | A clearly readable heart in the bottom-right corner of the picture |
 | T30.2 | It sits in front of the Pokémon | A Pokémon whose sprite fills that corner — Wobbuffet, Snorlax | Heart drawn over the sprite, not behind it |
-| T30.3 | It is flush in the corner | Any Pokémon | Inside the striped area, not overlapping the green border |
+| T30.3 | It is clear of the frame edge | Any Pokémon | Bottom-right of the striped area with a few pixels of frame below the heart's point, so nothing reads as cut off |
+| T30.3b | **The gold heart reads as a heart** | A Pokémon at 255 friendship | Dark outline around the gold fill, recognisably heart-shaped rather than a solid wedge |
 | T30.4 | The frames still step correctly | Compare a fresh catch with a walked one | Fill rises from the bottom through six steps |
 | T30.5 | **Gold only at the true maximum** | Debug → Party… → Edit Pokemon → Set Friendship 255 | Whole heart turns gold |
 | T30.5b | 254 is not gold | Set Friendship 254 | Full **red** heart, not gold. Gold has to mean "cannot go higher" |
@@ -1296,7 +1297,7 @@ what. The skills page's IV and EV views are the exception: SELECT stays the stat
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| T30.18 | **The caption reads ABILITY** | Skills page | Top-right banner says ABILITY, not RIBBON, with no leftover letters behind it |
+| T30.18 | **The caption reads ABILITY** | Skills page | Top-right banner says ABILITY in the same white-on-yellow style as ITEM beside it, fully visible, nothing clipped by the box below |
 | T30.19 | The ability is shown | Any Pokémon | Its ability, centred in the box where the ribbon count was |
 | T30.20 | A long name fits | A Pokémon with a long ability name | Inside the box, not clipped off the left |
 | T30.21 | It tracks the Pokémon | Page up and down through the party | Changes with each one |
