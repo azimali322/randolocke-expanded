@@ -85,7 +85,9 @@
 #define PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER 17
 #define PSS_LABEL_WINDOW_PORTRAIT_NICKNAME 18 // The upper name
 #define PSS_LABEL_WINDOW_PORTRAIT_SPECIES 19 // The lower name
-#define PSS_LABEL_WINDOW_END 20
+// randolocke: "X/255" over the bottom of the Pokemon's picture on the skills page.
+#define PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP 20
+#define PSS_LABEL_WINDOW_END 21
 
 // Dynamic fields for the Pokémon Info page
 #define PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER 0
@@ -113,9 +115,6 @@ enum
     SPRITE_ARR_ID_MON,
     SPRITE_ARR_ID_BALL,
     SPRITE_ARR_ID_STATUS,
-    SPRITE_ARR_ID_FRIENDSHIP, // randolocke: the friendship heart. Deliberately before
-                              // SPRITE_ARR_ID_TYPE, which is where HidePageSpecificSprites
-                              // starts sweeping -- this one is managed by hand instead.
     SPRITE_ARR_ID_TYPE, // 2 for mon types, 5 for move types(4 moves and 1 to learn), used interchangeably, because mon types and move types aren't shown on the same screen
     SPRITE_ARR_ID_MOVE_SELECTOR1 = SPRITE_ARR_ID_TYPE + TYPE_ICON_SPRITE_COUNT, // 10 sprites that make up the selector
     SPRITE_ARR_ID_MOVE_SELECTOR2 = SPRITE_ARR_ID_MOVE_SELECTOR1 + MOVE_SELECTOR_SPRITES_COUNT,
@@ -202,9 +201,6 @@ EWRAM_DATA u8 gLastViewedMonIndex = 0;
 static EWRAM_DATA u8 sMoveSlotToReplace = 0;
 #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
 static EWRAM_DATA bool8 sRandolockeStatsOverlayVisible = FALSE;
-// The five shared type-icon sprites are all spoken for on the moves page -- four moves
-// plus the one being learned -- so the overlay makes two of its own.
-static EWRAM_DATA u8 sRandolockeOverlayTypeSpriteIds[2] = {0};
 // Zero-initialised because EWRAM_DATA lands in .sbss; ShowPokemonSummaryScreen sets it
 // to WINDOW_NONE before anything reads it.
 static EWRAM_DATA u8 sRandolockeStatsOverlayWindowId = 0;
@@ -325,9 +321,6 @@ static void StopPokemonAnimations(void);
 static void CreateMonMarkingsSprite(struct Pokemon *);
 static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *);
 static void CreateCaughtBallSprite(struct Pokemon *);
-#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-static void RandolockeSetFriendshipHeart(void);
-#endif
 static void CreateSetStatusSprite(void);
 static void CreateMoveSelectorSprites(u8);
 static void SpriteCB_MoveSelector(struct Sprite *);
@@ -662,6 +655,15 @@ static const struct WindowTemplate sSummaryTemplate[] =
         .paletteNum = 6,
         .baseBlock = 431,
     },
+    [PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP] = {
+        .bg = 0,
+        .tilemapLeft = 3,
+        .tilemapTop = 10,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 6,
+        .baseBlock = 902,   // past the stats overlay, which ends at 901
+    },
     [PSS_LABEL_WINDOW_END] = DUMMY_WIN_TEMPLATE
 };
 static const struct WindowTemplate sPageInfoTemplate[] =
@@ -823,7 +825,6 @@ static const struct WindowTemplate sRandolockeStatsOverlayTemplate =
     .baseBlock = 822,
 };
 
-#define RZ_STATS_OVERLAY_TOP    (2 * TILE_HEIGHT)   // screen y of the window's first row
 #endif
 
 static void (*const sTextPrinterFunctions[])(void) =
@@ -857,75 +858,6 @@ static const u8 sMovesPPLayout[] = _("{PP}{DYNAMIC 0}/{DYNAMIC 1}");
 #define TAG_MON_MARKINGS 30003
 #define TAG_CATEGORY_ICONS 30004
 
-#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-// Seven 16x16 frames: an outline filling from the bottom up, and a gold heart at the top
-// of the range. Ported from pokeemerald_rando_enh at that fork's 8x8 and doubled -- at
-// eight pixels it was legible only if you already knew it was there, which is not much
-// use for something whose whole job is to be read at a glance.
-static const u16 sFriendshipHeart_Pal[] = INCBIN_U16("graphics/summary_screen/friendship_heart.gbapal");
-static const u32 sFriendshipHeart_Gfx[] = INCGFX_U32("graphics/summary_screen/friendship_heart.png", ".4bpp.lz");
-
-#define TAG_FRIENDSHIP_HEART    30000
-#define FRIENDSHIP_HEART_FRAMES 7
-
-// The friendship value each frame takes over at. The gold frame is pinned to
-// MAX_FRIENDSHIP rather than to 250: gold has to mean "this is as high as it goes", or a
-// Pokemon sitting at 251 shows the same heart as one that is genuinely maxed and there is
-// no way to tell a full heart from a nearly-full one. The six red frames divide 0..254
-// evenly between them.
-static const u16 sFriendshipHeartThresholds[FRIENDSHIP_HEART_FRAMES] =
-    { 0, 43, 86, 128, 171, 214, MAX_FRIENDSHIP };
-
-static const struct OamData sOamData_FriendshipHeart =
-{
-    .affineMode = ST_OAM_AFFINE_OFF,
-    .objMode = ST_OAM_OBJ_NORMAL,
-    .shape = SPRITE_SHAPE(16x16),
-    .size = SPRITE_SIZE(16x16),
-    .priority = 0,
-};
-
-// ANIMCMD_FRAME takes a tile offset, not a frame index, and a 16x16 4bpp frame is four
-// tiles -- the same convention sSpriteAnim_CategoryIcon* uses.
-static const union AnimCmd sAnim_FriendshipHeart_0[] = { ANIMCMD_FRAME( 0, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_1[] = { ANIMCMD_FRAME( 4, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_2[] = { ANIMCMD_FRAME( 8, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_3[] = { ANIMCMD_FRAME(12, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_4[] = { ANIMCMD_FRAME(16, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_5[] = { ANIMCMD_FRAME(20, 0), ANIMCMD_END };
-static const union AnimCmd sAnim_FriendshipHeart_6[] = { ANIMCMD_FRAME(24, 0), ANIMCMD_END };
-
-static const union AnimCmd *const sAnimTable_FriendshipHeart[] =
-{
-    sAnim_FriendshipHeart_0, sAnim_FriendshipHeart_1, sAnim_FriendshipHeart_2,
-    sAnim_FriendshipHeart_3, sAnim_FriendshipHeart_4, sAnim_FriendshipHeart_5,
-    sAnim_FriendshipHeart_6,
-};
-
-static const struct CompressedSpriteSheet sSpriteSheet_FriendshipHeart =
-{
-    .data = sFriendshipHeart_Gfx,
-    .size = FRIENDSHIP_HEART_FRAMES * 4 * TILE_SIZE_4BPP,
-    .tag = TAG_FRIENDSHIP_HEART,
-};
-
-static const struct SpritePalette sSpritePal_FriendshipHeart =
-{
-    .data = sFriendshipHeart_Pal,
-    .tag = TAG_FRIENDSHIP_HEART,
-};
-
-static const struct SpriteTemplate sSpriteTemplate_FriendshipHeart =
-{
-    .tileTag = TAG_FRIENDSHIP_HEART,
-    .paletteTag = TAG_FRIENDSHIP_HEART,
-    .oam = &sOamData_FriendshipHeart,
-    .anims = sAnimTable_FriendshipHeart,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
-};
-#endif
 
 static const struct OamData sOamData_CategoryIcons =
 {
@@ -1393,8 +1325,6 @@ void ShowPokemonSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, 
     #if RANDOLOCKE_MOVE_SCREEN_STATS == TRUE
     sRandolockeStatsOverlayVisible = FALSE;
     sRandolockeStatsOverlayWindowId = WINDOW_NONE;
-    sRandolockeOverlayTypeSpriteIds[0] = SPRITE_NONE;
-    sRandolockeOverlayTypeSpriteIds[1] = SPRITE_NONE;
     #endif
     SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
 
@@ -1528,9 +1458,6 @@ static bool8 LoadGraphics(void)
         break;
     case 19:
         CreateCaughtBallSprite(&sMonSummaryScreen->currentMon);
-        #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-            RandolockeSetFriendshipHeart();
-        #endif
         gMain.state++;
         break;
     case 20:
@@ -2337,9 +2264,6 @@ static void Task_ChangeSummaryMon(u8 taskId)
         break;
     case 6:
         CreateCaughtBallSprite(&sMonSummaryScreen->currentMon);
-        #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-            RandolockeSetFriendshipHeart();
-        #endif
         break;
     case 7:
         if (sMonSummaryScreen->summary.ailment != AILMENT_NONE)
@@ -3641,6 +3565,9 @@ static void PutPageWindowTilemaps(u8 page)
         break;
     case PSS_PAGE_SKILLS:
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
+        #if RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP == TRUE
+        PutWindowTilemap(PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP);
+        #endif
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -3697,6 +3624,9 @@ static void ClearPageWindowTilemaps(u8 page)
         ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_RELEARN);
         break;
     case PSS_PAGE_SKILLS:
+        #if RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP == TRUE
+        ClearWindowTilemap(PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP);
+        #endif
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
@@ -3820,6 +3750,36 @@ static void Task_PrintInfoPage(u8 taskId)
     }
     data[0]++;
 }
+
+#if RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP == TRUE
+// The friendship value, right-aligned into the bottom-right of the picture frame, whose
+// striped inner area is x 8..71. Transparent background so the picture shows through, and
+// white on a black shadow rather than the usual grey, because it has to stay readable over
+// whatever the Pokemon's sprite is doing underneath it.
+static void RandolockePrintFriendship(void)
+{
+    static const u8 sFriendshipColors[3] = { 0, 3, 1 }; // transparent, white, black shadow
+    u8 text[16];
+    u8 *end;
+    s32 x;
+
+    FillWindowPixelBuffer(PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP, PIXEL_FILL(0));
+    if (sMonSummaryScreen->summary.isEgg)
+        return;
+
+    end = ConvertIntToDecimalStringN(text,
+                                     GetMonData(&sMonSummaryScreen->currentMon, MON_DATA_FRIENDSHIP),
+                                     STR_CONV_MODE_LEFT_ALIGN, 3);
+    *end++ = CHAR_SLASH;
+    ConvertIntToDecimalStringN(end, MAX_FRIENDSHIP, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+    x = GetStringRightAlignXOffset(FONT_SMALL, text, 6 * TILE_WIDTH);
+    if (x < 0)
+        x = 0;
+    AddTextPrinterParameterized4(PSS_LABEL_WINDOW_SKILLS_FRIENDSHIP, FONT_SMALL,
+                                 x, 4, 0, 0, sFriendshipColors, 0, text);
+}
+#endif
 
 static void PrintMonOTName(void)
 {
@@ -4220,6 +4180,9 @@ static void PrintSkillsPageText(void)
 {
     PrintHeldItemName();
     PrintRibbonCount();
+    #if RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP == TRUE
+    RandolockePrintFriendship();
+    #endif
     if (ShouldShowIvEvPrompt())
         ShowUtilityPrompt(SUMMARY_SKILLS_MODE_STATS);
     BufferLeftColumnStats();
@@ -4240,6 +4203,9 @@ static void Task_PrintSkillsPage(u8 taskId)
         break;
     case 2:
         PrintRibbonCount();
+        #if RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP == TRUE
+        RandolockePrintFriendship();
+        #endif
         break;
     case 3:
         ChangeStatLabel(SUMMARY_SKILLS_MODE_STATS);
@@ -5138,58 +5104,6 @@ static void RemoveAndCreateMonMarkingsSprite(struct Pokemon *mon)
     CreateMonMarkingsSprite(mon);
 }
 
-#if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-// Draws the friendship heart under the bottom-right of the Pokemon's picture. Fills from
-// the bottom as friendship climbs, and turns gold at the top of the range.
-//
-// Kept outside HidePageSpecificSprites' range, which sweeps everything from
-// SPRITE_ARR_ID_TYPE onward when the page changes, and shown on every page -- the
-// Pokemon's picture is drawn on all four, so there is no page where the heart has
-// nothing to sit under.
-static void RandolockeSetFriendshipHeart(void)
-{
-    u8 *spriteId = &sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_FRIENDSHIP];
-    u32 friendship = GetMonData(&sMonSummaryScreen->currentMon, MON_DATA_FRIENDSHIP);
-    u32 frame = 0;
-
-    if (sMonSummaryScreen->summary.isEgg)
-    {
-        if (*spriteId != SPRITE_NONE)
-            SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, TRUE);
-        return;
-    }
-
-    while (frame + 1 < FRIENDSHIP_HEART_FRAMES
-        && friendship >= sFriendshipHeartThresholds[frame + 1])
-        frame++;
-
-    if (*spriteId == SPRITE_NONE)
-    {
-        LoadCompressedSpriteSheet(&sSpriteSheet_FriendshipHeart);
-        LoadSpritePalette(&sSpritePal_FriendshipHeart);
-        // Bottom-right of the picture frame, whose striped inner area is x 8..71,
-        // y 32..95. Centred at (64, 84) rather than flush in the corner at (64, 88): the
-        // art fills rows 0..13 of its 16x16 box, so at 88 its point sat on the frame's
-        // last row and read as though the heart had been cut off there. Subpriority 0
-        // keeps it in front of the Pokemon's own sprite, which shares the same 64x64 box.
-        *spriteId = CreateSprite(&sSpriteTemplate_FriendshipHeart, 64, 84, 0);
-        if (*spriteId == SPRITE_NONE)
-            return;
-    }
-
-    StartSpriteAnim(&gSprites[*spriteId], frame);
-    SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, FALSE);
-}
-
-// The stats overlay covers the picture frame, heart included.
-static void RandolockeSetFriendshipHeartVisible(bool32 visible)
-{
-    if (sMonSummaryScreen != NULL
-     && sMonSummaryScreen->spriteIds[SPRITE_ARR_ID_FRIENDSHIP] != SPRITE_NONE
-     && !sMonSummaryScreen->summary.isEgg)
-        SetSpriteInvisibility(SPRITE_ARR_ID_FRIENDSHIP, !visible);
-}
-#endif
 
 static void CreateCaughtBallSprite(struct Pokemon *mon)
 {
@@ -5359,6 +5273,17 @@ static s32 RandolockeNatureMod(u32 nature, enum Stat stat)
     return 0;
 }
 
+// Panel layout, window-relative. Five rows of fourteen pixels in the window's eighty:
+// types, the three stat rows, then the ability.
+#define RZ_STATS_WIDTH     (10 * TILE_WIDTH)
+#define RZ_STATS_COL1_X     3
+#define RZ_STATS_COL2_X    43
+#define RZ_STATS_TYPES_Y    3
+#define RZ_STATS_ROW1_Y    18
+#define RZ_STATS_ROW2_Y    32
+#define RZ_STATS_ROW3_Y    46
+#define RZ_STATS_ABILITY_Y 62
+
 // Palette 6 of graphics/summary_screen/tiles.png: 1 black, 2 light grey, 3 white,
 // 5 red, 8 blue. Red for the raised stat, blue for the lowered one, matching the arrows
 // the skills page already draws.
@@ -5384,80 +5309,45 @@ static void RandolockePrintOverlayStat(u8 windowId, const u8 *label, u32 stat, s
     AddTextPrinterParameterized4(windowId, FONT_NARROW, x + 20, y, 0, 0, sColors, 0, statStr);
 }
 
-// The type icons are 32x16 sprites drawn from the same sheet the move list uses. They
-// are created here rather than borrowed from spriteIds[]: SPRITE_ARR_ID_TYPE onward is
-// fully occupied on this page. Priority 0 because the overlay window is on bg 0, and an
-// object only draws in front of a background whose priority is no lower than its own --
-// gSpriteTemplate_MoveTypes' own priority of 1 would put these behind the panel.
-static void RandolockeSetOverlayTypeIcon(u32 slot, enum Type type, u32 x, u32 y)
+// The Pokemon's types, as text, centred above the stats.
+//
+// This was two 32x16 sprites from the move list's own type-icon sheet, and only the first
+// of the pair ever appeared. I could not account for it: both were created from the same
+// template with the same priority and subpriority, both were positioned inside the panel,
+// and the two calls differed only in an array index and an x. Rather than leave a
+// half-working pair on screen, the types are printed the same way the ability below them
+// is -- one printer call, no second sprite that can go missing, and a dual type now always
+// shows both halves.
+//
+// GetFontIdToFit steps down to a narrower font when a pair is too long for the panel:
+// "FIGHTING/PSYCHIC" does not fit 80 pixels at FONT_NARROW.
+static void RandolockePrintOverlayTypes(u8 windowId, enum Species species, u32 y)
 {
-    u8 *spriteId = &sRandolockeOverlayTypeSpriteIds[slot];
-    struct Sprite *sprite;
-
-    if (*spriteId == SPRITE_NONE)
-    {
-        *spriteId = CreateSprite(&gSpriteTemplate_MoveTypes, 0, 0, 2);
-        if (*spriteId == SPRITE_NONE)
-            return;
-    }
-
-    sprite = &gSprites[*spriteId];
-    StartSpriteAnim(sprite, type);
-    sprite->oam.paletteNum = gTypesInfo[type].palette;
-    sprite->oam.priority = 0;
-    sprite->x = x + 16;
-    sprite->y = y + 8;
-    sprite->invisible = FALSE;
-}
-
-static void RandolockeDestroyOverlayTypeIcons(void)
-{
-    u32 i;
-
-    for (i = 0; i < ARRAY_COUNT(sRandolockeOverlayTypeSpriteIds); i++)
-    {
-        if (sRandolockeOverlayTypeSpriteIds[i] != SPRITE_NONE)
-        {
-            // Only the sprite. The tiles and palette belong to the move list's icons.
-            DestroySprite(&gSprites[sRandolockeOverlayTypeSpriteIds[i]]);
-            sRandolockeOverlayTypeSpriteIds[i] = SPRITE_NONE;
-        }
-    }
-}
-
-// Both types side by side, or one centred when the Pokemon has a single type. 32px each
-// inside an 80px panel, so a pair leaves 8px of margin either side.
-static void RandolockeShowOverlayTypes(enum Species species)
-{
+    static const u8 sTypeColors[3] = { 3, 1, 2 }; // white background, black text, grey shadow
     enum Type type1 = GetSpeciesType(species, 0);
     enum Type type2 = GetSpeciesType(species, 1);
-    u32 y = RZ_STATS_OVERLAY_TOP + 2;
+    u8 text[32];
+    u8 *end;
+    u32 fontId;
+    s32 x;
 
-    if (type1 == type2)
+    end = StringCopy(text, gTypesInfo[type1].name);
+    if (type2 != type1)
     {
-        RandolockeSetOverlayTypeIcon(0, type1, 24, y);
-        if (sRandolockeOverlayTypeSpriteIds[1] != SPRITE_NONE)
-            gSprites[sRandolockeOverlayTypeSpriteIds[1]].invisible = TRUE;
+        end = StringCopy(end, COMPOUND_STRING("/"));
+        StringCopy(end, gTypesInfo[type2].name);
     }
-    else
-    {
-        RandolockeSetOverlayTypeIcon(0, type1, 8, y);
-        RandolockeSetOverlayTypeIcon(1, type2, 42, y);
-    }
+
+    fontId = GetFontIdToFit(text, FONT_NARROW, 0, RZ_STATS_WIDTH);
+    x = (RZ_STATS_WIDTH - GetStringWidth(fontId, text, 0)) / 2;
+    if (x < 0)
+        x = 0;
+
+    AddTextPrinterParameterized4(windowId, fontId, x, y, 0, 0, sTypeColors, 0, text);
 }
 
 static void RandolockeShowStatsOverlay(void)
 {
-    // Window-relative. Rows 2..17 are where the type icons sit, so the stats start below
-    // them and the ability closes the panel out at 63 + 14 of the window's 80.
-    #define RZ_STATS_COL1_X  3
-    #define RZ_STATS_COL2_X 43
-    #define RZ_STATS_ROW1_Y 20
-    #define RZ_STATS_ROW2_Y 34
-    #define RZ_STATS_ROW3_Y 48
-    #define RZ_STATS_ABILITY_Y 63
-    #define RZ_STATS_WIDTH  (10 * TILE_WIDTH)
-
     struct Pokemon *mon = &sMonSummaryScreen->currentMon;
     // The nature that actually moved the numbers. CalculateMonStats reads
     // MON_DATA_HIDDEN_NATURE, so a Mint -- or the debug menu's hidden-nature roll --
@@ -5472,9 +5362,6 @@ static void RandolockeShowStatsOverlay(void)
     // not always hold stats.
     StopPokemonAnimations();
     SetSpriteInvisibility(SPRITE_ARR_ID_MON, TRUE);
-    #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-    RandolockeSetFriendshipHeartVisible(FALSE);
-    #endif
 
     if (sRandolockeStatsOverlayWindowId == WINDOW_NONE)
         sRandolockeStatsOverlayWindowId = AddWindow(&sRandolockeStatsOverlayTemplate);
@@ -5510,20 +5397,13 @@ static void RandolockeShowStatsOverlay(void)
                                      sAbilityColors, 0, gAbilitiesInfo[ability].name);
     }
 
-    RandolockeShowOverlayTypes(GetMonData(mon, MON_DATA_SPECIES));
+    RandolockePrintOverlayTypes(windowId, GetMonData(mon, MON_DATA_SPECIES), RZ_STATS_TYPES_Y);
 
     PutWindowTilemap(windowId);
     CopyWindowToVram(windowId, COPYWIN_FULL);
     ScheduleBgCopyTilemapToVram(0);
     sRandolockeStatsOverlayVisible = TRUE;
 
-    #undef RZ_STATS_COL1_X
-    #undef RZ_STATS_COL2_X
-    #undef RZ_STATS_ROW1_Y
-    #undef RZ_STATS_ROW2_Y
-    #undef RZ_STATS_ROW3_Y
-    #undef RZ_STATS_ABILITY_Y
-    #undef RZ_STATS_WIDTH
 }
 
 static void RandolockeHideStatsOverlay(void)
@@ -5532,10 +5412,6 @@ static void RandolockeHideStatsOverlay(void)
         return;
 
     SetSpriteInvisibility(SPRITE_ARR_ID_MON, FALSE);
-    #if RANDOLOCKE_FRIENDSHIP_HEART == TRUE
-    RandolockeSetFriendshipHeartVisible(TRUE);
-    #endif
-    RandolockeDestroyOverlayTypeIcons();
 
     if (sRandolockeStatsOverlayWindowId != WINDOW_NONE)
     {

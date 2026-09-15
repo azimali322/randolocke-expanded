@@ -141,10 +141,16 @@
 
 // --- Friendship heart ---------------------------------------------------------
 
-// If TRUE, the summary's info page shows a heart under the Pokemon's picture that fills
-// from the bottom as friendship rises, and turns gold only at MAX_FRIENDSHIP, so a gold
-// heart means the value cannot go higher. Graphic ported from pokeemerald_rando_enh.
-#define RANDOLOCKE_FRIENDSHIP_HEART         TRUE
+// The Pokemon's friendship, as a plain "X/255" on the skills page, in the bottom-right of
+// its picture where the filling heart used to be.
+//
+// The heart is gone. It was a seven-frame graphic that filled from the bottom and turned
+// gold at maximum, and across three rounds of playtesting it was never legible: too small
+// at 8x8, still ambiguous at 16x16 over the Pokemon's own sprite, and the gold frame read
+// as a wedge rather than a heart until its outline was darkened. A number cannot be
+// misread, and it answers the question the heart could only gesture at -- how far along
+// the value actually is.
+#define RANDOLOCKE_SKILLS_PAGE_FRIENDSHIP   TRUE
 
 // --- First-encounter badge ---------------------------------------------------
 

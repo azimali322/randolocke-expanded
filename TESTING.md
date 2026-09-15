@@ -1173,6 +1173,41 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 40 — Types as text, and friendship as a number
+
+### The overlay shows both types
+
+Two type icons fit an 80px panel on paper, but only the first ever appeared. The types are
+printed as text now, on the same grid the ability below them uses, so there is no second
+sprite to go missing. A pair too long for the panel steps down to a narrower font.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T40.1 | **A dual type shows both halves** | Forget-a-move screen → SELECT, on an Electric/Poison Pokémon | "ELECTRIC/POISON" |
+| T40.2 | A single type shows one | Same on a pure Ghost | "GHOST", centred |
+| T40.3 | A long pair still fits | A Fighting/Psychic or similar | Inside the panel, smaller font if it has to be |
+| T40.4 | The rest of the panel is unchanged | Same screen | Stats grid and ability as before, nothing overlapping |
+| T40.5 | No stray icons | Open and close the overlay, change page, reopen | Never a leftover type box anywhere |
+
+### Friendship is a number
+
+The heart is gone — graphic, sprite and all. Three rounds of playtesting never made it
+legible. The skills page now reads the value out, bottom right of the Pokémon's picture.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T40.6 | **The value is shown** | Summary → skills page | "X/255" over the bottom right of the picture |
+| T40.7 | It is readable over the sprite | A Pokémon whose sprite fills that corner | White text with a black shadow, legible |
+| T40.8 | It tracks the Pokémon | Page up and down the party | Changes with each one |
+| T40.9 | It updates | Walk around, level up, use a vitamin, then check | The number has moved |
+| T40.10 | **No heart anywhere** | Every page, info through contest moves | No heart, no leftover sprite |
+| T40.11 | Skills page only | Info, battle moves, contest moves | No friendship readout on those |
+| T40.12 | Eggs | An egg's summary → skills page | Blank rather than a meaningless number |
+| T40.13 | It does not collide | Nickname, species, ball, level, gender mark | All still readable |
+| T40.14 | Max reads plainly | Debug → Set Friendship 255 | "255/255" |
+
+---
+
 ## Phase 39 — The legendary clause
 
 A legendary met in the wild is always catchable, on the same terms as a shiny: allowed in
