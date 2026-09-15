@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "pokemon.h"
 #include "egg_hatch.h"
 #include "pokedex.h"
@@ -316,6 +317,9 @@ static void AddHatchedMonToParty(u8 id)
 
     bool32 isEgg = FALSE;
     SetMonData(mon, MON_DATA_IS_EGG, &isEgg);
+
+    // randolocke: a hatched Pokemon is yours as much as a caught one.
+    RandolockeSetPlayerMonIVs(mon, TRUE);
 
     species = GetMonData(mon, MON_DATA_SPECIES);
     StringCopy(name, GetSpeciesName(species));

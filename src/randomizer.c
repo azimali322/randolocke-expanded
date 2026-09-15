@@ -134,6 +134,12 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
             #else
                 return FlagGet(RANDOMIZER_FLAG_BERRY_TREES);
             #endif
+        case RANDOMIZE_TUTOR_MOVES:
+            #ifdef FORCE_RANDOMIZE_TUTOR_MOVES
+                return FORCE_RANDOMIZE_TUTOR_MOVES;
+            #else
+                return FlagGet(RANDOMIZER_FLAG_TUTOR_MOVES);
+            #endif
         case RANDOMIZE_TM_MOVES:
             #ifdef FORCE_RANDOMIZE_TM_MOVES
                 return FORCE_RANDOMIZE_TM_MOVES;
@@ -213,12 +219,6 @@ static u16 RzWeightedPickMode(struct Sfc32State *state, const struct RzTier *tie
         }
     }
     return 0;   // caller falls back
-}
-
-static u16 RzWeightedPick(struct Sfc32State *state, const struct RzTier *tiers, u32 tierCount,
-                          bool32 (*accept)(u16, u32), u32 arg)
-{
-    return RzWeightedPickMode(state, tiers, tierCount, accept, arg, RZ_TIER_WEIGHTED);
 }
 
 #define RZ_TIER(arr, w) { (arr), ARRAY_COUNT(arr), (w) }
@@ -520,6 +520,78 @@ enum Move RandomizeTMMove(u16 tmIndex)
     return sRzTmMoves[tmIndex - 1];
 }
 
+// Emerald's ten move tutors, in the order data/scripts/move_tutors.inc lists them. The
+// table is keyed by the vanilla move because that is all the tutor script has to hand.
+const enum Move gRandolockeTutorMoves[RANDOLOCKE_TUTOR_COUNT] =
+{
+    MOVE_SWAGGER, MOVE_ROLLOUT, MOVE_FURY_CUTTER, MOVE_MIMIC, MOVE_METRONOME,
+    MOVE_SLEEP_TALK, MOVE_SUBSTITUTE, MOVE_DYNAMIC_PUNCH, MOVE_DOUBLE_EDGE, MOVE_EXPLOSION,
+};
+
+static EWRAM_DATA u16 sRzTutorMoves[RANDOLOCKE_TUTOR_COUNT] = {0};
+static EWRAM_DATA bool8 sRzTutorMovesBuilt = FALSE;
+
+static void RzBuildTutorMoveTable(void)
+{
+    struct Sfc32State state;
+    u32 i, j;
+
+    // The TM table has to exist first, so tutors can avoid what it already covers.
+    if (!sRzTmMovesBuilt)
+        RzBuildTmMoveTable();
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, 0x7C7002, GetRandomizerSeed());
+
+    for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
+    {
+        u32 attempts;
+
+        sRzTutorMoves[i] = MOVE_NONE;
+        for (attempts = 0; attempts < 128 && sRzTutorMoves[i] == MOVE_NONE; attempts++)
+        {
+            u16 move = RzWeightedPickMode(&state, sTmMoveTiers, ARRAY_COUNT(sTmMoveTiers),
+                                          NULL, 0, RZ_TUTOR_MOVES_TIER_MODE);
+            bool32 dupe = FALSE;
+
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+                continue;
+            for (j = 0; j < i; j++)
+            {
+                if (sRzTutorMoves[j] == move)
+                    dupe = TRUE;
+            }
+            // A tutor that teaches something a reusable TM already covers is wasted.
+            for (j = 0; j < NUM_TECHNICAL_MACHINES; j++)
+            {
+                if (sRzTmMoves[j] == move)
+                    dupe = TRUE;
+            }
+            if (!dupe)
+                sRzTutorMoves[i] = move;
+        }
+        // A slot the pool could not fill stays MOVE_NONE and keeps its vanilla move.
+    }
+    sRzTutorMovesBuilt = TRUE;
+}
+
+enum Move RandomizeTutorMove(enum Move move)
+{
+    u32 i;
+
+    if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TUTOR_MOVES))
+        return move;
+
+    if (!sRzTutorMovesBuilt)
+        RzBuildTutorMoveTable();
+
+    for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
+    {
+        if (gRandolockeTutorMoves[i] == move)
+            return sRzTutorMoves[i] != MOVE_NONE ? sRzTutorMoves[i] : move;
+    }
+    return move;
+}
+
 u16 RandomizeTMMoveReverse(enum Move move)
 {
     u32 i;
@@ -545,7 +617,17 @@ u16 RandomizeTMMoveReverse(enum Move move)
 // draws every TM's move through the same TM bands, so the 50 assigned moves are already
 // spread across them. A uniform pick over the assigned TMs reproduces that spread, and
 // reflects what this ROM actually contains rather than what vanilla did.
-static enum Item RzPickTmItem(struct Sfc32State *state)
+// A TM the player has, in the bag or in the PC. The PC counts so that depositing a TM
+// cannot make it drawable again.
+static bool32 RzPlayerOwnsTm(enum Item item)
+{
+    return item == ITEM_NONE || CheckBagHasItem(item, 1) || CheckPCHasItem(item, 1);
+}
+
+// The TM item itself, before the no-duplicates rule. gTMHMItemMoveIds keeps an ITEM_NONE
+// failsafe at index 0 and the 50 TMs at 1 .. NUM_TECHNICAL_MACHINES, with the HMs after
+// them -- hence the + 1, and hence the loops below counting from 1.
+static enum Item RzDrawTmItem(struct Sfc32State *state)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return GetTMHMItemId(RandomizerNextRange(state, NUM_TECHNICAL_MACHINES) + 1);
@@ -556,6 +638,58 @@ static enum Item RzPickTmItem(struct Sfc32State *state)
     #else
         return ITEM_NONE;
     #endif
+}
+
+static enum Item RzPickTmItem(struct Sfc32State *state)
+{
+    enum Item result = RzDrawTmItem(state);
+
+    #if RANDOLOCKE_TM_PICKUPS_NO_DUPES == TRUE
+    {
+        u32 attempts, unowned, index, i;
+
+        if (!RzPlayerOwnsTm(result))
+            return result;
+
+        // Redraw first, so the weighting RzDrawTmItem applies still decides which TM this
+        // is whenever there are plenty left to choose from.
+        for (attempts = 0; attempts < 24; attempts++)
+        {
+            enum Item retry = RzDrawTmItem(state);
+
+            if (!RzPlayerOwnsTm(retry))
+                return retry;
+        }
+
+        // Down to the last few. Draw uniformly from exactly the ones not owned, which
+        // always lands on one if any exists -- counting first, then walking to the chosen
+        // one, rather than building a hundred-entry list on the stack.
+        unowned = 0;
+        for (i = 1; i <= NUM_TECHNICAL_MACHINES; i++)
+        {
+            if (!RzPlayerOwnsTm(GetTMHMItemId(i)))
+                unowned++;
+        }
+
+        if (unowned != 0)
+        {
+            index = RandomizerNextRange(state, unowned);
+            for (i = 1; i <= NUM_TECHNICAL_MACHINES; i++)
+            {
+                enum Item tm = GetTMHMItemId(i);
+
+                if (RzPlayerOwnsTm(tm))
+                    continue;
+                if (index == 0)
+                    return tm;
+                index--;
+            }
+        }
+        // Every TM already collected. Nothing better to offer than the original draw.
+    }
+    #endif
+
+    return result;
 }
 
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)
@@ -647,6 +781,26 @@ void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx)
 {
     RandomizeFoundItemScript(&gSpecialVar_0x8005);
 }
+
+#if RANDOLOCKE_RANDOMIZE_NPC_GIFTS == TRUE
+// randolocke: the same treatment for items an NPC hands over, so the man in Rustboro is
+// not always good for a Quick Claw. Std_ObtainItem calls this before `additem` and before
+// the name is buffered, so the bag and the "obtained the ..." line agree.
+//
+// ShouldRandomizeItem already refuses HMs and the whole key item pocket, which is every
+// item the story gates progress behind -- the bikes, the rods, the Devon Goods, the
+// Letter, the Scope, the Go-Goggles, the tickets. Poke Balls are held back separately;
+// see RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS.
+void GiftItemRandomize_NativeCall(struct ScriptContext *ctx)
+{
+    #if RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS == FALSE
+        if (GetItemPocket(gSpecialVar_0x8000) == POCKET_POKE_BALLS)
+            return;
+    #endif
+
+    RandomizeFoundItemScript(&gSpecialVar_0x8000);
+}
+#endif
 
 // Both legendary and mythical Pokémon are included in this category.
 static inline bool32 IsRandomizerLegendary(enum Species species)
@@ -1580,10 +1734,11 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
 
     // 7 STAB. Dual types split 4/3 across the two.
     stabFromT1 = (t1 == t2) ? RZ_LEARNSET_STAB_MOVES : (RZ_LEARNSET_STAB_MOVES + 1) / 2;
-    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, category, TRUE);
+    RzPickMoves(&state, &picks[0], stabFromT1, RzAcceptStab, t1, t1, category,
+                RZ_LEARNSET_SORT_BY_POWER);
     if (stabFromT1 < RZ_LEARNSET_STAB_MOVES)
         RzPickMoves(&state, &picks[stabFromT1], RZ_LEARNSET_STAB_MOVES - stabFromT1,
-                    RzAcceptStab, t2, t2, category, TRUE);
+                    RzAcceptStab, t2, t2, category, RZ_LEARNSET_SORT_BY_POWER);
 
     // 7 status, in no particular order - Base Power does not apply to them.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES], RZ_LEARNSET_STATUS_MOVES,
@@ -1591,7 +1746,8 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
 
     // 7 non-STAB damaging, weakest first.
     RzPickMoves(&state, &picks[RZ_LEARNSET_STAB_MOVES + RZ_LEARNSET_STATUS_MOVES],
-                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, category, TRUE);
+                RZ_LEARNSET_DAMAGING_MOVES, RzAcceptDamaging, t1, t2, category,
+                RZ_LEARNSET_SORT_BY_POWER);
 
     // Interleave the three groups so each level band mixes categories, and keep the
     // within-group power ordering so stronger moves still arrive later.

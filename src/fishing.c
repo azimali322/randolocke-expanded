@@ -14,6 +14,7 @@
 #include "tv.h"
 #include "wild_encounter.h"
 #include "config/fishing.h"
+#include "config/randolocke.h"
 
 static void Task_Fishing(u8);
 static bool32 Fishing_Init(struct Task *);
@@ -319,6 +320,17 @@ static bool32 Fishing_WaitForA(struct Task *task)
 
     AlignFishingAnimationFrames();
     task->tFrameCounter++;
+
+    // Easy fishing reels in by itself once something has bitten: the bite is never lost
+    // to a slow thumb, and going straight to the hook skips FISHING_CHECK_MORE_DOTS,
+    // which is what can send a Super Rod through another five rounds of dots.
+    if (RANDOLOCKE_EASY_FISHING)
+    {
+        if (task->tFrameCounter >= RANDOLOCKE_EASY_FISHING_REEL_DELAY || JOY_NEW(A_BUTTON))
+            task->tStep = FISHING_MON_ON_HOOK;
+        return FALSE;
+    }
+
     if (task->tFrameCounter >= reelTimeouts[task->tFishingRod])
         task->tStep = FISHING_GOT_AWAY;
     else if (JOY_NEW(A_BUTTON))
@@ -471,6 +483,11 @@ static bool32 Fishing_EndNoMon(struct Task *task)
 
 static bool32 DoesFishingMinigameAllowCancel(void)
 {
+    // Nothing to cancel out of: easy fishing cannot be failed, so an A press during the
+    // dots is a mistake rather than a choice.
+    if (RANDOLOCKE_EASY_FISHING)
+        return FALSE;
+
     switch (I_FISHING_MINIGAME)
     {
     case GEN_1:

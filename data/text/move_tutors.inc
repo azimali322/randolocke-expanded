@@ -235,3 +235,15 @@ MoveTutor_Text_ExplosionTaught:
 	.string "to ignite my own EXPLOSION…\p"
 	.string "Maybe it's because deep down,\n"
 	.string "I would rather stay here…$"
+
+@ randolocke: the tutor's own flavour text still plays, but the offer and the
+@ which-Pokemon prompt name the move that will actually be taught. With tutor
+@ randomization off these read exactly as the vanilla lines did.
+MoveTutor_Text_RandolockeOffer:
+	.string "I can teach {STR_VAR_1} to one of\n"
+	.string "your POKéMON.\p"
+	.string "Would you like me to?$"
+
+MoveTutor_Text_RandolockeWhichMon:
+	.string "Which POKéMON should learn\n"
+	.string "{STR_VAR_1}?$"

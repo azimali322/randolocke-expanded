@@ -1,4 +1,6 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
+#include "config/randolocke.h"
 #include "malloc.h"
 #include "battle.h"
 #include "pokemon.h"
@@ -577,6 +579,19 @@ static const union TextColor sHealthBoxTextColor =
     .accent = 0
 };
 
+#if RANDOLOCKE_FIRST_ENCOUNTER_BADGE == TRUE
+// The first-encounter badge. Foreground 2 turned out to be nearly invisible against the
+// box, so this is the same pairing the HP numbers use -- which is legible by definition,
+// since that is what it was chosen for.
+static const union TextColor sRandolockeBadgeTextColor =
+{
+    .background = 0,
+    .foreground = 1,
+    .shadow = 3,
+    .accent = 0
+};
+#endif
+
 // Because the healthbox is too large to fit into one sprite, it is divided into two sprites.
 // healthboxLeft  or healthboxMain  is the left part that is used as the 'main' sprite.
 // healthboxRight or healthboxOther is the right part of the healthbox.
@@ -910,6 +925,36 @@ static void UpdateLvlInHealthbox(u8 healthboxSpriteId, u8 lvl)
 #define HP_FONT FONT_SMALL
 #define HP_MAX_DIGITS 4
 #define HP_RIGHT_SPRITE_CHARS 6
+
+#if RANDOLOCKE_FIRST_ENCOUNTER_BADGE == TRUE
+// Draws a circled 1 on a wild Pokemon's health box when catching it here would be legal
+// under the nuzlocke rules. Printed onto the healthbox sprite the same way HP numbers are,
+// so it inherits the box's position, its slide-in and its cleanup -- no second sprite to
+// own. An opponent healthbox in singles has no HP numbers, so the space is free.
+static void RandolockeDrawEncounterBadge(u32 healthboxSpriteId, enum BattlerId battler)
+{
+    static const u8 sBadge[] = _("{CIRCLE_1}");
+    u32 spriteId2 = gSprites[healthboxSpriteId].oam.affineParam;
+    s16 savedValue1, savedValue2;
+
+    // Asks about this battler specifically, and answers no while the battle is still
+    // setting up -- see RandolockeEncounterIsFirst.
+    if (!RandolockeEncounterIsFirst(battler))
+        return;
+
+    // The sprite text printer walks data[1] as a sprite chain; borrow it and put it back.
+    savedValue1 = gSprites[healthboxSpriteId].data[1];
+    savedValue2 = gSprites[spriteId2].data[1];
+    gSprites[healthboxSpriteId].data[1] = spriteId2;
+    gSprites[spriteId2].data[1] = SPRITE_NONE;
+
+    AddSpriteTextPrinterParameterized6(healthboxSpriteId, FONT_SMALL, 46, 3, 0, 0,
+                                       sRandolockeBadgeTextColor, 0, sBadge);
+
+    gSprites[healthboxSpriteId].data[1] = savedValue1;
+    gSprites[spriteId2].data[1] = savedValue2;
+}
+#endif
 
 static void PrintHpOnHealthbox(u32 spriteId, s16 currHp, s16 maxHp, u32 bgColor, s8 xOffset, s8 yOffset)
 {
@@ -2138,6 +2183,12 @@ void UpdateHealthboxAttribute(u8 healthboxSpriteId, struct Pokemon *mon, u8 elem
             UpdateNickInHealthbox(healthboxSpriteId, mon);
         if (elementId == HEALTHBOX_STATUS_ICON || elementId == HEALTHBOX_ALL)
             UpdateStatusIconInHealthbox(healthboxSpriteId);
+
+        #if RANDOLOCKE_FIRST_ENCOUNTER_BADGE == TRUE
+            // After the nickname, which would otherwise paint over it.
+            if (elementId == HEALTHBOX_NICK || elementId == HEALTHBOX_ALL)
+                RandolockeDrawEncounterBadge(healthboxSpriteId, battler);
+        #endif
     }
 }
 

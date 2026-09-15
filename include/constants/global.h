@@ -110,11 +110,15 @@ enum Language
 #define ROAMER_COUNT 1 // Number of maximum concurrent active roamers
 
 // Bag constants
-#define BAG_ITEMS_COUNT 50
-#define BAG_KEYITEMS_COUNT 40
-#define BAG_POKEBALLS_COUNT 24
+// randolocke: a bigger bag. The cheap mart sells every evolution item and three kinds of
+// ball, field items are randomized and TMs are permanent, so the vanilla pockets fill up
+// and then quietly stop accepting pickups. WARNING: these sizes are part of SaveBlock1,
+// so changing them changes the save layout.
+#define BAG_ITEMS_COUNT 150
+#define BAG_KEYITEMS_COUNT 50
+#define BAG_POKEBALLS_COUNT 40
 #define BAG_TMHM_COUNT 64
-#define BAG_BERRIES_COUNT 46
+#define BAG_BERRIES_COUNT 60
 
 // Number of facilities for Ranking Hall.
 // 7 facilities for single mode + tower double mode + tower multi mode.

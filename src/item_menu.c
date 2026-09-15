@@ -78,6 +78,8 @@ enum {
     ACTION_USE,
     ACTION_TOSS,
     ACTION_REGISTER,
+    ACTION_REGISTER_TAP,
+    ACTION_REGISTER_HOLD,
     ACTION_GIVE,
     ACTION_CANCEL,
     ACTION_BATTLE_USE,
@@ -202,6 +204,10 @@ static void BagMenu_ItemPrintCallback(u8, u32, u8);
 static void ItemMenu_UseOutOfBattle(u8);
 static void ItemMenu_Toss(u8);
 static void ItemMenu_Register(u8);
+#if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+static void ItemMenu_RegisterTap(u8);
+static void ItemMenu_RegisterHold(u8);
+#endif
 static void ItemMenu_Give(u8);
 static void ItemMenu_Cancel(u8);
 static void ItemMenu_UseInBattle(u8);
@@ -297,6 +303,10 @@ static const struct MenuAction sItemMenuActions[] = {
     [ACTION_USE]               = {gMenuText_Use,                {ItemMenu_UseOutOfBattle}},
     [ACTION_TOSS]              = {gMenuText_Toss,               {ItemMenu_Toss}},
     [ACTION_REGISTER]          = {gMenuText_Register,           {ItemMenu_Register}},
+#if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+    [ACTION_REGISTER_TAP]      = {COMPOUND_STRING("TAP"),       {ItemMenu_RegisterTap}},
+    [ACTION_REGISTER_HOLD]     = {COMPOUND_STRING("HOLD"),      {ItemMenu_RegisterHold}},
+#endif
     [ACTION_GIVE]              = {gMenuText_Give,               {ItemMenu_Give}},
     [ACTION_CANCEL]            = {gText_Cancel2,                {ItemMenu_Cancel}},
     [ACTION_BATTLE_USE]        = {gMenuText_Use,                {ItemMenu_UseInBattle}},
@@ -317,6 +327,14 @@ static const struct MenuAction sItemMenuActions[] = {
 
 // these are all 2D arrays with a width of 2 but are represented as 1D arrays
 // ACTION_DUMMY is used to represent blank spaces
+#if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+static const u8 sRandolockeText_RegisterHow[] = _("Register to a tap of SELECT,\nor to holding it down?");
+static const u8 sRandolockeRegisterOptions[] = {
+    ACTION_REGISTER_TAP, ACTION_REGISTER_HOLD,
+    ACTION_DUMMY,        ACTION_CANCEL
+};
+#endif
+
 static const u8 sContextMenuItems_ItemsPocket[] = {
     ACTION_USE,         ACTION_GIVE,
     ACTION_TOSS,        ACTION_CANCEL
@@ -409,6 +427,10 @@ static const struct ScrollArrowsTemplate sBagScrollArrowsTemplate = {
 };
 
 static const u8 sRegisteredSelect_Gfx[] = INCGFX_U8("graphics/bag/select_button.png", ".4bpp");
+#if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+// The same SELECT badge in a second colour, for the slot that answers to a held press.
+static const u8 sRegisteredSelectHold_Gfx[] = INCGFX_U8("graphics/bag/select_button_hold.png", ".4bpp");
+#endif
 
 // Layout of the TM/HM move-info box (WIN_TMHM_INFO), in window-local pixels.
 // The box is 8x8 tiles; the labels are 42px wide and a right-aligned 3-digit
@@ -1044,6 +1066,13 @@ static void BagMenu_ItemPrintCallback(u8 windowId, u32 itemIndex, u8 y)
             // Print registered icon
             if (gSaveBlock1Ptr->registeredItem != ITEM_NONE && gSaveBlock1Ptr->registeredItem == itemSlot.itemId)
                 BlitBitmapToWindow(windowId, sRegisteredSelect_Gfx, 96, y - 1, 24, 16);
+            #if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+            // The held-SELECT slot gets its own badge, so the two are told apart at a
+            // glance rather than by remembering which was registered second.
+            else if (gSaveBlock1Ptr->registeredItemHold != ITEM_NONE
+                  && gSaveBlock1Ptr->registeredItemHold == itemSlot.itemId)
+                BlitBitmapToWindow(windowId, sRegisteredSelectHold_Gfx, 96, y - 1, 24, 16);
+            #endif
         }
     }
 }
@@ -1055,7 +1084,14 @@ static void PrintItemDescription(int itemIndex)
     {
         enum Item itemId = GetBagItemId(gBagPosition.pocket, itemIndex);
 
-        str = GetItemDescription(itemId);
+        #if RANDOLOCKE_TM_MOVE_DESCRIPTIONS == TRUE
+            // A TM describes the move it teaches, not the move it taught in the base game.
+            static u8 sDescriptionBuffer[ITEM_DESCRIPTION_BUFFER];
+            str = GetItemDescriptionForWindow(itemId, sDescriptionBuffer,
+                                              TILE_WIDTH * sDefaultBagWindows[WIN_DESCRIPTION].width - 3);
+        #else
+            str = GetItemDescription(itemId);
+        #endif
         #if RANDOLOCKE_TM_HOVER_INFO == TRUE
             // Show the hovered TM's move at a glance, rather than only once it is
             // selected. Randomized TMs make this close to essential.
@@ -2052,36 +2088,93 @@ static void Task_RemoveItemFromBag(u8 taskId)
     }
 }
 
-static void ItemMenu_Register(u8 taskId)
+#if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
+
+// Writes gSpecialVar_ItemId into one of the two SELECT slots, or clears it if it is
+// already there, then rebuilds the list so the badge appears.
+static void RandolockeSetRegisterSlot(u8 taskId, bool32 isHold)
 {
     s16 *data = gTasks[taskId].data;
     u16 *scrollPos = &gBagPosition.scrollPosition[gBagPosition.pocket];
     u16 *cursorPos = &gBagPosition.cursorPosition[gBagPosition.pocket];
+    u16 *slot = isHold ? &gSaveBlock1Ptr->registeredItemHold : &gSaveBlock1Ptr->registeredItem;
+    u16 *other = isHold ? &gSaveBlock1Ptr->registeredItem : &gSaveBlock1Ptr->registeredItemHold;
 
-    #if RANDOLOCKE_DUAL_REGISTERED_ITEMS == TRUE
-        // Registering pushes the previous first item into the second slot, so two
-        // registrations fill both without needing a second menu entry.
-        if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
-            gSaveBlock1Ptr->registeredItem = ITEM_NONE;
-        else if (gSaveBlock1Ptr->registeredItemHold == gSpecialVar_ItemId)
-            gSaveBlock1Ptr->registeredItemHold = ITEM_NONE;
-        else
-        {
-            gSaveBlock1Ptr->registeredItemHold = gSaveBlock1Ptr->registeredItem;
-            gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
-        }
-    #else
-        if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
-            gSaveBlock1Ptr->registeredItem = ITEM_NONE;
-        else
-            gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
-    #endif
+    if (*slot == gSpecialVar_ItemId)
+    {
+        *slot = ITEM_NONE;
+    }
+    else
+    {
+        // An item lives in one slot at a time; moving it clears where it was.
+        if (*other == gSpecialVar_ItemId)
+            *other = ITEM_NONE;
+        *slot = gSpecialVar_ItemId;
+    }
+
     DestroyListMenuTask(tListTaskId, scrollPos, cursorPos);
     LoadBagItemListBuffers(gBagPosition.pocket);
     tListTaskId = ListMenuInit(&gMultiuseListMenuTemplate, *scrollPos, *cursorPos);
     ScheduleBgCopyTilemapToVram(0);
     ItemMenu_Cancel(taskId);
 }
+
+static void ItemMenu_RegisterTap(u8 taskId)
+{
+    RandolockeSetRegisterSlot(taskId, FALSE);
+}
+
+static void ItemMenu_RegisterHold(u8 taskId)
+{
+    RandolockeSetRegisterSlot(taskId, TRUE);
+}
+
+// Two registered items need two gestures, and a gesture nobody is told about is a feature
+// nobody uses. The previous version silently pushed the old item into the second slot,
+// which from the outside looked exactly like registering having failed. Ask instead.
+static void ItemMenu_Register(u8 taskId)
+{
+    // Already registered somewhere? Then this is a deselect; nothing to ask.
+    if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+    {
+        RandolockeSetRegisterSlot(taskId, FALSE);
+        return;
+    }
+    if (gSaveBlock1Ptr->registeredItemHold == gSpecialVar_ItemId)
+    {
+        RandolockeSetRegisterSlot(taskId, TRUE);
+        return;
+    }
+
+    RemoveContextWindow();
+    gBagMenu->contextMenuItemsPtr = sRandolockeRegisterOptions;
+    gBagMenu->contextMenuNumItems = ARRAY_COUNT(sRandolockeRegisterOptions);
+    FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(0));
+    BagMenu_Print(WIN_DESCRIPTION, FONT_NORMAL, sRandolockeText_RegisterHow, 3, 1, 0, 0, 0, COLORID_NORMAL);
+    PrintContextMenuItemGrid(BagMenu_AddWindow(ITEMWIN_2x2), 2, 2);
+    gTasks[taskId].func = Task_ItemContext_MultipleRows;
+}
+
+#else
+
+static void ItemMenu_Register(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    u16 *scrollPos = &gBagPosition.scrollPosition[gBagPosition.pocket];
+    u16 *cursorPos = &gBagPosition.cursorPosition[gBagPosition.pocket];
+
+    if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+        gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+    else
+        gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
+    DestroyListMenuTask(tListTaskId, scrollPos, cursorPos);
+    LoadBagItemListBuffers(gBagPosition.pocket);
+    tListTaskId = ListMenuInit(&gMultiuseListMenuTemplate, *scrollPos, *cursorPos);
+    ScheduleBgCopyTilemapToVram(0);
+    ItemMenu_Cancel(taskId);
+}
+
+#endif
 
 static void ItemMenu_Give(u8 taskId)
 {

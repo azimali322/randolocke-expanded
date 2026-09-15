@@ -135,6 +135,41 @@ cannot disagree about who is who.
 Set this to `FALSE` and each site rolls independently through the ordinary species mode —
 duplicates possible, and non-legendaries possible.
 
+### Nuzlocke rules
+
+```c
+#define RANDOLOCKE_NUZLOCKE_RULES       TRUE
+#define RANDOLOCKE_FLAG_NUZLOCKE_OFF    FLAG_UNUSED_0x02D
+```
+
+Enforced in-game rather than left to the player:
+
+| Rule | Behaviour |
+| --- | --- |
+| **One per area** | One catch per wild-encounter area. After that, balls are refused there |
+| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, so you can keep looking |
+| **Shiny clause** | A shiny is always catchable and never uses the area up |
+
+An *area* is one entry in the wild encounter tables, which is one map. Land, surfing and
+fishing on the same map share an area. Places with no wild table — the legendary sites,
+gift Pokémon, scripted battles, Wally's tutorial — are never restricted.
+
+The flag is **inverted**: clear means the rules are on. That way a save made before the
+rules existed gets them without a new game. Set `0x2D` in the debug menu to switch them
+off for that save.
+
+The per-area bits live in `SaveBlock1.caughtInArea`, carved out of the old dex-flag
+filler at 0x988 rather than appended — so the save layout did not change.
+
+**Permadeath** (`RANDOLOCKE_PERMADEATH`): a Pokémon that faints is stripped of its held
+item, marked, boxed, and cannot be withdrawn, moved or shifted until you are Champion. It
+can still be released. **Wiping** (`RANDOLOCKE_RUN_OVER_ON_WIPE`): a living box Pokémon
+takes over if there is one; if there is not, the run is over and the game returns to the
+title screen — the save is never deleted.
+
+`docs/NUZLOCKE.md` has the full rules, including how the level caps line up with each
+boss's ace.
+
 ### The seed
 
 ```c
@@ -258,7 +293,8 @@ Pokémon strong and every Pokémon samey. Weighted is the one to actually play.
 | `RANDOLOCKE_DUAL_REGISTERED_ITEMS` | `TRUE` | A second key item registered to **held** SELECT; a tap still uses the first. **Changes the save layout** |
 | `RANDOLOCKE_SELECT_HOLD_FRAMES` | `20` | Frames SELECT must be held before the second item fires (60fps) |
 | `RANDOLOCKE_FLASH_OPENS_REGI_CAVES` | `TRUE` | Flash substitutes for the Braille puzzles at the Sealed Chamber, Desert Ruins and Island Cave. The original puzzles still work |
-| `RANDOLOCKE_FORCE_NICKNAME` | `TRUE` | Catching goes straight to the naming screen, no prompt |
+| `RANDOLOCKE_FORCE_NICKNAME` | `FALSE` | If TRUE, catching goes straight to the naming screen with no prompt. Off, so catching asks as the base game does |
+| `RANDOLOCKE_SUMMARY_STAT_EDITOR` | `TRUE` | The summary's IV and EV pages can be edited in place. SELECT starts, A moves between stats, D-pad changes the one you are on: Up maxes, Down zeroes, Left/Right step by one. Held to 252 per stat, 510 total, 31 for IVs. Party Pokémon only |
 | `RANDOLOCKE_TM_HOVER_INFO` | `TRUE` | The bag's TM move panel follows the cursor instead of waiting for a selection, and shows a physical/special icon |
 
 ### The four custom key items

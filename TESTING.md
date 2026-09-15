@@ -790,8 +790,8 @@ python3 tools/randolocke/gen_berry_tiers.py
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
-| V.1 | **Forced nickname** | Catch a Pokémon | Goes **straight to the naming screen** — no "Do you want to nickname?" prompt |
-| V.2 | Naming still cancellable | Press B on the naming screen | Keeps the species name, no crash |
+| V.1 | **Nicknaming is optional** | Catch a Pokémon | The base game's "Do you want to give it a nickname?" prompt. `RANDOLOCKE_FORCE_NICKNAME` ships `FALSE` |
+| V.2 | Saying no works | Answer no | Keeps the species name, no crash |
 | V.3 | **Bag disabled in trainer battles** | Debug → Vars, set `VAR_UNUSED_0x40F7` to 1. Enter a trainer battle | The Bag is unusable |
 | V.4 | Wild battles unaffected at 1 | Same var at 1, enter a wild battle | Bag still usable |
 | V.5 | Value 2 disables both | Set the var to 2 | Bag unusable in wild battles too |
@@ -853,6 +853,921 @@ white box on BG1 at tile (5, 4), drawn over the bag sprite.
 | T13.28 | Wally's tutorial bag | Play the Wally catching tutorial | No regression |
 | T13.29 | **Sell / deposit screens** | Sell a TM at a mart; deposit one in the PC | Panel behaves, money window does not overlap it |
 | T13.30 | Config off | Set `RANDOLOCKE_TM_HOVER_INFO` to `FALSE`, rebuild | Panel appears only after pressing A, as in stock 1.17 |
+
+---
+
+## Phase 18 — Nuzlocke rules
+
+`RANDOLOCKE_NUZLOCKE_RULES` (TRUE). `RANDOLOCKE_FLAG_NUZLOCKE_OFF` (0x2D) switches them
+off for a save — clear means **on**, so a save made before this existed gets the rules
+with no new game needed.
+
+An "area" is one entry in the wild encounter tables, which is one map. Places with no
+wild table — the legendary sites, gift Pokémon, scripted battles — are never restricted.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T18.1 | **One catch per area** | Catch something on Route 101, then meet another wild Pokémon there and open the bag | Balls refused: "You already caught a Pokémon in this area!" |
+| T18.2 | A different area is free | Go to Route 103 and catch something | Allowed |
+| T18.3 | The mark survives a reload | Catch on Route 101, save, reset, reload, try again there | Still refused |
+| T18.4 | **Dupes are refused** | Meet a species whose family you already own | "You've already caught this Pokémon's family!" |
+| T18.5 | **A dupe does not use the area up** | On a fresh route, meet a dupe and run. Then meet something new there | The new one is catchable — the dupe did not count |
+| T18.6 | Dupes work across the family | Catch a Zigzagoon, then meet a Linoone | Refused — the whole evolution family counts |
+| T18.7 | …and in the other direction | Catch a Linoone first, then meet a Zigzagoon | Refused |
+| T18.8 | **Shinies are always catchable** | Meet a shiny on an area you have already used | Allowed |
+| T18.9 | A shiny does not use the area up | Catch a shiny on a fresh area, then meet something new there | Still catchable |
+| T18.10 | A shiny dupe is catchable | Meet a shiny of a family you own | Allowed |
+| T18.11 | Fishing shares the area | Catch on land on Route 103, then fish there | Refused — one map is one area |
+| T18.12 | Surfing shares the area | Same, but surf | Refused |
+| T18.13 | **Legendary sites are exempt** | Reach Sky Pillar and throw a ball | Allowed — no wild table, so not an area |
+| T18.14 | Gift Pokémon are exempt | Take a gift Pokémon on a used-up area | Given normally |
+| T18.15 | **Wally's tutorial still works** | Play the Petalburg catching tutorial | Wally catches the Zigzagoon; the story continues |
+| T18.16 | Trainer battles unaffected | Try a ball in a trainer battle | The usual "trainer blocked it" |
+| T18.17 | **Off switch** | Debug → Flags, set 0x2D | Balls work everywhere again |
+| T18.18 | On by default for an old save | Load a save made before this build | Rules apply, no new game needed |
+| T18.19 | Areas start clear on a new game | New game, catch on Route 101 | Allowed |
+| T18.20 | No false positives from the starter | New game; your starter is registered caught. Meet an unrelated species | Catchable |
+| T18.21 | Safari Zone | Catch one there, then try again | Refused — the Safari Zone map is one area |
+| T18.22 | Box-full still reports correctly | Fill the box, then throw | The box-full message, not a nuzlocke one |
+
+---
+
+## Phase 19 — Wipes, trainer EVs, and when the rules start
+
+`RANDOLOCKE_WIPE_COSTS_PARTY`, `RANDOLOCKE_RUN_OVER_ON_WIPE`, `RZ_TRAINER_EV_SCALING`.
+See `docs/NUZLOCKE.md`.
+
+### When the rules begin
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.1 | **Nothing applies before the Poké Balls** | New game. Before returning to the lab, check the bag in a wild battle | Balls behave normally; no nuzlocke messages |
+| T19.2 | Losing the Route 103 rival battle is free | Lose it on purpose | Ordinary white-out; nothing is boxed |
+| T19.3 | **The rules start at the five Poké Balls** | Beat the rival, return to the lab, take the balls. Then catch twice on one route | Second catch refused |
+| T19.4 | The starter is not an area catch | After T19.3, catch on Route 101 | Allowed |
+| T19.5 | Flag check | Debug → Flags, read `FLAG_ADVENTURE_STARTED` | Clear before the balls, set after |
+
+### Individual faints
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.6 | **A single faint costs nothing** | Let one Pokémon faint with others still standing | Stays in your party, fainted. Heal at a Center and carry on |
+| T19.7 | Field poison faint | Let a poisoned Pokémon faint while walking, with others alive | Same — stays in the party |
+
+### Wipes
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.8 | **A wipe boxes the whole party** | Lose with every Pokémon down, with something living in a box | Party empty; all of them in a box, marked |
+| T19.9 | Held items come back | Give one Leftovers, then wipe | Leftovers in your bag |
+| T19.10 | You start at the Pokémon Center | After T19.8 | Last Pokémon Center, empty party |
+| T19.11 | **Withdraw a new team** | Use the PC | Living Pokémon can be withdrawn |
+| T19.12 | The wiped team cannot come back | Try to withdraw one of them | "This POKéMON is gone for good." |
+| T19.13 | Nor moved or shifted | Try MOVE and SHIFT on one | Same refusal |
+| T19.14 | It can be released | Choose RELEASE on one | Allowed |
+| T19.15 | **No wild battles while empty** | Walk out of the Center into grass with an empty party | No encounters at all |
+| T19.16 | Eggs survive a wipe | Carry an egg through one | Still in your party |
+| T19.17 | **Nothing left ends the run** | Wipe with no living Pokémon anywhere | Back to the title screen |
+| T19.18 | The save is not deleted | After T19.17, load the save | Loads: last Pokémon Center, empty party |
+| T19.19 | The ending can be escaped | After T19.17, set flag 0x2D, withdraw a wiped Pokémon | Playable again |
+| T19.20 | Champion lifts the lock | Beat the Champion, open the PC | Wiped Pokémon are withdrawable |
+| T19.21 | Frontier losses are safe | Lose a Frontier battle | Nothing is boxed |
+| T19.22 | Config off | Set `RANDOLOCKE_WIPE_COSTS_PARTY` to `FALSE`, rebuild, wipe | Vanilla white-out, party kept |
+
+### Trainer EVs
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.23 | **Trainers hit harder than vanilla** | Fight Roxanne at the level cap with an untrained team | Noticeably tougher than a 0-EV party |
+| T19.24 | The spread follows badges | Compare an early trainer with a late one | Late trainers are bulkier and faster for their level |
+| T19.25 | **The spread follows the species** | Fight a trainer whose randomized Pokémon is a special attacker | Its Sp. Atk is boosted, not its Atk |
+| T19.26 | The player is not capped | EV train one of yours to 252 in a stat | Allowed — `B_EV_CAP_TYPE` is `EV_CAP_NONE` |
+| T19.27 | Vitamins still work | Buy and use one | Normal |
+| T19.28 | Config off | Set `RZ_TRAINER_EV_SCALING` to `FALSE`, rebuild | Trainers back to zero EVs |
+
+### Level caps against boss levels
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.29 | **Cap equals the next boss's ace** | Before each gym, check your cap and the leader's highest level | Equal at every badge: 14 / 21 / 24 / 29 / 36 / 43 / 47 / 50 |
+| T19.30 | The 8-badge cap covers the Elite Four | Check after the 8th badge, then Sidney through Wallace | Cap 63; Sidney's ace 53 rising to Wallace's 63 |
+| T19.31 | Champion lifts it | After beating the Champion | Cap 100 |
+| T19.32 | Hard cap, not soft | Battle at the cap | **No** experience at all, not reduced |
+| T19.33 | Cap Candy reaches it | Use one below the cap | Levels to the cap |
+
+### Key items
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T19.34 | **The Oldale old man gives two** | After the five Poké Balls, talk to the man near the Oldale Mart sign | CAP CANDY and REPELLANT |
+| T19.35 | He does not repeat | Talk again | His ordinary footprints line |
+| T19.36 | He waits for the balls | Talk to him before the adventure starts | The vanilla blocking-the-path scene, no items |
+| T19.37 | The Littleroot boy gives the other two | Talk to the boy by the pond | PORTA HEAL and ENDLESS CANDY |
+| T19.38 | Works on an existing save | Load a save from before this build, talk to both | All four handed over |
+| T19.39 | Repellant toggles | Use it, walk, use it again | Repel on, then off; the step counter never ticks down while on |
+| T19.40 | Cap Candy respects the cap | Use it on a Pokémon already at the cap | Refused or no-op, never over the cap |
+
+---
+
+## Phase 20 — BST, IVs, AI, tutors
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T20.1 | **Similar-BST substitution** | New game, survey Route 101 | Small, weak species — no Rayquaza in the starting grass |
+| T20.2 | Late routes scale up | Survey Victory Road | Strong species; the BST band moved with the originals |
+| T20.3 | **Legendary sites ignore BST** | Reach Sky Pillar | Still a legendary, because those twelve force legend-aware |
+| T20.4 | Mode is switchable | Set var `0x404E` to 0 | Back to anything-goes on new rolls |
+| T20.5 | **Caught Pokémon have 31s** | Catch anything, check the summary IVs | 31 in all six |
+| T20.6 | Starters too | New game, check your starter | 31 in all six |
+| T20.7 | Gifts too | Take any gift Pokémon | 31 in all six |
+| T20.8 | Hatched eggs too | Hatch the Wynaut egg | 31 in all six |
+| T20.9 | **Trainers are NOT given 31s** | Fight a trainer, compare damage against a known 31-IV target | Trainer Pokémon still roll their own IVs |
+| T20.10 | The alternative mode | Set `RANDOLOCKE_PLAYER_IVS` to `RANDOLOCKE_IVS_RANDOLOCKE`, rebuild | Starters/gifts get 3 perfect IVs; caught Pokémon roll random |
+| T20.11 | **A cave is one area** | Catch on Granite Cave 1F, go to B1F, try again | Refused — one region map section is one area |
+| T20.12 | Magma Hideout | Catch on one floor, try another | Refused. This is the case Randolocke's notes call out |
+| T20.13 | Different routes still separate | Catch on Route 101, then Route 103 | Allowed |
+| T20.14 | **One catch per area actually blocks now** | Catch on Route 101, meet another there, open the bag | Balls refused. This never worked before Phase 20 |
+| T20.15 | **Bosses fight properly** | Fight Roxanne | Switches sensibly, targets KOs, saves her ace for last |
+| T20.16 | **Every boss is omniscient** | Fight any gym leader | Plays around your moves, abilities and held items as if it has seen them — no Surf into Water Absorb, no setting up on your revenge killer |
+| T20.16b | The Champion reads ahead too | Fight Wallace | Also anticipates your switches and the move you are about to pick |
+| T20.16c | Ordinary trainers are not omniscient | Fight a Youngster | Still walks into your immunities the first time |
+| T20.17 | Route trainers are competent, not brutal | Fight a Youngster | Avoids bad moves and goes for KOs, but no switching games |
+| T20.18 | Admins and rivals sit between | Fight an Aqua Admin or your rival | Smarter switching than a Youngster, less than a leader |
+| T20.19 | Config off | Set `RZ_TRAINER_AI_TIERS` to `FALSE`, rebuild | Back to the vanilla AI |
+| T20.20 | **Tutors teach randomized moves** | Talk to any of the ten tutors with flag `0x2E` set | Offers something other than its vanilla move |
+| T20.21 | **The offer names the right move** | Read the tutor's dialogue | The flavour line plays, then "I can teach X" naming what is actually taught |
+| T20.22 | The prompt agrees | Say yes | "Which POKéMON should learn X?" — the same X |
+| T20.23 | It teaches what it said | Teach it | The Pokémon learns X |
+| T20.24 | No duplicates among tutors | Check all ten | Ten different moves |
+| T20.25 | **No overlap with TMs** | Compare the ten tutor moves against the 50 TMs | No move appears in both |
+| T20.26 | Stable across a reload | Note all ten, soft reset, check again | Identical |
+| T20.27 | Flag off is vanilla | Clear flag `0x2E` | Swagger, Rollout, Fury Cutter, Mimic, Metronome, Sleep Talk, Substitute, Dynamic Punch, Double-Edge, Explosion — and the text still reads correctly |
+| T20.28 | Once-only tutors still are | Teach one, come back | Refuses, as in vanilla |
+
+---
+
+## Phase 21 — Hidden nature roller
+
+Debug menu → Edit Pokémon → **Roll Hidden Nature**. "Set Hidden Nature" already existed
+for picking one deliberately; this is the dice version.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T21.1 | **It rolls** | Pick a party Pokémon, Roll Hidden Nature | A message naming the Pokémon and its new nature |
+| T21.2 | **It always changes** | Roll the same Pokémon ten times | Never lands on the nature it already had |
+| T21.3 | Stats update immediately | Note Attack, roll into an Adamant or Modest | Attack changes on the spot — no level-up needed |
+| T21.4 | The summary agrees | Open the summary after rolling | The new nature is shown |
+| T21.5 | Eggs are skipped | Choose an egg | Nothing happens, no crash |
+| T21.6 | Cancelling is safe | Back out of the party menu | Nothing changes |
+| T21.7 | The true nature is untouched | Roll the hidden nature, then check "Set Nature" | The personality-derived nature is unchanged; only the hidden one moved |
+| T21.8 | It persists | Roll, save, reset, reload | The rolled nature is still there |
+
+---
+
+## Phase 22 — Summary stat editor and the LEVEL CAP option
+
+`RANDOLOCKE_SUMMARY_STAT_EDITOR`. On the summary's skills page, press A to cycle
+Stats → IVs → EVs, then **SELECT** to edit in place.
+
+| Key | Effect |
+| --- | --- |
+| SELECT | start editing / stop editing |
+| A | move to the next stat, in reading order |
+| Up | jump to the maximum (31 IV, 252 EV) |
+| Down | jump to zero |
+| Right | one higher |
+| Left | one lower |
+| B | stop editing |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T22.1 | **SELECT starts editing** | Summary → skills → IVs, press SELECT | HP is highlighted in the raised-stat colour |
+| T22.2 | A walks the stats | Press A repeatedly | HP → Attack → Defense → Sp. Atk → Sp. Def → Speed → back to HP, in reading order |
+| T22.3 | Up maxes an IV | On an IV, press Up | 31 |
+| T22.4 | Down zeroes it | Press Down | 0 |
+| T22.5 | Left and Right step | Press Right three times, Left once | +2 from where it started |
+| T22.6 | IVs stop at 31 | Press Right at 31 | Refused, failure beep |
+| T22.7 | **Stats update live** | Edit an Attack IV and watch the Stats page | The real stat changed — no level-up needed |
+| T22.8 | **EVs stop at 252** | On the EV page, press Up on one stat | 252, not more |
+| T22.9 | **The 510 total holds** | Max two stats (504), then try to raise a third | Refused. 6 more points are available, so Right works 6 times and then stops |
+| T22.10 | Lowering frees budget | Zero one maxed stat, then raise another | The freed points are spendable |
+| T22.11 | D-pad does not leak | While editing, press Left and Right | The page does **not** change; the value does |
+| T22.12 | Up/Down do not switch Pokémon | While editing, press Up and Down | The party member does **not** change |
+| T22.13 | SELECT exits | Press SELECT again | Highlight gone; D-pad navigates the summary as usual |
+| T22.14 | B exits without closing | Press B while editing | Editing stops, the summary stays open |
+| T22.15 | **Boxed Pokémon are not editable** | Open a boxed Pokémon's summary, press SELECT on the IV page | Nothing happens |
+| T22.16 | Eggs are not editable | Summary of an egg | No edit mode |
+| T22.17 | The Stats page is not editable | Press SELECT on the Stats view | Nothing happens |
+| T22.18 | Changes persist | Edit, close the summary, save, reset, reload | The values stuck |
+
+### LEVEL CAP from the party menu
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T22.19 | **The option appears** | Hold a Cap Candy, open the party menu, pick a Pokémon below the cap | A **LEVEL CAP** entry under SUMMARY |
+| T22.20 | It levels to the cap | Choose it | The Pokémon goes to the current cap in one use |
+| T22.21 | Hidden without the item | Toss the Cap Candy, reopen the menu | No LEVEL CAP entry |
+| T22.22 | Hidden at the cap | Pick a Pokémon already at the cap | No LEVEL CAP entry |
+| T22.23 | Moves and evolutions still happen | Use it on something with a level-up move on the way | It learns the move, and evolves if it should |
+| T22.24 | The item is not consumed | Check the bag afterwards | Cap Candy still there |
+
+---
+
+## Phase 23 — Type effectiveness in move select, and the capture fix
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.1 | **Effectiveness shows on a species you have never seen** | Battle a randomized wild Pokémon, open FIGHT | The PP line carries an effectiveness icon. It used to be gated on having *seen* the species, which in a randomizer is never |
+| T23.2 | Super effective | Point at a move the target is weak to | A green up arrow |
+| T23.3 | 4x | A double weakness | Two green up arrows |
+| T23.4 | Not very effective | A resisted move | A red down arrow |
+| T23.5 | 0.25x | A double resist | Two red down arrows |
+| T23.6 | **No effect** | A move the target is immune to | A red X |
+| T23.7 | Neutral | A neutral move | The hollow circle, unchanged |
+| T23.8 | Status moves | Point at a status move | No icon — effectiveness does not apply |
+| T23.9 | **Doubles picks the right target** | In a double battle, choose a target, then look at the icon | It reflects the selected target, not the other one |
+| T23.10 | The L-button detail view still works | Press L on the move list | Unchanged |
+| T23.11a | **STAB shows a red dot** | Point at a move whose type matches your Pokémon's | A filled red circle after the effectiveness icon |
+| T23.11b | Non-STAB shows none | Point at a move of an unrelated type | No dot |
+| T23.11c | Both indicators together | A super-effective STAB move | Green up arrow **and** the red dot |
+| T23.11d | 4x STAB fits the window | A doubled-weakness STAB move | Two arrows and the dot, nothing clipped |
+| T23.11e | Status moves get neither | Point at a status move | No arrow, no dot |
+| T23.11f | Dual types both count | A Pokémon with two types, one move of each | Both show the dot |
+| T23.11g | The PP label is gone | Look at the window | Icons only — the PP number was already replaced, so the label described nothing |
+
+### The post-capture softlock
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.11 | **Catching does not hang** | Catch several Pokémon on different routes, including with a Fast Ball | The battle ends, the overworld returns, the player is controllable |
+| T23.12 | Catching something with a big family | Catch an Eevee or a Wurmple line member | No hang — the family walk is bounded now |
+| T23.13 | Perfect IVs still applied | Check a freshly caught Pokémon's IVs | 31 across the board |
+| T23.14 | Area still marked | Catch, then try to catch again on the same route | Refused |
+| T23.15 | HP is not corrupted | Catch a Pokémon at low HP, check it afterwards | Sensible current and max HP |
+
+### Other adjustments
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T23.16 | **Battle style is SET** | New game, beat a trainer's Pokémon | No "will you switch?" prompt |
+| T23.17 | Still changeable | Options → Battle Style | Can be set back to SHIFT |
+| T23.18 | **Berries come in fours** | Harvest a berry tree | Four times the usual count |
+| T23.19 | **The boy gives all four key items** | Talk to the boy by the Littleroot pond | Porta Heal, Endless Candy, Cap Candy, Repellant |
+| T23.20 | The old man is flavour again | Talk to the Oldale footprints man | His footprints line, no items |
+| T23.21 | **Registered items are vanilla** | Register a key item, press SELECT | Works as the base game does. No hold behaviour |
+| T23.22 | Cap Candy pauses correctly | Use LEVEL CAP on something with a move coming up | Stops at that level, reports that level, and the summary agrees |
+| T23.23 | Pressing it again continues | Use it again | Climbs to the next stop, or the cap |
+
+---
+
+## Phase 28 — Playtest round 5
+
+### NPC gift items
+
+Items an NPC hands over now go through the same randomizer as item balls, via a hook at
+the top of `Std_ObtainItem` — 158 `giveitem` calls, every gift in the game. HMs and the
+whole key items pocket are refused by `ShouldRandomizeItem`, and Poké Balls are held back
+separately. Follows the same toggle as field items (`RANDOMIZE_FIELD_ITEMS`).
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.1 | **Ordinary gifts are randomized** | Rustboro — the man who gives a Quick Claw | Something other than a Quick Claw |
+| T28.2 | The message agrees with the bag | Read the "obtained the …" line, then open the bag | Same item in both. The message never names the original |
+| T28.3 | The fanfare and pocket agree | Receive a gift that rolls into a TM | TM fanfare, "put away in the TM CASE" |
+| T28.4 | It is stable | Save before the gift, take it, reset, take it again | The same replacement both times |
+| T28.5 | **The five Poké Balls survive** | Birch's lab — the starting Poké Balls | Five Poké Balls. Not randomized |
+| T28.6 | **HMs survive** | Cut, Flash, Rock Smash, Strength, Surf, Waterfall, Dive | Each is the HM it should be |
+| T28.7 | **Key items survive** | Letter, Devon Goods, Devon Scope, Go-Goggles, both bikes, all three rods, Wailmer Pail, Soot Sack, Contest Pass, Meteorite, Scanner, the tickets | Each is itself. The story never blocks |
+| T28.8 | Gym TM rewards are randomized | Beat a gym, take the leader's TM | Some other item or TM |
+| T28.9 | Berry gifts are randomized | Route 123 Berry Master | Random items rather than the named berries |
+| T28.10 | Purchases are untouched | Game Corner prizes, Lilycove rooftop, Frontier exchange | Exactly what was chosen. These use `additem`, not the gift path |
+| T28.11 | Bag-full still handled | Fill the items pocket, then take a gift | "no room" message, gift not lost |
+
+### TM descriptions name the move they teach
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.12 | **The bag shows the move's description** | Bag → TM/HM pocket → hover a randomized TM | The description of the move it teaches, matching the hover panel's type and PP |
+| T28.13 | It is re-wrapped, not clipped | Hover a TM whose move has a long description | Three lines at most, nothing running off the right edge |
+| T28.14 | The mart agrees | Mauville or Lilycove mart → a TM | Same description as the bag |
+| T28.15 | HMs read correctly | Bag → an HM | The HM's move description |
+| T28.16 | Non-TMs are unchanged | Hover a Potion, a berry, a key item | Their own descriptions, wrapped as before |
+
+### Randomized trainers get their own moves
+
+`CustomTrainerPartyAssignMoves` kept the hand-written moveset for a Pokémon whose species
+had been substituted, so Roxanne's whole team carried Tackle / Defense Curl / Rock Throw /
+Rock Tomb regardless of what they became — no same-type attacks and three identical
+Pokémon. It now falls back to the level-up learnset, which is itself randomized.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T28.17 | **Roxanne's team has its own moves** | Fight Roxanne | Three different move lists, suited to the three species. No shared Rock Tomb |
+| T28.18 | Same-type moves appear | Watch a gym leader's Pokémon attack | Moves matching its own types, since the learnset gives it seven |
+| T28.19 | Ordinary trainers too | Any route trainer with a written moveset | Moves that fit the species it became |
+| T28.20 | Movesets are stable | Save before a battle, fight, reset, fight again | The same moves |
+| T28.21 | PP is right | Check a trainer Pokémon's PP in battle | Full PP for the move it actually has |
+| T28.22 | **Bosses are harder now** | Fight a gym leader | Four of the species' strongest available moves plus boss AI. Expected — note if it is too much |
+| T28.23 | Low-level trainers still work | The first Route 102 trainer | Has at least one move; nothing blank or Struggle-only |
+| T28.24 | Wally's Ralts | The Petalburg tutorial catch | Battle plays out normally |
+
+---
+
+## Phase 42 — Easy fishing
+
+Ported from Modern Emerald's EASIER FISHING option. Once something bites, the rod reels
+itself in: "Oh! A bite!" holds for RANDOLOCKE_EASY_FISHING_REEL_DELAY frames (24, about
+four tenths of a second) and then the Pokémon is on the hook. Pressing A during that
+window reels in immediately, so nothing got slower for a player who was going to press it
+anyway.
+
+Three ways to lose a cast are gone with it:
+
+- **The reaction window.** Fishing_WaitForA used to send a slow thumb to FISHING_GOT_AWAY
+  after 30–36 frames. "It got away!" can no longer happen.
+- **The extra rounds.** Going straight to the hook skips FISHING_CHECK_MORE_DOTS, which
+  could send a Super Rod back through up to five more rounds of dots.
+- **The stray A press.** An A press during the dots used to cancel the cast outright.
+  DoesFishingMinigameAllowCancel now says no, so it does nothing.
+
+What did *not* change is whether anything bites. That is still the roll in
+Fishing_CheckForBite — I_FISHING_BITE_ODDS, 25% Old / 50% Good / 75% Super — so "Not even
+a nibble..." is still the usual answer to a bad cast, and fishing is still a way to burn
+an area's nuzlocke encounter on nothing.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T42.1 | **A bite is always landed** | Fish until "Oh! A bite!", then touch nothing | "Pokémon on the hook!" and a battle |
+| T42.2 | It got away is gone | Repeat T42.1 ten times, never pressing A | Never "It got away!" |
+| T42.3 | A still reels in early | Press A the instant the bite appears | Battle starts at once, no wait |
+| T42.4 | A during the dots does nothing | Mash A while the dots tick | Dots keep going; no "Not even a nibble" from the press |
+| T42.5 | **One round of dots** | Fish with the Super Rod ten times | Dots appear once per cast, never twice |
+| T42.6 | A miss still misses | Fish repeatedly with the Old Rod | "Not even a nibble..." still happens, roughly three casts in four |
+| T42.7 | Empty water still says so | Fish somewhere with no fishing table | "Not even a nibble..." |
+| T42.8 | The rod goes away cleanly | After a miss | Player stands up, the box closes, movement returns |
+| T42.9 | Surfing is unaffected | Fish while surfing | Same behaviour, surf blob intact afterwards |
+| T42.10 | The encounter is a real one | Land a fishing encounter on a fresh route | Randomized species, first-encounter badge, nuzlocke area consumed |
+| T42.11 | Old Rod on Route 103 | The relocated fisherman's rod | Works before the first badge, as Phase 17 expects |
+| T42.12 | Feebas still needs the spot | Fish the Route 119 tiles | Unchanged: easy fishing does not change what is in the water |
+
+---
+
+## Phase 41 — Rolling a nature or ability takes a held button
+
+RZ_ABILITY_STABLE_ACROSS_EVOLUTION works: the randomized ability is seeded from the
+evolution family's root, so every stage of a line maps the same ability slot to the same
+ability, and evolving cannot change it. Verified against the game's own evolution data —
+Hatenna, Hattrem and Hatterene all resolve to Hatenna.
+
+What *can* change it is the ability slot, and the summary screen's roll used to fire on a
+bare tap of START, right beside the SELECT used for the nature, on the two pages the
+player visits most. It now needs the button held for about a third of a second, and
+released before it fires again.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T41.1 | **A tap does nothing** | Info page → tap START | Ability unchanged |
+| T41.2 | **A hold rolls** | Hold START for about half a second | Ability changes once |
+| T41.3 | Holding does not repeat | Keep holding for several seconds | One change, not a stream |
+| T41.4 | Releasing re-arms | Release, hold again | Rolls again |
+| T41.5 | The nature behaves the same | Tap SELECT, then hold it | Nothing, then one nature change |
+| T41.6 | Switching buttons mid-hold | Hold START halfway, then switch to SELECT | Count restarts; no roll from the partial hold |
+| T41.7 | Skills page too | Both buttons, held, on the stats view | Same behaviour |
+| T41.8 | The IV/EV editor is unaffected | Skills page → A to IVs → tap SELECT | Opens the editor on a tap, as before |
+| T41.9 | The move relearner is unaffected | Battle moves page → tap START | Opens the relearner on a tap, as before |
+
+### Abilities really are stable across evolution
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T41.10 | **Evolving keeps the ability** | Note a Pokémon's ability, evolve it, check again | Identical |
+| T41.11 | …through two stages | Evolve a three-stage line twice | Identical at all three |
+| T41.12 | An Ability Capsule still works | Use one | Ability changes — that is the item's job |
+
+---
+
+## Phase 40 — Types as text, and friendship as a number
+
+### The overlay shows both types
+
+Two type icons fit an 80px panel on paper, but only the first ever appeared. The types are
+printed as text now, on the same grid the ability below them uses, so there is no second
+sprite to go missing. A pair too long for the panel steps down to a narrower font.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T40.1 | **A dual type shows both halves** | Forget-a-move screen → SELECT, on an Electric/Poison Pokémon | "ELECTRIC/POISON" |
+| T40.2 | A single type shows one | Same on a pure Ghost | "GHOST", centred |
+| T40.3 | A long pair still fits | A Fighting/Psychic or similar | Inside the panel, smaller font if it has to be |
+| T40.4 | The rest of the panel is unchanged | Same screen | Stats grid and ability as before, nothing overlapping |
+| T40.5 | No stray icons | Open and close the overlay, change page, reopen | Never a leftover type box anywhere |
+
+### Friendship is a number
+
+The heart is gone — graphic, sprite and all. Three rounds of playtesting never made it
+legible. The skills page now reads the value out, bottom right of the Pokémon's picture.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T40.6 | **The value is shown** | Summary → skills page | "X/255" over the bottom right of the picture |
+| T40.7 | It is readable over the sprite | A Pokémon whose sprite fills that corner | White text with a black shadow, legible |
+| T40.8 | It tracks the Pokémon | Page up and down the party | Changes with each one |
+| T40.9 | It updates | Walk around, level up, use a vitamin, then check | The number has moved |
+| T40.10 | **No heart anywhere** | Every page, info through contest moves | No heart, no leftover sprite |
+| T40.11 | Skills page only | Info, battle moves, contest moves | No friendship readout on those |
+| T40.12 | Eggs | An egg's summary → skills page | Blank rather than a meaningless number |
+| T40.13 | It does not collide | Nickname, species, ball, level, gender mark | All still readable |
+| T40.14 | Max reads plainly | Debug → Set Friendship 255 | "255/255" |
+
+---
+
+## Phase 39 — The legendary clause
+
+A legendary met in the wild is always catchable, on the same terms as a shiny: allowed in
+an area already used up, allowed even if its family is registered, and catching it does
+not consume the area.
+
+Decision order is now: shiny → legendary → duplicate → area used → allowed.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T39.1 | **A wild legendary in a used-up area** | Catch something on a route, then meet a legendary there | Catchable, and the badge shows |
+| T39.2 | **It does not consume the area** | Catch that legendary, then meet something else on the route | Still catchable — the legendary was a freebie |
+| T39.3 | A duplicate legendary is still allowed | Meet a wild legendary whose family is registered | Catchable; the clause outranks the dupe rule |
+| T39.4 | Sub-legendaries count | A wild Regi, Latias, bird or beast | Catchable |
+| T39.5 | Mythicals count | A wild Mew, Celebi, Jirachi, Deoxys | Catchable |
+| T39.6 | Ultra Beasts count | A wild Nihilego, Buzzwole and so on | Catchable |
+| T39.7 | **Ordinary Pokémon are unaffected** | A non-legendary in a used-up area | Still refused, same message as before |
+| T39.8 | Paradox Pokémon are not covered | A wild Great Tusk, Iron Valiant | Treated as ordinary. `isParadox` is a separate flag from the four the clause reads |
+| T39.9 | The twelve legendary sites still work | Rayquaza, the Regis, the Lati and so on | Unchanged — those maps have no wild encounter table, so they were never area-gated |
+| T39.10 | Trainers' legendaries | A trainer with a legendary | No change; trainer battles never reach the clause |
+
+---
+
+## Phase 38 — Shiny rate 1 in 256
+
+`SHINY_ODDS` 8 → 256, out of 65536. Up from 1 in 8192, a 32x increase.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T38.1 | **Shinies actually appear** | Run through grass for a while | Roughly one in 256 encounters is shiny |
+| T38.2 | **The shiny clause is reachable now** | Meet a shiny in an area already used up | Catchable, and the badge shows |
+| T38.3 | A shiny does not consume the area | Catch it, then meet something else there | Still catchable — the shiny was a freebie |
+| T38.4 | A shiny dupe is still catchable | Meet a shiny whose family you already have | Catchable; the shiny clause outranks the dupe clause |
+| T38.5 | Rerolls still stack on top | Use a lure, or chain fish | Shinier than 1 in 256, as before |
+| T38.6 | Trainer Pokémon are unaffected | Fight trainers | Their Pokémon roll the same odds as any generated Pokémon; nothing special |
+| T38.7 | Sprites and palettes are fine | Catch one and view it | Shiny palette in battle, party, PC and summary |
+
+---
+
+## Phase 37 — The first-encounter badge asks about the right Pokémon
+
+The badge appeared on second encounters and then vanished on the next health box redraw.
+It was asking `GetCatchingBattler()` which Pokémon to judge, and during the battle intro
+that function's `IsBattlerAlive` check fails the left-hand opponent and falls through to
+the right-hand one — which in a single battle is not a battler at all, so the rule ran
+against a stale enemy party slot left over from an earlier battle. It now asks about the
+battler whose box is being drawn, and draws nothing at all while the data is unreadable.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T37.1 | **A first encounter is badged** | Enter a fresh area, meet a wild Pokémon | The badge is there from the moment the box appears |
+| T37.2 | **A second encounter is not** | Catch one, then meet another wild Pokémon in the same area | No badge, not even for a moment |
+| T37.3 | It does not appear on a redraw | Same, then open the bag and back out | Still no badge |
+| T37.4 | …and a real one does not vanish | A first encounter, then bag and back out | Badge still there |
+| T37.5 | **Straight after a trainer battle** | Fight a trainer, then meet a wild Pokémon in a used-up area | No badge. This is the case the stale party slot came from |
+| T37.6 | A dupe is not badged | Meet a wild Pokémon whose family is already caught | No badge |
+| T37.7 | A shiny is badged | Meet a shiny in a used-up area | Badge — the shiny clause still overrides |
+| T37.8 | Trainers never get one | Any trainer battle | No badge on their Pokémon |
+| T37.9 | Doubles | A wild double battle, one catchable and one not | The badge sits on the right box only |
+| T37.10 | Safari | Safari Zone | No badge |
+| T37.11 | The rules themselves are unchanged | Try to catch in a used-up area | Still refused, same message as before |
+
+---
+
+## Phase 36 — TM pickups are drawn without replacement
+
+A randomized TM — found, hidden, or handed over by a gym leader — is now drawn from the
+TMs the player does not already own. TMs are reusable here, so a duplicate is not a lesser
+prize, it is nothing at all, and the TM *item* is drawn uniformly from 50, so the odds of a
+repeat climb with every one collected: at 20 TMs it was 40%, at 35 it was 70%.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T36.1 | **A gym reward is never a duplicate** | Collect a dozen TMs, then beat a gym | A TM not already in the bag |
+| T36.2 | Found TMs too | Pick up a TM ball with a full-ish collection | Not a duplicate |
+| T36.3 | Hidden TMs too | Same via an Itemfinder spot | Not a duplicate |
+| T36.4 | A TM rolled from an ordinary item | An item pickup that lands in the TM band | Not a duplicate |
+| T36.5 | **The PC counts as owned** | Deposit a TM in the PC, then collect a TM | The deposited one is not handed back |
+| T36.6 | Every TM owned | Collect all 50, then take another TM pickup | Hands over some TM rather than nothing; no softlock |
+| T36.7 | Seeds are still stable | Save before a TM pickup, take it, reset, take it again | The same TM, as long as the bag has not changed in between |
+| T36.8 | The weighting still applies | Early game, with few TMs owned | Distribution unchanged from before — the redraw only kicks in on a collision |
+| T36.9 | **No HMs from TM pickups** | Collect many TMs | Never an HM. Indices 1..50 are the TMs; the HMs sit past them |
+| T36.10 | No ITEM_NONE | Same | Never an empty or glitched item |
+
+---
+
+## Phase 35 — Items only one Pokémon can use drop to tier 4
+
+Memories and drives sat in tier 3, alongside real held items. With 17 memories and 4
+drives at tier 3's per-item rate, **10.6% of every tiered item roll was Silvally or
+Genesect gear**. They are now tier 4, with 36 one-species items in total.
+
+| tier | items | band | per item |
+| --- | --- | --- | --- |
+| 1 | 2 | 1.18% | 0.590% |
+| 2 | 77 | 47.92% | 0.622% |
+| 3 | 61 | 41.46% | 0.680% |
+| **4** | **102** | **5.37%** | **0.053%** |
+| 5 | 166 | 4.07% | 0.025% |
+
+Chance a tiered roll is a memory or a drive: **10.62% → 1.11%**.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T35.1 | **Memories are rare** | Collect 30-odd field items and NPC gifts on a new seed | At most one memory, usually none |
+| T35.2 | Drives are rare | Same | Same |
+| T35.3 | The signature orbs moved too | Watch for Adamant, Lustrous, Griseous, Red and Blue Orb | Rare rather than tier-2 common |
+| T35.4 | …as did the powders and sticks | Leek, Quick Powder, Metal Powder, Thick Club, Light Ball, Soul Dew, Lucky Punch, Deep Sea Tooth/Scale | All rare |
+| T35.5 | **Plates did not move** | Watch for the Arceus plates | Still as common as before — a plate boosts its type for any holder |
+| T35.6 | Good items got commoner | Watch tier 3 finds | Slightly more frequent: the same band weight now covers 61 items rather than 82 |
+| T35.7 | Leftovers and Choice Band unchanged | Keep collecting | Still the rarest-but-best finds |
+| T35.8 | Seeds are still stable | Save, collect an item, reset, collect it again | Same item both times |
+| T35.9 | NPC gifts follow the same table | Rustboro's Quick Claw man and others | Memories rare there too |
+
+---
+
+## Phase 34 — A fainted Pokémon looks fainted in the PC
+
+Nothing on the storage screen said which Pokémon were dead; the only clue was the refusal
+when you tried to withdraw one. Three tells now, following pokeemerald_rando_enh, which
+dims the box icons and greys the portrait.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T34.1 | **The box icon is dimmed** | PC → a box holding fainted Pokémon | Their icons are see-through against the box wallpaper; living ones are solid |
+| T34.2 | **The portrait is grey** | Put the cursor on a fainted one | The PKMN DATA picture has the colour drained out of it |
+| T34.3 | **The panel says FAINTED** | Same | Where the held item would be, it reads FAINTED |
+| T34.4 | Living Pokémon are untouched | Move to a living one | Solid icon, full-colour portrait, its real held item |
+| T34.5 | It survives a page change | Scroll to another box and back | Still dimmed, still grey |
+| T34.6 | The grey does not leak | Hover a fainted one, then a living one | The living one is full colour, not grey |
+| T34.7 | …nor across a fade | Hover a fainted one, open the party view, come back | Still grey, not recoloured |
+| T34.8 | Item mode still dims | PC → MOVE ITEMS | Pokémon holding nothing are dimmed, as before |
+| T34.9 | Champion clears it | Beat the Champion, reopen the PC | Full colour, no FAINTED label, withdrawable |
+| T34.10 | Eggs are not affected | An egg in the same box | Normal egg icon and portrait |
+
+### Which refusal is which
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T34.11 | **Withdrawing a fainted Pokémon** | PC → a fainted one → Withdraw | "This POKéMON is gone for good." — *not* an egg message |
+| T34.12 | Releasing an egg | PC → an egg → Release | "You can't release an EGG." This is the vanilla egg rule and has nothing to do with fainting |
+| T34.13 | Releasing a fainted Pokémon | PC → a fainted one → Release | Allowed |
+
+---
+
+## Phase 33 — A fainted Pokémon is gone
+
+The death rule. Until now only a **total wipe** boxed anything, so a Pokémon that fainted
+in a gym battle walked out of the Pokémon Center good as new. Anything that reaches 0 HP
+is now boxed at the end of the battle and locked there for the rest of the run.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T33.1 | **A faint boxes the Pokémon** | Let one faint in a trainer battle, then end the battle | It is gone from the party and sitting in the PC |
+| T33.2 | **It does not heal** | Go to a Pokémon Center afterwards | It is not in the party to be healed, and the box entry stays fainted |
+| T33.3 | **Its item comes back** | Faint a Pokémon holding an item | The item is in the bag, the boxed Pokémon holds nothing |
+| T33.4 | **It cannot be withdrawn** | PC → the boxed Pokémon → Withdraw | Refused with the locked message |
+| T33.5 | …nor moved or shifted | Try Move and Shift on it | Both refused |
+| T33.6 | It can still be released | Release it | Allowed — tidying the graveyard is permitted |
+| T33.7 | Survivors are untouched | Faint one of three, win the battle | The other two stay in the party at whatever HP they had |
+| T33.8 | The party closes up | Faint the lead of a full party | Slots compact, no gap, no duplicate |
+| T33.9 | **A whole party down still ends the run** | Lose with every Pokémon fainted and nothing living in the boxes | Soft reset to the title, save intact |
+| T33.10 | …but not while the PC has someone | Same, with a living Pokémon in a box | Walk out of the Center with an empty party and withdraw a new team |
+| T33.11 | **Field poison counts** | Let a poisoned Pokémon faint walking around | Boxed the same way, after the message |
+| T33.12 | Field poison to a whole party | Every remaining Pokémon poisoned to 0 | The normal white-out, then the run-over check |
+| T33.13 | Wild battles too | Faint against a wild Pokémon | Boxed |
+| T33.14 | Champion releases the graveyard | Beat the Champion, then open the PC | Dead Pokémon can be withdrawn again — the run is over |
+
+### Where it deliberately does not apply
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T33.15 | **Before the rules start** | Faint during the Route 103 rival battle, before the five Poké Balls | Nothing boxed |
+| T33.16 | Birch's bag | Route 101, the Zigzagoon battle | Nothing boxed |
+| T33.17 | The Wally tutorial | Petalburg Gym catching tutorial | Nothing boxed |
+| T33.18 | The Frontier | Lose a Battle Tower round | Nothing boxed — rentals and borrowed teams |
+| T33.19 | Nuzlocke switched off | Clear the rules flag, then faint one | Nothing boxed, heals normally |
+
+---
+
+## Phase 32 — Any Pokémon learns any TM, HM or tutor move
+
+Compatibility is gone from the teaching path. This is a repair as much as a convenience:
+randomized TMs draw from the whole move pool, while the teachable list holds 88 moves, so
+most randomized TMs taught a move **no Pokémon in the game could learn**.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T32.1 | **Every Pokémon reads ABLE** | Bag → any TM → open the party | ABLE next to every Pokémon, none greyed out |
+| T32.2 | **A TM that was dead now works** | A TM teaching an off-list move — Extreme Speed, Fling, Play Nice | Teaches normally |
+| T32.3 | Gimmick species too | Magikarp, Ditto, Wobbuffet, Caterpie | ABLE, and the move is really learned |
+| T32.4 | HMs | Teach Surf, Fly, Cut to anything | Learned. (Using them still needs no teaching at all — see Phase 31) |
+| T32.5 | **Tutors** | Any of the ten randomized tutors on any Pokémon | Teaches, no refusal |
+| T32.6 | Boxed Pokémon | Teach a TM to one in the PC | Same behaviour |
+| T32.7 | Eggs still refuse | Try a TM on an egg | "can't learn" — an egg is still an egg |
+| T32.8 | Already-known still refuses | Teach a move the Pokémon has | "already knows" |
+| T32.9 | Replacing a move works | Teach a TM to a Pokémon with four moves | Normal forget-a-move flow |
+| T32.10 | Reusable TMs survive | Teach the same TM twice to two Pokémon | Still in the bag |
+
+### What deliberately did **not** change
+
+These read the real learnsets to judge what a species plausibly has, which is a different
+question from what the player may choose to give it.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T32.11 | **The move relearner** | Open it for any Pokémon | Its own learnset, not every move in the game |
+| T32.12 | Egg moves | Breed with a TM move on the parent | Inheritance unchanged |
+| T32.13 | The Frontier | Apprentice, Battle Pyramid, Battle Factory | Unchanged |
+
+---
+
+## Phase 31 — HMs without HM slaves
+
+Every badge-gated field move now works with no party Pokémon knowing it. The badge is
+still required. The always-unlocked ones — Teleport, Dig, Sweet Scent, Soft-Boiled, Milk
+Drink, Secret Power — are untouched, because those are ordinary moves rather than
+infrastructure.
+
+### The six reached by walking into something
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.1 | **Cut** | A party that knows no field moves at all → face a cuttable tree → A | "Would you like to CUT?" naming the lead Pokémon, and it works |
+| T31.2 | **Rock Smash** | Same party → face a breakable rock | Prompts and breaks it |
+| T31.3 | **Strength** | Same party → a boulder | Prompts and enables pushing |
+| T31.4 | **Surf** | Same party → face surfable water | Prompts and surfs |
+| T31.5 | **Waterfall** | Surfing north at a waterfall | Prompts and climbs |
+| T31.6 | **Dive** | Over deep water | Prompts and dives, and surfacing works |
+| T31.7 | Rock Climb | A rock climb tile, if enabled | Prompts and climbs |
+| T31.8 | **The badge is still required** | Try each before its gym | The "can't use until a new badge" refusal, not a free pass |
+
+### The two with no overworld trigger
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.9 | **Flash appears without being known** | In a dark cave, after Badge 2 → party menu → any Pokémon | FLASH in its option list |
+| T31.10 | **Fly appears without being known** | After Badge 6 → party menu → any Pokémon | FLY in its option list |
+| T31.11 | Neither appears before its badge | Same, before the badge | Absent |
+| T31.12 | No duplicate entry | A Pokémon that really knows Fly | FLY listed once, not twice |
+| T31.13 | Flash wins a tight list | A Pokémon knowing four field moves, Cap Candy in the bag | Nothing is dropped from the menu and it still fits on screen |
+
+### The option list cannot overflow
+
+The list is nine entries at most — the selection window is laid out as `19 - numActions*2`
+rows from the top, so ten would place it off-screen — and the array holding it was eight.
+A Pokémon knowing four field moves with the Cap Candy entry alongside could already run
+past the end before this phase.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T31.14 | **A full list is intact** | Teach one Pokémon four field moves, hold the Cap Candy, open its menu | Every entry drawn, window fully on screen, no corruption |
+| T31.15 | Each entry still works | Pick each one in turn | All behave normally |
+
+---
+
+## Phase 30 — Rolling natures where you can see them
+
+### The heart is 16x16 now
+
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.1 | **It is obvious now** | Summary → info page | A clearly readable heart in the bottom-right corner of the picture |
+| T30.2 | It sits in front of the Pokémon | A Pokémon whose sprite fills that corner — Wobbuffet, Snorlax | Heart drawn over the sprite, not behind it |
+| T30.3 | It is clear of the frame edge | Any Pokémon | Bottom-right of the striped area with a few pixels of frame below the heart's point, so nothing reads as cut off |
+| T30.3b | **The gold heart reads as a heart** | A Pokémon at 255 friendship | Dark outline around the gold fill, recognisably heart-shaped rather than a solid wedge |
+| T30.4 | The frames still step correctly | Compare a fresh catch with a walked one | Fill rises from the bottom through six steps |
+| T30.5 | **Gold only at the true maximum** | Debug → Party… → Edit Pokemon → Set Friendship 255 | Whole heart turns gold |
+| T30.5b | 254 is not gold | Set Friendship 254 | Full **red** heart, not gold. Gold has to mean "cannot go higher" |
+| T30.5c | **Empty at zero** | Set Friendship 0 | Dark interior, red outline, no fill. Use this to confirm the frames step at all |
+| T30.6 | Nothing else moved | Nickname, species, ball, level, gender mark | All still readable |
+
+### SELECT re-rolls the hidden nature
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+SELECT rolls the nature and START rolls the ability, on **both** the info page and the
+skills page — same two buttons either side, nothing to remember about which page does
+what. The skills page's IV and EV views are the exception: SELECT stays the stat editor.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.7 | **SELECT rolls the nature — info page** | Info page → SELECT | Trainer Memo reads "Naive (Modest) nature," — original, then the new hidden one. The ability does **not** change |
+| T30.7b | **START rolls the ability — info page** | Info page → START | ABILITY line and its description change. The nature does **not** change |
+| T30.7c | **SELECT rolls the nature — skills page** | Skills page, stats view → SELECT | The red and blue stats recolour on the spot. Left to the info page confirms the new nature |
+| T30.7d | **START rolls the ability — skills page** | Skills page, stats view → START | The ability in the old RIBBON slot changes on the spot |
+| T30.7e | **No debug page** | SELECT on any page, in *both* ROMs | Never the Bulbasaur sprite browser |
+| T30.7f | The IV/EV editor still owns SELECT | Skills page → A until it reads IVs or EVs → SELECT | Opens the stat editor. No nature roll |
+| T30.7g | They are independent | Roll a nature you want, then roll the ability repeatedly | The nature stays put |
+| T30.7h | One-ability species | A species with a single ability across all slots | Failure sound, nothing changes |
+| T30.7i | Hidden abilities are in the pool | Roll a species with a hidden ability repeatedly | It comes up |
+| T30.7j | **Rolling is free** | Note your money, roll several times | Money unchanged |
+| T30.7k | START on the move pages is still RELEARN | Battle moves page → START | Opens the move relearner |
+| T30.7l | Stats follow the nature | Roll on the skills page and watch the numbers | Raised stat up and red, lowered stat down and blue |
+
+### The ability replaces the ribbon count
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T30.18 | **The caption reads ABILITY** | Skills page | Top-right banner says ABILITY in the same white-on-yellow style as ITEM beside it, fully visible, nothing clipped by the box below |
+| T30.19 | The ability is shown | Any Pokémon | Its ability, centred in the box where the ribbon count was |
+| T30.20 | A long name fits | A Pokémon with a long ability name | Inside the box, not clipped off the left |
+| T30.21 | It tracks the Pokémon | Page up and down through the party | Changes with each one |
+| T30.22 | Eggs | An egg's summary | Nothing broken |
+| T30.23 | The other pages are unchanged | Info, battle moves, contest moves | No stray ABILITY caption |
+| T30.8 | It never no-ops | Press SELECT repeatedly | The parenthetical changes every time; it never rolls the nature it already had |
+| T30.9 | **The stats follow** | Roll, then page right to skills | Numbers match the new nature; the raised stat is up, the lowered one down |
+| T30.10 | It persists | Roll, leave the summary, come back | Same hidden nature |
+| T30.11 | …and through a save | Roll, save, reset, reload | Same hidden nature |
+| T30.12 | The move-select arrows follow | Roll, then reach the forget-a-move screen and press SELECT | Red/blue arrows match the rolled nature |
+| T30.13 | Not on other pages | SELECT on skills, battle moves, contest moves | Skills opens the IV/EV editor; the move pages do nothing. No nature roll |
+| T30.14 | Not on boxed Pokémon | PC → a boxed Pokémon's summary → SELECT | Nothing happens |
+| T30.15 | Not on eggs | An egg's summary → SELECT | Nothing happens |
+| T30.16 | Not on rentals | Battle Factory rental summary → SELECT | Nothing happens |
+| T30.17 | The debug action still works | Debug → Party… → Edit Pokemon → Roll Hidden Nature | Still rolls, still reports the new nature |
+
+---
+
+## Phase 29 — Heart placement
+
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T29.1 | **It is where it should be** | Summary → info page | Heart inside the picture frame, bottom right, above the nickname. Not clipping the green border |
+| T29.2 | It does not cover the nickname | A Pokémon with a nine-character nickname | Name fully readable |
+| T29.3 | It survives page changes | L/R through all four pages | Heart on every page, same spot |
+| T29.4 | Eggs still have none | An egg's summary, then page through | No heart anywhere |
+| T29.5 | The stats overlay hides it | Forget-a-move screen → SELECT → SELECT | Gone, then back |
+| T29.6 | The colour is right | A freshly caught Pokémon, then a maxed one | Red outline filling from the bottom; gold at 250 |
+
+---
+
+## Phase 27 — Playtest round 4
+
+### Fast text by default
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.1 | **A new game starts on Fast** | New game → Options | Text speed reads FAST |
+| T27.2 | Still changeable | Set it to Slow, leave, come back | Slow, and it sticks |
+| T27.3 | An existing save is untouched | Load a save started before this build → Options | Whatever it was already set to. Only new games get the new default |
+
+### Indicator colours, not window colours
+
+The previous build coloured palette entry 13, which every window on that BG draws its text
+with, so one arrow turned the move names, the type line and the action menu red — and the
+change survived leaving move select. The icons now carry their own palette entries.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.4 | **Move names stay black** | Battle → Battle → hover a move with no effect | The ✕ is red; both move names and "TYPE/…" stay dark grey |
+| T27.5 | Green for super effective | Hover a move the foe is weak to | Green ↑ (double for 4×); names unchanged |
+| T27.6 | Orange for resisted | Hover a resisted move | Orange ↓; names unchanged |
+| T27.7 | **It does not leak** | Hover a no-effect move, then B out to the action menu | Battle / Bag / Pokémon / Run are black, not red |
+| T27.8 | The STAB dot stays red | Hover a same-type move that is also super effective | Green arrow *and* a red dot side by side |
+| T27.9 | Neutral is unremarkable | Hover a neutral move | Grey hollow circle, the same grey as the text |
+
+### Level cap candy no longer exits the menu
+
+`Task_LearnNextMoveOrClosePartyMenu` tested `data1` — which by then holds the move just
+learned — instead of `learnMoveState`. Every move but MOVE_POUND took the "close the menu"
+branch, so the Pokémon also never reached the evolution check.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.10 | **Learning a move keeps you in the menu** | Party → a Pokémon → LEVEL CAP onto a level-up move | Learns the move, then returns to the party list. Does *not* drop to the field |
+| T27.11 | Replacing a move too | Same with four moves already known → forget one | Returns to the party list |
+| T27.12 | Declining also returns | Same, but choose not to learn | Returns to the party list |
+| T27.13 | **It evolves now** | LEVEL CAP a Pokémon onto its evolution level | Evolution scene plays |
+| T27.14 | **…and comes back cleanly** | Press through the evolution and the Pokédex entry | Back in the party menu on the field. Press B → field. Not a frozen battle screen |
+| T27.15 | Evolve on a level that also learns a move | A species that does both at once | Move first, then the evolution, then the party menu |
+| T27.16 | Repeat immediately | LEVEL CAP the same Pokémon again | Works; the Cap Candy is never consumed |
+| T27.17 | A real Rare Candy still evolves | Bag → Rare Candy on a Pokémon at its evolution level | Evolves, then back to the bag |
+| T27.18 | A TM still closes the menu | Bag → any TM → teach it | Learns, then back to the bag. Unchanged |
+| T27.19 | Move tutors still work | A randomized tutor → teach a move | Learns and returns to the overworld script |
+
+### Stats on the move-select screen
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T27.20 | **The prompt is visible** | Level a Pokémon into "which move should be forgotten?" | Top right reads SELECT + "Stats", not "Ⓐ INFO" |
+| T27.21 | **SELECT shows the numbers** | Press SELECT | The picture is replaced by the Pokémon's type icons, HP / ATK / DEF / SpA / SpD / SPE, and the ability |
+| T27.21b | **Dual types sit side by side** | A two-type Pokémon | Both icons across the top of the panel, inside the margins |
+| T27.21c | A single type is centred | A one-type Pokémon | One icon, centred. No leftover second icon |
+| T27.21d | The icons are in front | Open the overlay | Icons drawn over the white panel, not hidden behind it |
+| T27.21e | They do not linger | Open the overlay, close it, change page, reopen | No stray type icons anywhere on screen |
+| T27.22 | The numbers are the real ones | Compare with the skills page afterwards | Identical |
+| T27.23 | Nature colouring | A Pokémon with a non-neutral nature | Raised stat red, lowered stat blue, rest black |
+| T27.24 | **Hidden nature wins** | A Pokémon given a Mint or a rolled hidden nature | The colours follow the *hidden* nature, which is what moved the numbers |
+| T27.25 | SELECT again hides it | Press SELECT a second time | Picture returns |
+| T27.26 | Page change hides it | Open the overlay, press L or R | Overlay gone, picture back, contest page drawn normally |
+| T27.27 | Confirming works with it open | Open the overlay, press A on a move | Forgets that move and returns as usual |
+| T27.28 | Cancelling works with it open | Open the overlay, press B | Declines as usual |
+| T27.29 | The ability fits | A long ability name, e.g. Neutralizing Gas | Drawn inside the panel, not clipped off the left edge |
+| T27.30 | Not offered elsewhere | Normal summary → moves page → press SELECT | Nothing happens. Only the forget-a-move screen has it |
+
+---
+
+## Phase 26 — Friendship heart and a bigger bag
+
+> **Superseded by Phase 40.** The friendship heart was removed; the skills page prints
+> the value as "X/255" instead. The rows below are kept as a record of what was tried
+> and are not part of the suite — do not run them.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T26.1 | **The heart appears** | Summary → info page | A small heart at the bottom right of the picture frame, just above the nickname |
+| T26.2 | It starts nearly empty | A freshly caught Pokémon (friendship 70) | Low fill |
+| T26.3 | **It fills as friendship rises** | Walk with it, level it, use vitamins | The heart fills from the bottom in steps at 42 / 85 / 128 / 170 / 212 |
+| T26.4 | **Gold at maximum** | Friendship 250 or more | A gold heart |
+| T26.5 | It tracks the selected Pokémon | Page up and down between party members | The heart changes with each one |
+| T26.6 | **Every page** | Switch to skills, moves, contest | The heart stays put on all four |
+| T26.7 | Hidden behind the stats overlay | Forget-a-move screen → SELECT | Heart gone with the picture; back when SELECT is pressed again |
+| T26.8 | Eggs have none | View an egg's summary | No heart |
+| T26.9 | It does not collide | Look at the ball icon, status icon and name | All still drawn correctly |
+| T26.10 | Boxed Pokémon | Open a boxed Pokémon's summary | Heart shows normally |
+
+### Bigger bag
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T26.11 | **Items pocket holds 150** | Buy every evolution item and keep collecting | No "the bag is full" until 150 distinct items |
+| T26.12 | Balls hold 40 | Buy Ultra, Fast and Timer Balls plus finds | 40 distinct entries |
+| T26.13 | Berries hold 60 | Harvest randomized berry trees | 60 distinct entries |
+| T26.14 | Key items hold 50 | Collect all four custom key items and the tickets | Fits comfortably |
+| T26.15 | **Freed features are really gone** | Check Mystery Gift on the main menu | Absent — its save data was reclaimed for the bag |
+| T26.16 | The game still saves | Play, save, reset, reload | Loads correctly; bag contents intact |
+| T26.17 | **A pre-0.9.2 save does not load** | Try an older save | Expected — the bag change moved SaveBlock1. Start a new game |
+
+---
+
+## Phase 25 — First-encounter badge
+
+`RANDOLOCKE_FIRST_ENCOUNTER_BADGE` (TRUE). A circled **1** appears on a wild Pokémon's
+health box when catching it *here* would be legal under the nuzlocke rules — so you do
+not have to throw a ball to find out.
+
+Printed onto the healthbox sprite the same way HP numbers are, so it inherits the box's
+position, slide-in and cleanup rather than owning a second sprite.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T25.1 | **It appears on a legal catch** | Walk into fresh grass on a route you have not caught in | A circled 1 on the wild Pokémon's health box |
+| T25.2 | **Gone once the area is used** | Catch something there, then meet another | No badge |
+| T25.3 | Gone on a duplicate | Meet a species whose family you already own | No badge, even on an unused area |
+| T25.4 | **Shinies always show it** | Meet a shiny on a used-up area | Badge present — the shiny clause makes it catchable |
+| T25.5 | It agrees with the bag | Whenever the badge shows, open the bag | Balls are allowed. No badge means they are refused |
+| T25.6 | Not on trainer battles | Fight any trainer | No badge |
+| T25.7 | Not on your own Pokémon | Look at your side of the screen | No badge there |
+| T25.8 | Not in the Safari Zone | Enter a Safari battle | No badge |
+| T25.9 | **Before the rules start** | New game, before Birch's five Poké Balls | No badge — nothing is being ruled on yet |
+| T25.10 | Rules off | Set flag `0x2D` | No badge |
+| T25.11 | Doubles | A double wild battle | Each opposing box is judged on its own species |
+| T25.12 | **It does not corrupt the box** | Watch HP change, switch, and let the box slide out | HP numbers, nickname, level and status all draw correctly; no leftover glyph |
+| T25.13 | Survives a switch | Send out a different Pokémon and back | The badge is still correct |
+| T25.14 | Config off | Set `RANDOLOCKE_FIRST_ENCOUNTER_BADGE` to `FALSE`, rebuild | No badge anywhere |
+
+---
+
+## Phase 24 — Two registered key items, properly
+
+`RANDOLOCKE_DUAL_REGISTERED_ITEMS` (TRUE). The first attempt silently pushed the
+previously registered item into the second slot, which from the outside looked exactly
+like registering having failed. It asks now.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T24.1 | **It asks which gesture** | Bag → a key item → REGISTER | "Register to a tap of SELECT, or to holding it down?" with TAP / HOLD |
+| T24.2 | TAP fills the tap slot | Choose TAP | The usual SELECT badge appears beside the item |
+| T24.3 | **HOLD fills the hold slot** | Register a second item, choose HOLD | A *differently coloured* SELECT badge beside that one |
+| T24.4 | **Porta Heal registers** | Register the Porta Heal to either slot | It takes. This is the case that failed before |
+| T24.5 | Tap uses slot one | In the overworld, tap SELECT | The TAP item is used |
+| T24.6 | **Hold uses slot two** | Hold SELECT for about a third of a second | The HOLD item is used, not the tap one |
+| T24.7 | A hold does not also fire the tap | Hold, then release | Only the hold item is used, once |
+| T24.8 | Deselecting needs no prompt | Choose REGISTER on an already-registered item | It clears immediately, no TAP/HOLD question |
+| T24.9 | An item lives in one slot | Register an item to TAP, then to HOLD | It moves; the tap slot is now empty |
+| T24.10 | Both badges at once | Have one item in each slot, look at the bag | Two items, two different badges |
+| T24.11 | Cancel is safe | Open the prompt and press B | Nothing registered, nothing cleared |
+| T24.12 | Survives a reload | Register both, save, reset, reload | Both still registered to the same gestures |
+| T24.13 | Non-key items are unaffected | Try to register a Potion | REGISTER is not offered, as in vanilla |
 
 ---
 
@@ -1097,7 +2012,10 @@ or Flips itself (*Apply Patch*).
 
 - **Save states** (Shift+F1–F9 save, F1–F9 load) — invaluable for testing randomization
   stability: state-save before an event, reload, and confirm you get the *same* result.
-- **Log view** (View → Log, enable "Game Error"/"Debug") shows `MgbaPrintf` output; the
-  randomizer prints `GetSpeciesGroup:` lines in debug builds.
+- **Log view** (View → Log) shows `MgbaPrintf` output. The randomizer's
+  `GetSpeciesGroup:` lines go out at **Info**, and only in the debug ROM
+  (`#ifndef NDEBUG`), so the Debug channel is always empty. Info is also where mGBA puts
+  its own `GBA DMA:` hardware trace, which will drown anything the game prints — turn
+  that category off in mGBA before looking.
 - **Reset vs. reload** — some randomizer bugs only appear after a true power cycle. Use
   *File → Reset*, not just a save-state reload, when testing persistence.

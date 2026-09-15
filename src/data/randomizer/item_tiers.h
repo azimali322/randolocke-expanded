@@ -9,7 +9,11 @@
 // vitamins and battle items sit at the bottom, matching the hand tiers' own
 // nuzlocke assumption.
 //
-// 118 hand-graded, 290 by heuristic, 0 unrecognised.
+// Items only one Pokemon can use -- memories, drives, the signature orbs and
+// powders -- are forced to tier 4 whatever else says, since on a randomized team
+// the holder that wants them is almost never there.
+//
+// 111 hand-graded, 261 by heuristic, 36 one-species, 0 unrecognised.
 
 // Tier 1 -- 2 items
 static const u16 sItemTier1[] =
@@ -18,16 +22,9 @@ static const u16 sItemTier1[] =
     ITEM_LEFTOVERS,
 };
 
-// Tier 2 -- 85 items
+// Tier 2 -- 77 items
 static const u16 sItemTier2[] =
 {
-    ITEM_RED_ORB,
-    ITEM_BLUE_ORB,
-    ITEM_LEEK,
-    ITEM_QUICK_POWDER,
-    ITEM_ADAMANT_ORB,
-    ITEM_LUSTROUS_ORB,
-    ITEM_GRISEOUS_ORB,
     ITEM_POWER_WEIGHT,
     ITEM_POWER_BRACER,
     ITEM_POWER_BELT,
@@ -104,11 +101,10 @@ static const u16 sItemTier2[] =
     ITEM_PUNCHING_GLOVE,
     ITEM_COVERT_CLOAK,
     ITEM_LOADED_DICE,
-    ITEM_BOOSTER_ENERGY,
     ITEM_MIRROR_HERB,
 };
 
-// Tier 3 -- 82 items
+// Tier 3 -- 61 items
 static const u16 sItemTier3[] =
 {
     ITEM_BERRY_JUICE,
@@ -129,27 +125,6 @@ static const u16 sItemTier3[] =
     ITEM_DREAD_PLATE,
     ITEM_IRON_PLATE,
     ITEM_PIXIE_PLATE,
-    ITEM_DOUSE_DRIVE,
-    ITEM_SHOCK_DRIVE,
-    ITEM_BURN_DRIVE,
-    ITEM_CHILL_DRIVE,
-    ITEM_FIRE_MEMORY,
-    ITEM_WATER_MEMORY,
-    ITEM_ELECTRIC_MEMORY,
-    ITEM_GRASS_MEMORY,
-    ITEM_ICE_MEMORY,
-    ITEM_FIGHTING_MEMORY,
-    ITEM_POISON_MEMORY,
-    ITEM_GROUND_MEMORY,
-    ITEM_FLYING_MEMORY,
-    ITEM_PSYCHIC_MEMORY,
-    ITEM_BUG_MEMORY,
-    ITEM_ROCK_MEMORY,
-    ITEM_GHOST_MEMORY,
-    ITEM_DRAGON_MEMORY,
-    ITEM_DARK_MEMORY,
-    ITEM_STEEL_MEMORY,
-    ITEM_FAIRY_MEMORY,
     ITEM_NORMAL_GEM,
     ITEM_FIRE_GEM,
     ITEM_WATER_GEM,
@@ -195,7 +170,7 @@ static const u16 sItemTier3[] =
     ITEM_MENTAL_HERB,
 };
 
-// Tier 4 -- 73 items
+// Tier 4 -- 102 items
 static const u16 sItemTier4[] =
 {
     ITEM_POKE_BALL,
@@ -260,15 +235,44 @@ static const u16 sItemTier4[] =
     ITEM_FLOWER_SWEET,
     ITEM_STAR_SWEET,
     ITEM_RIBBON_SWEET,
+    ITEM_DOUSE_DRIVE,
+    ITEM_SHOCK_DRIVE,
+    ITEM_BURN_DRIVE,
+    ITEM_CHILL_DRIVE,
+    ITEM_FIRE_MEMORY,
+    ITEM_WATER_MEMORY,
+    ITEM_ELECTRIC_MEMORY,
+    ITEM_GRASS_MEMORY,
+    ITEM_ICE_MEMORY,
+    ITEM_FIGHTING_MEMORY,
+    ITEM_POISON_MEMORY,
+    ITEM_GROUND_MEMORY,
+    ITEM_FLYING_MEMORY,
+    ITEM_PSYCHIC_MEMORY,
+    ITEM_BUG_MEMORY,
+    ITEM_ROCK_MEMORY,
+    ITEM_GHOST_MEMORY,
+    ITEM_DRAGON_MEMORY,
+    ITEM_DARK_MEMORY,
+    ITEM_STEEL_MEMORY,
+    ITEM_FAIRY_MEMORY,
+    ITEM_RED_ORB,
+    ITEM_BLUE_ORB,
     ITEM_LIGHT_BALL,
+    ITEM_LEEK,
     ITEM_THICK_CLUB,
     ITEM_LUCKY_PUNCH,
     ITEM_METAL_POWDER,
+    ITEM_QUICK_POWDER,
     ITEM_DEEP_SEA_SCALE,
     ITEM_DEEP_SEA_TOOTH,
     ITEM_SOUL_DEW,
+    ITEM_ADAMANT_ORB,
+    ITEM_LUSTROUS_ORB,
+    ITEM_GRISEOUS_ORB,
     ITEM_METAL_COAT,
     ITEM_AUSPICIOUS_ARMOR,
+    ITEM_BOOSTER_ENERGY,
     ITEM_GIMMIGHOUL_COIN,
     ITEM_MALICIOUS_ARMOR,
 };

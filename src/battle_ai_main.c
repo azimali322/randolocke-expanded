@@ -1,4 +1,6 @@
 #include "global.h"
+#include "constants/opponents.h"
+#include "config/randomizer.h"
 #include "main.h"
 #include "malloc.h"
 #include "battle.h"
@@ -256,6 +258,44 @@ static bool32 IsSmartBattle(void)
     return gBattleTypeFlags & BATTLE_TYPE_HAS_AI || IsWildMonSmart();
 }
 
+#if RZ_TRAINER_AI_TIERS == TRUE
+// Raise a trainer's AI to the tier its importance deserves. Every trainer in the game
+// shipped with either Check Bad Move alone or Basic Trainer, bosses included, which is
+// no longer a fair fight once levels, EVs and movesets have all been scaled up.
+static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
+{
+    enum TrainerClassID class;
+
+    // Partner and other synthetic ids live past the end of the trainer table; looking one
+    // up asserts. The battle test suite fights trainer 865 -- TRAINER_PARTNER(1) -- in its
+    // multi-battle tests, which is how this surfaced.
+    if (trainerId >= TRAINERS_COUNT)
+        return 0;
+
+    class = GetTrainerClassFromId(trainerId);
+
+    if (class == TRAINER_CLASS_CHAMPION)
+        return RZ_AI_CHAMPION;
+
+    if (IsBossTrainerBattle(trainerId))
+        return RZ_AI_BOSS;
+
+    // Gym leaders and the Elite Four are all Boss: Yes, so they were handled above; these
+    // are the untagged notables -- rivals and the Aqua/Magma admins.
+    switch (class)
+    {
+    case TRAINER_CLASS_RIVAL:
+    case TRAINER_CLASS_ELITE_FOUR:
+    case TRAINER_CLASS_LEADER:
+    case TRAINER_CLASS_AQUA_ADMIN:
+    case TRAINER_CLASS_MAGMA_ADMIN:
+        return RZ_AI_NOTABLE;
+    default:
+        return RZ_AI_BASE;
+    }
+}
+#endif
+
 static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
 {
     u64 flags = 0;
@@ -284,6 +324,10 @@ static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
             flags = AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT;
         else
             flags = GetTrainerAIFlagsFromId(trainerId);
+
+        #if RZ_TRAINER_AI_TIERS == TRUE
+            flags |= RandolockeAiFlagsForTrainer(trainerId);
+        #endif
     }
 
     if (IsDoubleBattle() && flags != 0)

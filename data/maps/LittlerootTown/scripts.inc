@@ -245,9 +245,47 @@ LittlerootTown_EventScript_FatMan::
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
+@ randolocke: all four key items, from one person you meet before leaving town.
 LittlerootTown_EventScript_Boy::
-	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
+	lock
+	faceplayer
+	setvar VAR_0x8009, 0
+	setvar VAR_0x8008, ITEM_PORTA_HEAL
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_ENDLESS_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_CAP_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_REPELLANT
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	goto_if_eq VAR_0x8009, 0, LittlerootTown_EventScript_BoyNothingToGive
+	msgbox LittlerootTown_Text_BoyKeepThemSafe, MSGBOX_DEFAULT
+	release
 	end
+
+LittlerootTown_EventScript_GiveKeyItemIfMissing::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	setvar VAR_0x8009, 1
+	return
+
+LittlerootTown_EventScript_KeyItemAlreadyHeld::
+	return
+
+LittlerootTown_EventScript_BoyNothingToGive::
+	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_DEFAULT
+	release
+	end
+
+LittlerootTown_Text_BoyKeepThemSafe:
+	.string "Dad said to hand these out to anyone\n"
+	.string "mad enough to try a run like yours.\p"
+	.string "The CAP CANDY takes a POKéMON as far\n"
+	.string "as the badges allow, all at once.\p"
+	.string "None of them ever run out.\n"
+	.string "Don't ask me how.$"
 
 LittlerootTown_EventScript_Twin::
 	lock

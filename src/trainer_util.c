@@ -1,4 +1,7 @@
 #include "global.h"
+#include "constants/flags.h"
+#include "event_data.h"
+#include "config/randomizer.h"
 #include "main.h"
 #include "data.h"
 #include "move.h"
@@ -18,7 +21,46 @@ rng_value_t GeneratePartySeed(const struct Trainer *trainer)
     return LocalRandomSeed(seed);
 }
 
-static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
+#if RZ_TRAINER_EV_SCALING == TRUE
+// Trainer Pokemon get an EV spread that grows with the player's badge count. Which stats
+// it lands on is decided from the Pokemon's own base stats rather than fixed, because the
+// species may have been randomized into something that wants the other half of the sheet.
+// Only ordinary trainers reach here -- Frontier and Battle Tower parties are built
+// elsewhere -- so there is no facility check to make.
+static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
+{
+    static const u8 sEvsByBadge[] = RZ_TRAINER_EVS_BY_BADGE;
+    static const u16 sBadgeFlags[] = {
+        FLAG_BADGE01_GET, FLAG_BADGE02_GET, FLAG_BADGE03_GET, FLAG_BADGE04_GET,
+        FLAG_BADGE05_GET, FLAG_BADGE06_GET, FLAG_BADGE07_GET, FLAG_BADGE08_GET,
+    };
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    u32 badges = 0, i;
+    u8 ev;
+
+    for (i = 0; i < ARRAY_COUNT(sBadgeFlags); i++)
+    {
+        if (FlagGet(sBadgeFlags[i]))
+            badges++;
+    }
+    ev = sEvsByBadge[badges];
+    if (ev == 0)
+        return;
+
+    SetMonData(mon, MON_DATA_HP_EV, &ev);
+    SetMonData(mon, MON_DATA_SPEED_EV, &ev);
+    if (gSpeciesInfo[species].baseAttack >= gSpeciesInfo[species].baseSpAttack)
+        SetMonData(mon, MON_DATA_ATK_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_SPATK_EV, &ev);
+    if (gSpeciesInfo[species].baseDefense >= gSpeciesInfo[species].baseSpDefense)
+        SetMonData(mon, MON_DATA_DEF_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_SPDEF_EV, &ev);
+}
+#endif
+
+static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry, bool32 speciesWasRandomized)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
@@ -28,6 +70,20 @@ static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct Trai
         if (partyEntry->moves[j] != MOVE_NONE)
             noMoveSet = FALSE;
     }
+    // randolocke: a hand-written moveset belongs to the species it was written for. Once
+    // the species has been substituted it is worse than useless -- Roxanne's three
+    // Pokemon all carried Tackle / Defense Curl / Rock Throw / Rock Tomb whatever they
+    // turned into, so none of them had a single same-type move and all three fought
+    // identically. Fall back to the level-up moveset, which GetSpeciesLevelUpLearnset
+    // routes through the randomizer, so the Pokemon gets moves that suit the species it
+    // actually is: same-type attacks included, strongest first.
+    #if RZ_TRAINER_REGENERATE_MOVES == TRUE && RANDOMIZER_AVAILABLE == TRUE
+    // The same applies once learnsets are randomized even if the species survived: this
+    // run's Geodude does not learn Rock Tomb either way, so a hand-written moveset is a
+    // list of moves the Pokemon in front of you cannot actually have.
+    if (speciesWasRandomized || RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
+        noMoveSet = TRUE;
+    #endif
     if (noMoveSet)
     {
         GiveMonInitialMoveset(mon);
@@ -180,7 +236,7 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
     }
 
     SetMonData(mon, MON_DATA_IVS, &trainerMon->iv);
-    CustomTrainerPartyAssignMoves(mon, trainerMon);
+    CustomTrainerPartyAssignMoves(mon, trainerMon, species != trainerMon->species);
     SetMonData(mon, MON_DATA_HELD_ITEM, &trainerMon->heldItem);
 
     bool32 abilitySet = FALSE;
@@ -250,6 +306,10 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
         data = TYPE_MYSTERY;
         SetMonData(mon, MON_DATA_TERA_TYPE, &data);
     }
+
+    #if RZ_TRAINER_EV_SCALING == TRUE
+        RandolockeGiveTrainerEVs(mon);
+    #endif
 
     CalculateMonStats(mon);
     SetMonData(mon, MON_DATA_OT_NAME, trainer->name);
