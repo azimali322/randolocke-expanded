@@ -617,7 +617,17 @@ u16 RandomizeTMMoveReverse(enum Move move)
 // draws every TM's move through the same TM bands, so the 50 assigned moves are already
 // spread across them. A uniform pick over the assigned TMs reproduces that spread, and
 // reflects what this ROM actually contains rather than what vanilla did.
-static enum Item RzPickTmItem(struct Sfc32State *state)
+// A TM the player has, in the bag or in the PC. The PC counts so that depositing a TM
+// cannot make it drawable again.
+static bool32 RzPlayerOwnsTm(enum Item item)
+{
+    return item == ITEM_NONE || CheckBagHasItem(item, 1) || CheckPCHasItem(item, 1);
+}
+
+// The TM item itself, before the no-duplicates rule. gTMHMItemMoveIds keeps an ITEM_NONE
+// failsafe at index 0 and the 50 TMs at 1 .. NUM_TECHNICAL_MACHINES, with the HMs after
+// them -- hence the + 1, and hence the loops below counting from 1.
+static enum Item RzDrawTmItem(struct Sfc32State *state)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return GetTMHMItemId(RandomizerNextRange(state, NUM_TECHNICAL_MACHINES) + 1);
@@ -628,6 +638,58 @@ static enum Item RzPickTmItem(struct Sfc32State *state)
     #else
         return ITEM_NONE;
     #endif
+}
+
+static enum Item RzPickTmItem(struct Sfc32State *state)
+{
+    enum Item result = RzDrawTmItem(state);
+
+    #if RANDOLOCKE_TM_PICKUPS_NO_DUPES == TRUE
+    {
+        u32 attempts, unowned, index, i;
+
+        if (!RzPlayerOwnsTm(result))
+            return result;
+
+        // Redraw first, so the weighting RzDrawTmItem applies still decides which TM this
+        // is whenever there are plenty left to choose from.
+        for (attempts = 0; attempts < 24; attempts++)
+        {
+            enum Item retry = RzDrawTmItem(state);
+
+            if (!RzPlayerOwnsTm(retry))
+                return retry;
+        }
+
+        // Down to the last few. Draw uniformly from exactly the ones not owned, which
+        // always lands on one if any exists -- counting first, then walking to the chosen
+        // one, rather than building a hundred-entry list on the stack.
+        unowned = 0;
+        for (i = 1; i <= NUM_TECHNICAL_MACHINES; i++)
+        {
+            if (!RzPlayerOwnsTm(GetTMHMItemId(i)))
+                unowned++;
+        }
+
+        if (unowned != 0)
+        {
+            index = RandomizerNextRange(state, unowned);
+            for (i = 1; i <= NUM_TECHNICAL_MACHINES; i++)
+            {
+                enum Item tm = GetTMHMItemId(i);
+
+                if (RzPlayerOwnsTm(tm))
+                    continue;
+                if (index == 0)
+                    return tm;
+                index--;
+            }
+        }
+        // Every TM already collected. Nothing better to offer than the original draw.
+    }
+    #endif
+
+    return result;
 }
 
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId)

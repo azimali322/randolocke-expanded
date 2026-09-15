@@ -345,4 +345,20 @@
 // species plausibly has rather than what the player may choose to give it.
 #define RANDOLOCKE_UNIVERSAL_TM_COMPATIBILITY   TRUE
 
+// --- TM pickups --------------------------------------------------------------
+
+// If TRUE, a randomized TM -- found on the ground, hidden, or handed over by an NPC such
+// as a gym leader -- is drawn from the TMs the player does not already own, rather than
+// from all of them.
+//
+// TMs are reusable under I_REUSABLE_TMS, so a second copy of one is not a lesser prize,
+// it is nothing at all. And because randomized TM assignment makes the vanilla TM tiers
+// meaningless, the TM *item* is drawn uniformly, so the odds of a repeat climb with every
+// TM collected: past forty of them, better than a third of gym rewards were already in
+// the bag.
+//
+// The player's PC counts as owned too, so depositing a TM cannot be used to make it
+// drawable again. When every TM is already owned the draw falls back to the plain one.
+#define RANDOLOCKE_TM_PICKUPS_NO_DUPES      TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H

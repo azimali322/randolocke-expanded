@@ -1173,6 +1173,28 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 36 — TM pickups are drawn without replacement
+
+A randomized TM — found, hidden, or handed over by a gym leader — is now drawn from the
+TMs the player does not already own. TMs are reusable here, so a duplicate is not a lesser
+prize, it is nothing at all, and the TM *item* is drawn uniformly from 50, so the odds of a
+repeat climb with every one collected: at 20 TMs it was 40%, at 35 it was 70%.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T36.1 | **A gym reward is never a duplicate** | Collect a dozen TMs, then beat a gym | A TM not already in the bag |
+| T36.2 | Found TMs too | Pick up a TM ball with a full-ish collection | Not a duplicate |
+| T36.3 | Hidden TMs too | Same via an Itemfinder spot | Not a duplicate |
+| T36.4 | A TM rolled from an ordinary item | An item pickup that lands in the TM band | Not a duplicate |
+| T36.5 | **The PC counts as owned** | Deposit a TM in the PC, then collect a TM | The deposited one is not handed back |
+| T36.6 | Every TM owned | Collect all 50, then take another TM pickup | Hands over some TM rather than nothing; no softlock |
+| T36.7 | Seeds are still stable | Save before a TM pickup, take it, reset, take it again | The same TM, as long as the bag has not changed in between |
+| T36.8 | The weighting still applies | Early game, with few TMs owned | Distribution unchanged from before — the redraw only kicks in on a collision |
+| T36.9 | **No HMs from TM pickups** | Collect many TMs | Never an HM. Indices 1..50 are the TMs; the HMs sit past them |
+| T36.10 | No ITEM_NONE | Same | Never an empty or glitched item |
+
+---
+
 ## Phase 35 — Items only one Pokémon can use drop to tier 4
 
 Memories and drives sat in tier 3, alongside real held items. With 17 memories and 4
