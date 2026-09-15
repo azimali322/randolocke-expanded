@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "randolocke_nuzlocke.h"
 #include "randomizer.h"
 #include "malloc.h"
@@ -5053,6 +5054,19 @@ bool8 TryIncrementMonLevel(struct Pokemon *mon)
         SetMonData(mon, MON_DATA_LEVEL, &nextLevel);
         return TRUE;
     }
+}
+
+// randolocke: whether a TM, HM or tutor is allowed to teach this move to this species.
+// Separate from CanLearnTeachableMove so that only the teaching path opens up: the move
+// relearner, Egg move inheritance, the AI's Illusion guess and the Frontier all read the
+// real learnsets to judge what a species plausibly has, which is a different question
+// from what the player is allowed to choose.
+bool32 CanBeTaughtMove(enum Species species, enum Move move)
+{
+    if (RANDOLOCKE_UNIVERSAL_TM_COMPATIBILITY)
+        return move != MOVE_NONE;
+
+    return CanLearnTeachableMove(species, move);
 }
 
 bool32 CanLearnTeachableMove(enum Species species, enum Move move)

@@ -1173,6 +1173,38 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 32 — Any Pokémon learns any TM, HM or tutor move
+
+Compatibility is gone from the teaching path. This is a repair as much as a convenience:
+randomized TMs draw from the whole move pool, while the teachable list holds 88 moves, so
+most randomized TMs taught a move **no Pokémon in the game could learn**.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T32.1 | **Every Pokémon reads ABLE** | Bag → any TM → open the party | ABLE next to every Pokémon, none greyed out |
+| T32.2 | **A TM that was dead now works** | A TM teaching an off-list move — Extreme Speed, Fling, Play Nice | Teaches normally |
+| T32.3 | Gimmick species too | Magikarp, Ditto, Wobbuffet, Caterpie | ABLE, and the move is really learned |
+| T32.4 | HMs | Teach Surf, Fly, Cut to anything | Learned. (Using them still needs no teaching at all — see Phase 31) |
+| T32.5 | **Tutors** | Any of the ten randomized tutors on any Pokémon | Teaches, no refusal |
+| T32.6 | Boxed Pokémon | Teach a TM to one in the PC | Same behaviour |
+| T32.7 | Eggs still refuse | Try a TM on an egg | "can't learn" — an egg is still an egg |
+| T32.8 | Already-known still refuses | Teach a move the Pokémon has | "already knows" |
+| T32.9 | Replacing a move works | Teach a TM to a Pokémon with four moves | Normal forget-a-move flow |
+| T32.10 | Reusable TMs survive | Teach the same TM twice to two Pokémon | Still in the bag |
+
+### What deliberately did **not** change
+
+These read the real learnsets to judge what a species plausibly has, which is a different
+question from what the player may choose to give it.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T32.11 | **The move relearner** | Open it for any Pokémon | Its own learnset, not every move in the game |
+| T32.12 | Egg moves | Breed with a TM move on the parent | Inheritance unchanged |
+| T32.13 | The Frontier | Apprentice, Battle Pyramid, Battle Factory | Unchanged |
+
+---
+
 ## Phase 31 — HMs without HM slaves
 
 Every badge-gated field move now works with no party Pokémon knowing it. The badge is

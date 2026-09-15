@@ -318,4 +318,21 @@
 // over P999,999, so any price is a brake rather than a wall.
 #define RANDOLOCKE_ROLL_COST                0
 
+// --- TM, HM and tutor compatibility -----------------------------------------
+
+// If TRUE, any Pokemon can be taught any TM, HM or tutor move.
+//
+// This is not only a convenience. Randomized TMs and tutors draw from the whole move
+// pool, while a species' teachable learnset lists the moves it can learn -- so a TM
+// reassigned to a move that appears on no teachable list is a TM no Pokemon in the game
+// can use. Compatibility was already meaningless besides: every species shares one
+// teachable list here, since make_teachables.py forces ALL_TEACHABLES. All this does is
+// finish the job and hand the choice of what to teach back to the player.
+//
+// Scoped to the teaching path -- TMs, HMs, tutors, and the "ABLE / NOT ABLE" line in the
+// party menu. The move relearner, Egg move inheritance, the AI's Illusion guess and the
+// Battle Frontier keep the real learnsets, because those read them to decide what a
+// species plausibly has rather than what the player may choose to give it.
+#define RANDOLOCKE_UNIVERSAL_TM_COMPATIBILITY   TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H
