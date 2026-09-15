@@ -1173,6 +1173,36 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 35 — Items only one Pokémon can use drop to tier 4
+
+Memories and drives sat in tier 3, alongside real held items. With 17 memories and 4
+drives at tier 3's per-item rate, **10.6% of every tiered item roll was Silvally or
+Genesect gear**. They are now tier 4, with 36 one-species items in total.
+
+| tier | items | band | per item |
+| --- | --- | --- | --- |
+| 1 | 2 | 1.18% | 0.590% |
+| 2 | 77 | 47.92% | 0.622% |
+| 3 | 61 | 41.46% | 0.680% |
+| **4** | **102** | **5.37%** | **0.053%** |
+| 5 | 166 | 4.07% | 0.025% |
+
+Chance a tiered roll is a memory or a drive: **10.62% → 1.11%**.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T35.1 | **Memories are rare** | Collect 30-odd field items and NPC gifts on a new seed | At most one memory, usually none |
+| T35.2 | Drives are rare | Same | Same |
+| T35.3 | The signature orbs moved too | Watch for Adamant, Lustrous, Griseous, Red and Blue Orb | Rare rather than tier-2 common |
+| T35.4 | …as did the powders and sticks | Leek, Quick Powder, Metal Powder, Thick Club, Light Ball, Soul Dew, Lucky Punch, Deep Sea Tooth/Scale | All rare |
+| T35.5 | **Plates did not move** | Watch for the Arceus plates | Still as common as before — a plate boosts its type for any holder |
+| T35.6 | Good items got commoner | Watch tier 3 finds | Slightly more frequent: the same band weight now covers 61 items rather than 82 |
+| T35.7 | Leftovers and Choice Band unchanged | Keep collecting | Still the rarest-but-best finds |
+| T35.8 | Seeds are still stable | Save, collect an item, reset, collect it again | Same item both times |
+| T35.9 | NPC gifts follow the same table | Rustboro's Quick Claw man and others | Memories rare there too |
+
+---
+
 ## Phase 34 — A fainted Pokémon looks fainted in the PC
 
 Nothing on the storage screen said which Pokémon were dead; the only clue was the refusal

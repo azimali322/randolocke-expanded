@@ -87,6 +87,48 @@ DEAD_SORT_TYPES = {
 }
 
 
+# Items only one Pokemon can use. A Fire Memory is worthless on anything but a Silvally
+# and a Shock Drive on anything but a Genesect, so against a randomized dex they are dead
+# weight however strong they look on paper -- the odds of the one species that wants them
+# being on the team are negligible. They are forced to tier 4, the floor for things that
+# at least do *something*, above tier 5 where the consumables and switched-off gimmicks
+# sit. Keyed off hold effect and sort type rather than a name list, so new items of the
+# same kind land in the right place without anyone remembering to add them.
+#
+# Plates are deliberately NOT here: since Gen 4 a plate boosts its type for any holder,
+# so they are ordinary type-boost items.
+ONE_SPECIES_SORT_TYPES = {
+    "ITEM_TYPE_MEMORY",   # Silvally, 17 of them
+    "ITEM_TYPE_DRIVE",    # Genesect, 4 of them
+}
+
+ONE_SPECIES_HOLD_EFFECTS = {
+    "HOLD_EFFECT_MEMORY",           # Silvally
+    "HOLD_EFFECT_DRIVE",            # Genesect
+    "HOLD_EFFECT_LEEK",             # Farfetch'd, Sirfetch'd
+    "HOLD_EFFECT_THICK_CLUB",       # Cubone, Marowak
+    "HOLD_EFFECT_LIGHT_BALL",       # Pikachu
+    "HOLD_EFFECT_SOUL_DEW",         # Latios, Latias
+    "HOLD_EFFECT_DEEP_SEA_TOOTH",   # Clamperl
+    "HOLD_EFFECT_DEEP_SEA_SCALE",   # Clamperl
+    "HOLD_EFFECT_LUCKY_PUNCH",      # Chansey
+    "HOLD_EFFECT_METAL_POWDER",     # Ditto
+    "HOLD_EFFECT_QUICK_POWDER",     # Ditto
+    "HOLD_EFFECT_ADAMANT_ORB",      # Dialga
+    "HOLD_EFFECT_LUSTROUS_ORB",     # Palkia
+    "HOLD_EFFECT_GRISEOUS_ORB",     # Giratina
+    "HOLD_EFFECT_PRIMAL_ORB",       # Groudon, Kyogre -- and Primal Reversion is off anyway
+    "HOLD_EFFECT_OGERPON_MASK",     # Ogerpon
+    # Not one species, but the Paradox Pokemon are a closed set of about twenty out of
+    # the whole dex, so on anything else this is still a blank.
+    "HOLD_EFFECT_BOOSTER_ENERGY",
+}
+
+
+def is_one_species(d: dict) -> bool:
+    return d.get("sort") in ONE_SPECIES_SORT_TYPES or d.get("hold") in ONE_SPECIES_HOLD_EFFECTS
+
+
 def heuristic(name: str, d: dict) -> int:
     """Tier index 0..4 for an item with no hand grade.
 
@@ -116,14 +158,18 @@ def main() -> int:
     hand = hand_tiers()
 
     tiers: list[list[str]] = [[] for _ in range(TIERS)]
-    by_hand = by_heur = unknown = berries = 0
+    by_hand = by_heur = unknown = berries = by_species = 0
     for name in wl:
         # Berries are excluded from field-item randomization entirely: they are randomized
         # separately at berry trees, so finding one on the ground would double-dip.
         if data.get(name, {}).get("pocket") == "POCKET_BERRIES":
             berries += 1
             continue
-        if name in hand:
+        # Overrides both the hand grades and the heuristic: the fork graded several of
+        # these on their ceiling with the right holder, which is not the question here.
+        if name in data and is_one_species(data[name]):
+            tiers[3].append(name); by_species += 1
+        elif name in hand:
             tiers[hand[name]].append(name); by_hand += 1
         elif name in data:
             tiers[heuristic(name, data[name])].append(name); by_heur += 1
@@ -141,7 +187,12 @@ def main() -> int:
          "// vitamins and battle items sit at the bottom, matching the hand tiers' own",
          "// nuzlocke assumption.",
          "//",
-         f"// {by_hand} hand-graded, {by_heur} by heuristic, {unknown} unrecognised.",
+         "// Items only one Pokemon can use -- memories, drives, the signature orbs and",
+         "// powders -- are forced to tier 4 whatever else says, since on a randomized team",
+         "// the holder that wants them is almost never there.",
+         "//",
+         f"// {by_hand} hand-graded, {by_heur} by heuristic, {by_species} one-species, "
+         f"{unknown} unrecognised.",
          ""]
     for i, names in enumerate(tiers, 1):
         L.append(f"// Tier {i} -- {len(names)} items")
@@ -153,8 +204,8 @@ def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(L))
     print(f"wrote {OUT.relative_to(ROOT)}")
-    print(f"  hand-graded {by_hand}, heuristic {by_heur}, unrecognised {unknown}, "
-          f"berries excluded {berries}")
+    print(f"  hand-graded {by_hand}, heuristic {by_heur}, one-species {by_species}, "
+          f"unrecognised {unknown}, berries excluded {berries}")
     for i, names in enumerate(tiers, 1):
         print(f"  tier {i}: {len(names)}")
     return 0
