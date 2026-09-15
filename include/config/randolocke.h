@@ -329,6 +329,14 @@
 #define RANDOLOCKE_SUMMARY_NATURE_ROLL      TRUE
 #define RANDOLOCKE_SUMMARY_ABILITY_ROLL     TRUE
 
+// Frames the roll button has to be held before it fires, and the button has to be
+// released before it will fire again. A bare tap used to be enough, on the two screens
+// the player visits most and with START sitting next to SELECT -- so a stray press
+// silently replaced a Pokemon's ability, which is exactly what the "abilities stay as
+// caught" rule is supposed to prevent. 20 frames is a third of a second: enough to stop
+// an accident, cheap enough to repeat when aiming for a spread. 0 restores the tap.
+#define RANDOLOCKE_ROLL_HOLD_FRAMES         20
+
 // What one roll costs. 0 by default: this is meant to be a cheat, not an economy. Set it
 // to a price if you would rather rolling were a decision -- though the Oldale NPC hands
 // over P999,999, so any price is a brake rather than a wall.

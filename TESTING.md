@@ -1173,6 +1173,40 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 41 — Rolling a nature or ability takes a held button
+
+RZ_ABILITY_STABLE_ACROSS_EVOLUTION works: the randomized ability is seeded from the
+evolution family's root, so every stage of a line maps the same ability slot to the same
+ability, and evolving cannot change it. Verified against the game's own evolution data —
+Hatenna, Hattrem and Hatterene all resolve to Hatenna.
+
+What *can* change it is the ability slot, and the summary screen's roll used to fire on a
+bare tap of START, right beside the SELECT used for the nature, on the two pages the
+player visits most. It now needs the button held for about a third of a second, and
+released before it fires again.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T41.1 | **A tap does nothing** | Info page → tap START | Ability unchanged |
+| T41.2 | **A hold rolls** | Hold START for about half a second | Ability changes once |
+| T41.3 | Holding does not repeat | Keep holding for several seconds | One change, not a stream |
+| T41.4 | Releasing re-arms | Release, hold again | Rolls again |
+| T41.5 | The nature behaves the same | Tap SELECT, then hold it | Nothing, then one nature change |
+| T41.6 | Switching buttons mid-hold | Hold START halfway, then switch to SELECT | Count restarts; no roll from the partial hold |
+| T41.7 | Skills page too | Both buttons, held, on the stats view | Same behaviour |
+| T41.8 | The IV/EV editor is unaffected | Skills page → A to IVs → tap SELECT | Opens the editor on a tap, as before |
+| T41.9 | The move relearner is unaffected | Battle moves page → tap START | Opens the relearner on a tap, as before |
+
+### Abilities really are stable across evolution
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T41.10 | **Evolving keeps the ability** | Note a Pokémon's ability, evolve it, check again | Identical |
+| T41.11 | …through two stages | Evolve a three-stage line twice | Identical at all three |
+| T41.12 | An Ability Capsule still works | Use one | Ability changes — that is the item's job |
+
+---
+
 ## Phase 40 — Types as text, and friendship as a number
 
 ### The overlay shows both types

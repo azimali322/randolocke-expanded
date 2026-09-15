@@ -352,6 +352,7 @@ static void UpdateRelearnPrompt(void);
 static struct BoxPokemon *GetCurrentBoxmon(void);
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE || RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
 static bool32 RandolockeRollPage(void);
+static bool32 RandolockeRollHeld(u16 button);
 static void RandolockeRefreshAfterRoll(u8 taskId);
 #endif
 #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
@@ -1898,7 +1899,7 @@ static void Task_HandleInput(u8 taskId)
             BeginCloseSummaryScreen(taskId);
         }
         #if RANDOLOCKE_SUMMARY_NATURE_ROLL == TRUE
-        else if (JOY_NEW(SELECT_BUTTON) && RandolockeRollPage())
+        else if (RandolockeRollHeld(SELECT_BUTTON) && RandolockeRollPage())
         {
             RandolockeTryRollNature(taskId);
         }
@@ -1906,7 +1907,7 @@ static void Task_HandleInput(u8 taskId)
         #if RANDOLOCKE_SUMMARY_ABILITY_ROLL == TRUE
         // START is free on both of these pages. The move relearner takes it, but only on
         // the move pages.
-        else if (JOY_NEW(START_BUTTON) && RandolockeRollPage())
+        else if (RandolockeRollHeld(START_BUTTON) && RandolockeRollPage())
         {
             RandolockeTryRollAbility(taskId);
         }
@@ -3882,6 +3883,46 @@ static void PrintMonTrainerMemo(void)
 // ability. Separate buttons on purpose: aiming for a spread means keeping the half you
 // like while working on the other. Party Pokemon only, because RandolockeEditTarget
 // indexes monList.mons, which is not where a boxed Pokemon lives.
+// True on the single frame a roll button has been held long enough. The button must be
+// released before it counts again, so holding it does not roll repeatedly.
+//
+// A bare JOY_NEW used to be enough. That put an irreversible change behind one tap of a
+// key on the two screens the player navigates most, with START immediately beside the
+// SELECT used for the nature -- and a stray press silently replaced a Pokemon's ability,
+// which is the opposite of what "abilities stay as caught" is meant to guarantee.
+static bool32 RandolockeRollHeld(u16 button)
+{
+    static u16 sHeldButton = 0;
+    static u16 sHeldFrames = 0;
+
+    if (RANDOLOCKE_ROLL_HOLD_FRAMES == 0)
+        return JOY_NEW(button) != 0;
+
+    if (!(gMain.heldKeys & button))
+    {
+        if (sHeldButton == button)
+        {
+            sHeldButton = 0;
+            sHeldFrames = 0;
+        }
+        return FALSE;
+    }
+
+    // One tracker for both buttons: pressing the other one restarts the count, so a roll
+    // can never be half-charged on two keys at once.
+    if (sHeldButton != button)
+    {
+        sHeldButton = button;
+        sHeldFrames = 0;
+    }
+
+    if (sHeldFrames > RANDOLOCKE_ROLL_HOLD_FRAMES)
+        return FALSE;   // already fired for this press
+
+    sHeldFrames++;
+    return sHeldFrames == RANDOLOCKE_ROLL_HOLD_FRAMES;
+}
+
 // Everything except which page we are on.
 static bool32 RandolockeRollAllowed(void)
 {
