@@ -6,6 +6,7 @@
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
+#include "randolocke_nuzlocke.h"
 #include "battle_special.h"
 #include "battle_partner.h"
 #include "battle_tower.h"
@@ -694,6 +695,11 @@ static void CB2_EndWildBattle(void)
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
     ResetOamRange(0, 128);
 
+    // randolocke: the nuzlocke death rule. Anything that hit 0 HP is boxed here, before
+    // the white-out check below, so a party that went down entirely arrives at DoWhiteOut
+    // already empty and RandolockeAnyLivingMonInBoxes decides whether the run is over.
+    RandolockeBoxFaintedMons();
+
     if (IsNPCFollowerWildBattle())
     {
         RestorePartyAfterFollowerNPCBattle();
@@ -719,6 +725,8 @@ static void CB2_EndScriptedWildBattle(void)
 {
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
     ResetOamRange(0, 128);
+
+    RandolockeBoxFaintedMons();
 
     if (IsPlayerDefeated(gBattleOutcome) == TRUE)
     {
@@ -1572,6 +1580,11 @@ static void HandleBattleVariantEndParty(void)
 static void CB2_EndTrainerBattle(void)
 {
     HandleBattleVariantEndParty();
+
+    // randolocke: after HandleBattleVariantEndParty, which is what puts the player's own
+    // party back after a multi or partner battle -- boxing before that would reach into
+    // the wrong team.
+    RandolockeBoxFaintedMons();
 
     gIsDebugBattle = FALSE;
     if (FollowerNPCIsBattlePartner())

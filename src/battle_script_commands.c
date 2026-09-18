@@ -1,5 +1,6 @@
 #include "global.h"
 #include "config/randolocke.h"
+#include "randolocke_nuzlocke.h"
 #include "battle.h"
 #include "battle_hold_effects.h"
 #include "battle_message.h"
@@ -7807,6 +7808,13 @@ static void FinalizeCapture(void)
     struct Pokemon *caughtMon = GetBattlerMon(gBattlerTarget);
     SetMonData(caughtMon, MON_DATA_POKEBALL, &ballId);
 
+    // Uses up this area's one catch. Deliberately before Cmd_trysetcaughtmondexflags
+    // runs: once the dex flag for this catch is set, every catch looks like a duplicate.
+    // The IVs are NOT set here: this runs mid-battle, and CalculateMonStats moves maxHP
+    // and current HP, which desynced the rest of the capture sequence. They are set at
+    // GIVECAUGHTMON_GIVE_AND_SHOW_MSG instead, once the Pokemon is really the player's.
+    RandolockeNoteCatch(caughtMon);
+
     if (CalculatePlayerPartyCount() == PARTY_SIZE)
         gBattleCommunication[MULTISTRING_CHOOSER] = 0;
     else
@@ -8365,6 +8373,9 @@ static void Cmd_givecaughtmon(void)
     case GIVECAUGHTMON_GIVE_AND_SHOW_MSG:
     {
         struct Pokemon *caughtMon = GetBattlerMon(GetCatchingBattler());
+
+        RandolockeSetPlayerMonIVs(caughtMon, FALSE);
+
         if (B_RESTORE_HELD_BATTLE_ITEMS >= GEN_9)
         {
             enum Item lostItem = gBattleStruct->itemLost[B_TRAINER_OPPONENT_A][gBattlerPartyIndexes[GetCatchingBattler()]].originalItem;

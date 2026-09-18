@@ -1,5 +1,6 @@
 #include "global.h"
 #include "malloc.h"
+#include "config/randolocke.h"
 #if TESTING
 #include "test/test.h"
 #endif
@@ -88,14 +89,55 @@ static void *AllocInternal(void *heapStart, u32 size, const char *location)
     }
 }
 
-static void FreeInternal(void *heapStart, void *pointer)
+#if RANDOLOCKE_SKIP_BAD_FREES == TRUE && !TESTING
+// randolocke: a Free() the allocator can tell is wrong -- a block freed a second time, or
+// a pointer whose header does not carry the magic number -- used to end in an AGB_ASSERT,
+// and in the debug ROM a failed assert sends the CPU into unrelated code (see
+// RANDOLOCKE_DEBUG_ASSERTS_RESUME). To a player that is a freeze.
+//
+// Neither case needs the heap touched to stay consistent. A block that is already free is
+// already accounted for: its neighbours were merged into it the first time, so a second
+// pass over it would do nothing but report. And a header without the magic number cannot
+// be trusted to walk -- following its prev and next is how a bad free turns into a
+// corrupted heap. So outside the test runner, which keeps the assert so a test still
+// fails loudly, such a Free() is reported and skipped.
+//
+// The report names both ends of the bug: the code that called Free() -- look the address
+// up with `arm-none-eabi-addr2line -f -e pokeemerald.elf <address>` against the ELF of
+// the same build -- and, for a block freed twice, the file and line that allocated it,
+// which the header still records after the first Free().
+static bool32 RejectBadFree(const struct MemBlock *block, const void *caller)
+{
+    if (block->magic != MALLOC_SYSTEM_ID)
+    {
+        DebugPrintfLevel(MGBA_LOG_ERROR, "Free(0x%x) skipped: not a heap block (magic 0x%x). Called from 0x%x",
+                         (u32)block->data, block->magic, (u32)caller);
+        return TRUE;
+    }
+    if (!block->allocated)
+    {
+        DebugPrintfLevel(MGBA_LOG_ERROR, "Free(0x%x) skipped: already free. Called from 0x%x, allocated at %s",
+                         (u32)block->data, (u32)caller,
+                         (const char *)(ROM_START | (block->locationHi << 14) | block->locationLo));
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif
+
+static void FreeInternal(void *heapStart, void *pointer, const void *caller)
 {
     if (pointer)
     {
         struct MemBlock *head = (struct MemBlock *)heapStart;
         struct MemBlock *block = (struct MemBlock *)((u8 *)pointer - sizeof(struct MemBlock));
+#if RANDOLOCKE_SKIP_BAD_FREES == TRUE && !TESTING
+        if (RejectBadFree(block, caller))
+            return;
+#else
         AGB_ASSERT(block->magic == MALLOC_SYSTEM_ID);
         AGB_ASSERT(block->allocated == TRUE);
+#endif
         block->allocated = FALSE;
 
         // If the freed block isn't the last one, merge with the next block
@@ -209,7 +251,7 @@ void *AllocZeroedUnchecked_(u32 size, const char *location)
 
 void Free(void *pointer)
 {
-    FreeInternal(sHeapStart, pointer);
+    FreeInternal(sHeapStart, pointer, __builtin_return_address(0));
 }
 
 const struct MemBlock *HeapHead(void)

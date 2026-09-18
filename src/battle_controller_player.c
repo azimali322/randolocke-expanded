@@ -2426,46 +2426,138 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
     return foeEffectiveness; // fallthrough for any other circumstance
 }
 
+// True when the move's type matches one of the user's own, i.e. it gets the same-type
+// attack bonus. Uses the battler's live types, so a Tera or a type-changing ability is
+// accounted for the same way the damage calculation would.
+static bool32 RandolockeMoveIsStab(enum Move move, enum BattlerId battler)
+{
+    enum Type types[3];
+    enum Type moveType;
+    u32 i;
+
+    if (move == MOVE_NONE || IsBattleMoveStatus(move))
+        return FALSE;
+
+    moveType = GetMoveType(move);
+    GetBattlerTypes(battler, FALSE, types);
+    for (i = 0; i < ARRAY_COUNT(types); i++)
+    {
+        if (types[i] == moveType && moveType != TYPE_MYSTERY)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Overwriting entry 13 -- the entry B_WIN_PP and the move-name windows both draw their
+// text with -- coloured the move names, the type line and the action menu along with the
+// arrow, and the change outlived move select. Colour only the icons instead: a {COLOR}
+// code picks a palette *index*, so claim two entries the battle text palette never uses
+// (9 and 10 of graphics/battle_interface/text.pal are both (0,0,0), and no window colour
+// or message string references either), write our colours there, and emit the code in
+// front of the icon alone. The default grey matches entry 13 so the neutral circle still
+// looks stock.
+#define RZ_PLTT_EFFECTIVENESS   9
+#define RZ_PLTT_STAB           10
+
+static void RandolockeLoadIndicatorColors(u32 foeEffectiveness)
+{
+    u16 color;
+
+    switch (foeEffectiveness)
+    {
+    case EFFECTIVENESS_EXTREMELY_EFFECTIVE:
+    case EFFECTIVENESS_SUPER_EFFECTIVE:
+        color = RGB(6, 30, 6);      // green
+        break;
+    case EFFECTIVENESS_NOT_VERY_EFFECTIVE:
+        color = RGB(31, 20, 0);     // orange
+        break;
+    case EFFECTIVENESS_MOSTLY_INEFFECTIVE:
+    case EFFECTIVENESS_NO_EFFECT:
+        color = RGB(31, 6, 6);      // red
+        break;
+    default:
+        color = RGB(9, 9, 9);       // the window's own grey
+        break;
+    }
+
+    gPlttBufferUnfaded[BG_PLTT_ID(5) + RZ_PLTT_EFFECTIVENESS] = color;
+    gPlttBufferFaded[BG_PLTT_ID(5) + RZ_PLTT_EFFECTIVENESS] = color;
+    gPlttBufferUnfaded[BG_PLTT_ID(5) + RZ_PLTT_STAB] = RGB(31, 6, 6);
+    gPlttBufferFaded[BG_PLTT_ID(5) + RZ_PLTT_STAB] = RGB(31, 6, 6);
+}
+
+// Writes a {COLOR n} control code and returns the new end of the string. Built by hand
+// because the index is one of ours, not one of the named TEXT_COLOR_* entries.
+static u8 *RandolockeWriteColorCode(u8 *dest, u32 colorIndex)
+{
+    *dest++ = EXT_CTRL_CODE_BEGIN;
+    *dest++ = EXT_CTRL_CODE_COLOR;
+    *dest++ = colorIndex;
+    *dest = EOS;
+    return dest;
+}
+
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
+    // randolocke: arrows rather than the stock circles and triangles, so the direction
+    // reads at a glance -- up is good, down is bad, X is pointless. Mirrors what
+    // pokeemerald_rando_enh shows. A doubled arrow marks the 4x and 0.25x extremes.
     static const u8 noIcon[] =  _("");
     static const u8 effectiveIcon[] =  _("{CIRCLE_HOLLOW}");
-    static const u8 extremeleyEffectiveIcon[] =  _("{STAR}");
-    static const u8 superEffectiveIcon[] =  _("{CIRCLE_DOT}");
-    static const u8 notVeryEffectiveIcon[] =  _("{TRIANGLE}");
-    static const u8 mostlyIneffectiveIcon[] =  _("{TRIANGLE_UPSIDE_DOWN}");
+    static const u8 extremeleyEffectiveIcon[] =  _("{UP_ARROW_2}{UP_ARROW_2}");
+    static const u8 superEffectiveIcon[] =  _("{UP_ARROW_2}");
+    static const u8 notVeryEffectiveIcon[] =  _("{DOWN_ARROW_2}");
+    static const u8 mostlyIneffectiveIcon[] =  _("{DOWN_ARROW_2}{DOWN_ARROW_2}");
     static const u8 immuneIcon[] =  _("{BIG_MULT_X}");
+    static const u8 stabIcon[] =  _("{CIRCLE_DOT}");
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     u8 *txtPtr;
 
-    txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfacePP);
+    // The "PP " label is dropped here on purpose. With B_SHOW_EFFECTIVENESS on, the PP
+    // *number* is already replaced by the icon, so the label describes nothing -- and the
+    // window is only 32px, which two arrows plus a STAB dot will not share with it.
+    txtPtr = gDisplayedStringBattle;
+    txtPtr[0] = EOS;
 
     if (!IsBattleMoveStatus(moveInfo->moves[gMoveSelectionCursor[battler]]))
     {
+        RandolockeLoadIndicatorColors(foeEffectiveness);
+        txtPtr = RandolockeWriteColorCode(txtPtr, RZ_PLTT_EFFECTIVENESS);
+
         switch (foeEffectiveness)
         {
         case EFFECTIVENESS_EXTREMELY_EFFECTIVE:
-            StringCopy(txtPtr, extremeleyEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, extremeleyEffectiveIcon);
             break;
         case EFFECTIVENESS_SUPER_EFFECTIVE:
-            StringCopy(txtPtr, superEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, superEffectiveIcon);
             break;
         case EFFECTIVENESS_NOT_VERY_EFFECTIVE:
-            StringCopy(txtPtr, notVeryEffectiveIcon);
+            txtPtr = StringCopy(txtPtr, notVeryEffectiveIcon);
             break;
         case EFFECTIVENESS_MOSTLY_INEFFECTIVE:
-            StringCopy(txtPtr, mostlyIneffectiveIcon);
+            txtPtr = StringCopy(txtPtr, mostlyIneffectiveIcon);
             break;
         case EFFECTIVENESS_NO_EFFECT:
-            StringCopy(txtPtr, immuneIcon);
+            txtPtr = StringCopy(txtPtr, immuneIcon);
             break;
         case EFFECTIVENESS_NORMAL:
-            StringCopy(txtPtr, effectiveIcon);
+            txtPtr = StringCopy(txtPtr, effectiveIcon);
             break;
         default:
         case EFFECTIVENESS_CANNOT_VIEW:
-            StringCopy(txtPtr, noIcon);
+            txtPtr = StringCopy(txtPtr, noIcon);
             break;
+        }
+
+        // randolocke: and a filled red dot when the move gets the same-type bonus. With
+        // randomized movesets you cannot tell a Pokemon's own types from its move list,
+        // so which of four attacks is actually boosted is genuinely not obvious.
+        if (RandolockeMoveIsStab(moveInfo->moves[gMoveSelectionCursor[battler]], battler))
+        {
+            txtPtr = RandolockeWriteColorCode(txtPtr, RZ_PLTT_STAB);
+            txtPtr = StringCopy(txtPtr, stabIcon);
         }
     }
 

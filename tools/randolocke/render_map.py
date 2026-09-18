@@ -77,5 +77,56 @@ def render(layout_id, out, marks=()):
             d.rectangle([x0*32, y0*32, (x1+1)*32-1, (y1+1)*32-1], outline=(255,0,0), width=3)
     img.save(out); print('wrote', out, img.size)
 
+# ------------------------------------------------------------------- checks ---
+# Water tiles are collision 0 -- that is what makes them surfable -- so collision alone
+# does NOT tell you whether an NPC can stand somewhere. Read the metatile's behaviour.
+# Getting this wrong is how the Route 103 fisherman ended up standing in the sea.
+
+def _behaviors():
+    import re
+    src = (ROOT / 'include/constants/metatile_behaviors.h').read_text()
+    body = re.search(r'\{(.*?)\};', src, re.S).group(1)
+    out, val = {}, 0
+    for line in body.split('\n'):
+        line = line.split('//')[0].strip().rstrip(',')
+        if not line:
+            continue
+        if '=' in line:
+            name, v = line.split('=', 1)
+            name, val = name.strip(), int(v.strip(), 0)
+        else:
+            name = line
+        out[val] = name
+        val += 1
+    return out
+
+
+def check(layout_id, coords):
+    """Print metatile, collision, elevation and behaviour for each 'x,y'."""
+    import struct as _s
+    names = _behaviors()
+    L = {x['id']: x for x in json.loads((ROOT/'data/layouts/layouts.json').read_text())['layouts']}
+    l = L[layout_id]
+    w, h = l['width'], l['height']
+    blocks = (ROOT/l['blockdata_filepath']).read_bytes()
+    attrs = {}
+    for which, key in (('primary', 'primary_tileset'), ('secondary', 'secondary_tileset')):
+        attrs[which] = (tileset_dir(l[key])/'metatile_attributes.bin').read_bytes()
+    for c in coords:
+        x, y = (int(v) for v in c.split(','))
+        v = _s.unpack_from('<H', blocks, (y*w + x)*2)[0]
+        mid, coll, elev = v & 0x3FF, (v >> 10) & 3, (v >> 12) & 0xF
+        buf, i = (attrs['primary'], mid) if mid < NUM_METATILES_IN_PRIMARY else \
+                 (attrs['secondary'], mid - NUM_METATILES_IN_PRIMARY)
+        bh = _s.unpack_from('<H', buf, i*2)[0] & 0xFF
+        name = names.get(bh, '?')
+        ok = 'STANDABLE' if (coll == 0 and name == 'MB_NORMAL') else 'NOT standable'
+        print(f'  ({x:3d},{y:3d})  metatile 0x{mid:03X}  coll {coll}  elev {elev:2d}  '
+              f'{name:22s} {ok}')
+
+
 if __name__ == '__main__':
-    render(sys.argv[1], sys.argv[2])
+    if sys.argv[1] == 'check':
+        check(sys.argv[2], sys.argv[3:])
+    else:
+        render(sys.argv[1], sys.argv[2])

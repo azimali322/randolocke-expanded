@@ -1,5 +1,6 @@
 #include "global.h"
 #include "item_use.h"
+#include "randolocke_nuzlocke.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_stat_change.h"
@@ -84,7 +85,9 @@ static bool32 IsValidLocationForVsSeeker(void);
 
 static const u8 sText_RepellantOn[] = _("The Repellant is now active!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_RepellantOff[] = _("The Repellant was switched off.{PAUSE_UNTIL_PRESS}");
-static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored to full health!{PAUSE_UNTIL_PRESS}");
+// Two lines: one run of "Your Pokemon were restored to full health!" overflows the
+// field message box, which has no room for a 41-character line.
+static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored\nto full health!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_CantDismountBike[] = _("You can't dismount your BIKE here.{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderNearby[] = _("Huh?\nThe ITEMFINDER's responding!\pThere's an item buried around here!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_ItemFinderOnTop[] = _("Oh!\nThe ITEMFINDER's shaking wildly!{PAUSE_UNTIL_PRESS}");
@@ -1200,6 +1203,16 @@ static u32 GetBallThrowableState(void)
     else if (FlagGet(WE_FLAG_NO_CATCHING) || !IsAllowedToUseBag())
         return BALL_THROW_UNABLE_DISABLED_FLAG;
 
+    switch (RandolockeCatchRuleForBattle())
+    {
+    case RANDOLOCKE_CATCH_AREA_USED:
+        return BALL_THROW_UNABLE_NUZLOCKE_AREA;
+    case RANDOLOCKE_CATCH_DUPE:
+        return BALL_THROW_UNABLE_NUZLOCKE_DUPE;
+    default:
+        break;
+    }
+
     return BALL_THROW_ABLE;
 }
 
@@ -1211,6 +1224,8 @@ bool32 CanThrowBall(void)
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
 static const u8 sText_CantThrowPokeBall_SemiInvulnerable[] = _("Cannot throw a ball!\nThere's no Pokémon in sight!\p");
 static const u8 sText_CantThrowPokeBall_Disabled[] = _("POKé BALLS cannot be used\nright now!\p");
+static const u8 sText_CantThrowPokeBall_NuzlockeArea[] = _("You already caught a Pokémon\nin this area!\p");
+static const u8 sText_CantThrowPokeBall_NuzlockeDupe[] = _("You've already caught this\nPokémon's family!\p");
 
 static void ItemUseInBattle_ShowPartyMenu(u8 taskId)
 {
@@ -1323,6 +1338,14 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
             break;
         case BALL_THROW_UNABLE_DISABLED_FLAG:
             failStr = sText_CantThrowPokeBall_Disabled;
+            cannotUse = TRUE;
+            break;
+        case BALL_THROW_UNABLE_NUZLOCKE_AREA:
+            failStr = sText_CantThrowPokeBall_NuzlockeArea;
+            cannotUse = TRUE;
+            break;
+        case BALL_THROW_UNABLE_NUZLOCKE_DUPE:
+            failStr = sText_CantThrowPokeBall_NuzlockeDupe;
             cannotUse = TRUE;
             break;
         }

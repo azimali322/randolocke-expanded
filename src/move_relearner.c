@@ -934,7 +934,7 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves)
                 if (learnset[i].move == moves[j])
                     alreadyInList = TRUE;
             }
-            if (!alreadyInList)
+            if (!alreadyInList && numMoves < MAX_RELEARNER_MOVES)
                 moves[numMoves++] = learnset[i].move;
         }
 
@@ -956,7 +956,7 @@ static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves)
     if (eggMoves[0] == MOVE_UNAVAILABLE)
         return 0;
 
-    for (u32 i = 0; eggMoves[i] != MOVE_UNAVAILABLE; i++)
+    for (u32 i = 0; eggMoves[i] != MOVE_UNAVAILABLE && numMoves < MAX_RELEARNER_MOVES; i++)
     {
         if (!BoxMonKnowsMove(mon, eggMoves[i]))
             moves[numMoves++] = eggMoves[i];
@@ -970,7 +970,7 @@ static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves)
     enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
     u32 numMoves = 0;
 
-    for (u32 i = 0; i < NUM_ALL_MACHINES; i++)
+    for (u32 i = 0; i < NUM_ALL_MACHINES && numMoves < MAX_RELEARNER_MOVES; i++)
     {
         enum Item item = GetTMHMItemId(i + 1);
         enum Move move = GetTMHMMoveId(i + 1);
@@ -996,7 +996,7 @@ static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves)
     enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
     u32 numMoves = 0;
 
-    for (u32 i = 0; gTutorMoves[i] != MOVE_UNAVAILABLE; i++)
+    for (u32 i = 0; gTutorMoves[i] != MOVE_UNAVAILABLE && numMoves < MAX_RELEARNER_MOVES; i++)
     {
         enum Move move = gTutorMoves[i];
 

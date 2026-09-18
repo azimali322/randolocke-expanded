@@ -110,6 +110,7 @@ enum {
     MENU_CATALOG_MOWER,
     MENU_CHANGE_FORM,
     MENU_CHANGE_ABILITY,
+    MENU_RANDOLOCKE_CAP_CANDY,
     MENU_FIELD_MOVES
 };
 
@@ -155,6 +156,10 @@ enum {
 #define PARTY_PAL_NO_MON       (1 << 6)
 #define PARTY_PAL_UNUSED       (1 << 7)
 
+// The selection window is laid out as 19 - numActions*2 rows from the top of the screen,
+// so ten entries would place it off the top. Nine is the ceiling.
+#define PARTY_MENU_MAX_ACTIONS 9
+
 #define MENU_DIR_DOWN     1
 #define MENU_DIR_UP      -1
 #define MENU_DIR_RIGHT    2
@@ -185,7 +190,9 @@ struct PartyMenuInternal
     u32 spriteIdCancelPokeball:7;
     u32 messageId:14;
     u8 windowId[3];
-    u8 actions[8];
+    // Has to hold PARTY_MENU_MAX_ACTIONS: the stock eight could already be overrun by a
+    // Pokemon that knew four field moves once the Cap Candy entry joined them.
+    u8 actions[PARTY_MENU_MAX_ACTIONS];
     u8 numActions;
     // In vanilla Emerald, only the first 0xB0 hwords (0x160 bytes) are actually used.
     // However, a full 0x100 hwords (0x200 bytes) are allocated.
@@ -222,6 +229,9 @@ static EWRAM_DATA enum Item sPartyMenuItemId = 0;
 EWRAM_DATA u8 gBattlePartyCurrentOrder[PARTY_SIZE / 2] = {0}; // bits 0-3 are the current pos of Slot 1, 4-7 are Slot 2, and so on
 static EWRAM_DATA u8 sInitialLevel = 0;
 static EWRAM_DATA u8 sFinalLevel = 0;
+// randolocke: where to go once an evolution started by a candy used from the party menu
+// finishes. See CB2_RandolockeReturnToPartyMenuAfterCandy.
+static EWRAM_DATA MainCallback sRandolockeCandyExitCallback = NULL;
 
 // IWRAM common
 COMMON_DATA void (*gItemUseCB)(u8, TaskFunc) = NULL;
@@ -455,6 +465,7 @@ static void ShiftMoveSlot(struct BoxPokemon *, u8, u8);
 static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, bool8);
 static void CursorCb_Summary(u8);
+static void CursorCb_RandolockeCapCandy(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
 static void CursorCb_Item(u8);
@@ -2355,7 +2366,7 @@ static enum CanMoveBeLearned CanTeachMove(struct Pokemon *mon, enum Move move)
 {
     if (GetMonData(mon, MON_DATA_IS_EGG))
         return CANNOT_LEARN_MOVE_IS_EGG;
-    else if (!CanLearnTeachableMove(GetMonData(mon, MON_DATA_SPECIES_OR_EGG), move))
+    else if (!CanBeTaughtMove(GetMonData(mon, MON_DATA_SPECIES_OR_EGG), move))
         return CANNOT_LEARN_MOVE;
     else if (MonKnowsMove(mon, move) == TRUE)
         return ALREADY_KNOWS_MOVE;
@@ -2947,12 +2958,43 @@ static void SetPartyMonSelectionActions(struct Pokemon *mons, u8 slotId, u8 acti
     }
 }
 
+// AppendToList is shared with the start menu and cannot bounds-check for us, so
+// everything that builds the field selection list goes through here instead. Three slots
+// are held back for the Switch / Item / Cancel entries appended after the field moves.
+static void AppendFieldSelectionAction(u8 action, u32 reserve)
+{
+    if (sPartyMenuInternal->numActions + reserve >= PARTY_MENU_MAX_ACTIONS)
+        return;
+    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, action);
+}
+
+#if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+// randolocke: offers a badge-gated field move the Pokemon does not know. Every other HM
+// is reached by walking into the thing it works on, which ScrCmd_checkfieldmove handles;
+// Fly and Flash have no such trigger, so without this they would still need teaching.
+static void AppendUnknownFieldMove(struct Pokemon *mons, u8 slotId, enum FieldMove fieldMove)
+{
+    if (!IsFieldMoveUnlocked(fieldMove) || !FieldMove_IsVisible(fieldMove))
+        return;
+    if (MonKnowsMove(&mons[slotId], FieldMove_GetMoveId(fieldMove)))
+        return;
+    AppendFieldSelectionAction(fieldMove + MENU_FIELD_MOVES, 3);
+}
+#endif
+
 static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 {
     u8 i, j;
 
     sPartyMenuInternal->numActions = 0;
     AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUMMARY);
+
+    // randolocke: reach the Cap Candy from the Pokemon rather than from the bag. Only
+    // worth offering when it is actually held and there is a cap to climb to.
+    if (B_EXP_CAP_TYPE != EXP_CAP_NONE
+     && CheckBagHasItem(ITEM_CAP_CANDY, 1)
+     && GetMonData(&mons[slotId], MON_DATA_LEVEL) < GetCurrentLevelCap())
+        AppendFieldSelectionAction(MENU_RANDOLOCKE_CAP_CANDY, 3);
 
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -2964,11 +3006,18 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 
             if (GetMonData(&mons[slotId], i + MON_DATA_MOVE1) == FieldMove_GetMoveId(j))
             {
-                AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + MENU_FIELD_MOVES);
+                AppendFieldSelectionAction(j + MENU_FIELD_MOVES, 3);
                 break;
             }
         }
     }
+
+    #if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+    // Flash first: Fly can also be reached from the region map, so if only one of the two
+    // fits, Flash is the one with no other way in.
+    AppendUnknownFieldMove(mons, slotId, FIELD_MOVE_FLASH);
+    AppendUnknownFieldMove(mons, slotId, FIELD_MOVE_FLY);
+    #endif
 
     if (!InBattlePike())
     {
@@ -3121,6 +3170,19 @@ static void Task_HandleSelectionMenuInput(u8 taskId)
             break;
         }
     }
+}
+
+// randolocke: uses the Cap Candy on the chosen Pokemon straight from the party menu, so
+// it does not have to be dug out of the Key Items pocket every time.
+static void CursorCb_RandolockeCapCandy(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+
+    gSpecialVar_ItemId = ITEM_CAP_CANDY;
+    gPartyMenu.learnMoveState = 0;
+    ItemUseCB_CapCandy(taskId, Task_ReturnToChooseMonAfterText);
 }
 
 static void CursorCb_Summary(u8 taskId)
@@ -5628,13 +5690,19 @@ static void Task_LearnNextMoveOrClosePartyMenu(u8 taskId)
 {
     if (IsFanfareTaskInactive() && ((JOY_NEW(A_BUTTON)) || (JOY_NEW(B_BUTTON))))
     {
-        if (gPartyMenu.data1 == 1)
+        // These two tested gPartyMenu.data1 before, which by this point holds the move
+        // that was just learned -- so the level-up chain took the "close the menu" branch
+        // for every move but MOVE_POUND. A Pokemon that learned a move on the way up
+        // therefore never reached PartyMenuTryEvolution and never evolved, and the party
+        // menu shut itself on the player. learnMoveState is the field this was meant to
+        // read: 1 while walking a level range, 2 for the relearner.
+        if (gPartyMenu.learnMoveState == 1)
         {
             Task_TryLearningNextMove(taskId);
         }
         else
         {
-            if (gPartyMenu.data1 == 2) // never occurs
+            if (gPartyMenu.learnMoveState == 2) // never occurs
                 gSpecialVar_Result = TRUE;
             Task_ClosePartyMenu(taskId);
         }
@@ -5818,51 +5886,46 @@ static void UNUSED DisplayExpPoints(u8 taskId, TaskFunc task, u8 holdEffectParam
 // Returns the level a Cap Candy should raise this Pokémon to: the soonest of the
 // current level cap, the next level it learns a move, and the next level it
 // evolves. Falls back to +1 (which also covers item-based evolutions).
+// The Cap Candy climbs toward the level cap, but stops at anything worth seeing on the
+// way: the next level-up move, or the next level-based evolution. Use it again to carry
+// on. Going straight to the cap skipped past both and, worse, reported a level the
+// Pokemon did not end up at once the move-learning flow had run.
 static u32 GetCapCandyTargetLevel(struct Pokemon *mon)
 {
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
     u32 level = GetMonData(mon, MON_DATA_LEVEL);
-    u32 target = level + 1;
-    u32 best = MAX_LEVEL + 1;
+    u32 cap = (B_EXP_CAP_TYPE != EXP_CAP_NONE) ? GetCurrentLevelCap() : MAX_LEVEL;
+    u32 target = cap;
     u32 i;
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
     const struct Evolution *evolutions = GetSpeciesEvolutions(species);
 
-    // Next level-up move.
+    if (target > MAX_LEVEL)
+        target = MAX_LEVEL;
+
+    // The soonest level-up move above where we are now.
     if (learnset != NULL)
     {
         for (i = 0; learnset[i].move != LEVEL_UP_MOVE_END; i++)
         {
-            if (learnset[i].level > level && learnset[i].level < best)
-                best = learnset[i].level;
+            if (learnset[i].level > level && learnset[i].level < target)
+                target = learnset[i].level;
         }
     }
 
-    // Next level-based evolution.
+    // The soonest level-based evolution.
     if (evolutions != NULL)
     {
         for (i = 0; evolutions[i].method != EVOLUTIONS_END; i++)
         {
             if (evolutions[i].method == EVO_LEVEL
-             && evolutions[i].param > level && evolutions[i].param < best)
-                best = evolutions[i].param;
+             && evolutions[i].param > level && evolutions[i].param < target)
+                target = evolutions[i].param;
         }
     }
 
-    if (best <= MAX_LEVEL && best > target)
-        target = best;
-
-    // Never exceed the level cap or the maximum level.
-    if (B_EXP_CAP_TYPE != EXP_CAP_NONE)
-    {
-        u32 cap = GetCurrentLevelCap();
-
-        if (target > cap)
-            target = cap;
-    }
-    if (target > MAX_LEVEL)
-        target = MAX_LEVEL;
-
+    if (target < level)
+        target = level;
     return target;
 }
 
@@ -6149,6 +6212,29 @@ static void CB2_ReturnToPartyMenuUsingRareCandy(void)
     SetMainCallback2(CB2_ShowPartyMenuForItemUse);
 }
 
+// randolocke: true when the candy that caused this level-up came from the party menu's
+// own option list rather than from the bag, which is a route only the Cap Candy and the
+// Endless Candy have.
+static bool32 RandolockeCandyUsedFromPartyMenu(void)
+{
+    return gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD
+        && gPartyMenu.action != PARTY_ACTION_USE_ITEM
+        && (GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_CapCandy
+         || GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_EndlessCandy);
+}
+
+// ...and where such a candy comes back to after an evolution. The Rare Candy's
+// CB2_ReturnToPartyMenuUsingRareCandy cannot be reused: it reopens the menu in "use an
+// item on which Pokemon?" mode with CB2_ReturnToBagMenu behind it, and since this route
+// never came from the bag, backing out landed in whatever context the bag was last opened
+// from -- a battle, in the report -- and hung there with no way out. It also forced
+// gItemUseCB to the Rare Candy, so the next Pokemon picked would have been fed one.
+static void CB2_RandolockeReturnToPartyMenuAfterCandy(void)
+{
+    InitPartyMenu(PARTY_MENU_TYPE_FIELD, PARTY_LAYOUT_SINGLE, PARTY_ACTION_CHOOSE_MON, TRUE,
+                  PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, sRandolockeCandyExitCallback);
+}
+
 static void PartyMenuTryEvolution(u8 taskId)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
@@ -6165,10 +6251,25 @@ static void PartyMenuTryEvolution(u8 taskId)
     {
         GetEvolutionTargetSpecies(mon, EVO_MODE_NORMAL, ITEM_NONE, NULL, &canStopEvo, DO_EVO);
         FreePartyPointers();
-        if (GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_RareCandy && gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && CheckBagHasItem(gSpecialVar_ItemId, 1))
+        // randolocke: the Cap Candy and the Endless Candy are never consumed and are used
+        // repeatedly on the same Pokemon, so they want the Rare Candy's behaviour of coming
+        // back to the party menu rather than closing it after an evolution.
+        if (RandolockeCandyUsedFromPartyMenu())
+        {
+            sRandolockeCandyExitCallback = gPartyMenu.exitCallback;
+            gCB2_AfterEvolution = CB2_RandolockeReturnToPartyMenuAfterCandy;
+        }
+        else if ((GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_RareCandy
+               || GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_CapCandy
+               || GetItemFieldFunc(gSpecialVar_ItemId) == ItemUseOutOfBattle_EndlessCandy)
+              && gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && CheckBagHasItem(gSpecialVar_ItemId, 1))
+        {
             gCB2_AfterEvolution = CB2_ReturnToPartyMenuUsingRareCandy;
+        }
         else
+        {
             gCB2_AfterEvolution = gPartyMenu.exitCallback;
+        }
         BeginEvolutionScene(mon, targetSpecies, canStopEvo, gPartyMenu.slotId);
         DestroyTask(taskId);
     }

@@ -1,6 +1,7 @@
 #ifndef GUARD_ITEM_H
 #define GUARD_ITEM_H
 
+#include "config/randolocke.h"
 #include "constants/item.h"
 #include "constants/item_effects.h"
 #include "constants/items.h"
@@ -291,6 +292,14 @@ const u8 *GetItemEffect(enum Item itemId);
 enum HoldEffect GetItemHoldEffect(enum Item itemId);
 u32 GetItemHoldEffectParam(enum Item itemId);
 const u8 *GetItemDescription(enum Item itemId);
+#if RANDOLOCKE_TM_MOVE_DESCRIPTIONS == TRUE
+// A TM/HM describes the move it teaches, re-wrapped into `buffer` to fit `maxWidth`
+// pixels over ITEM_DESCRIPTION_LINES lines. Everything else returns its own description
+// and leaves the buffer alone, so the buffer may be a scratch local.
+#define ITEM_DESCRIPTION_LINES  3
+#define ITEM_DESCRIPTION_BUFFER 96
+const u8 *GetItemDescriptionForWindow(enum Item itemId, u8 *buffer, u32 maxWidth);
+#endif
 u8 GetItemImportance(enum Item itemId);
 u8 GetItemConsumability(enum Item itemId);
 enum Pocket GetItemPocket(enum Item itemId);

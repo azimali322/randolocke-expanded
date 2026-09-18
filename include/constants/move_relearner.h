@@ -4,7 +4,14 @@
 // Max number of moves shown by the move relearner.
 // Increased from 25 to 60 so Mew can display all TMs/HMs.
 // If you plan on adding more TMs, increase this number too.
-#define MAX_RELEARNER_MOVES 60
+//
+// randolocke: 64. With P_ENABLE_ALL_LEVEL_UP_MOVES and P_PRE_EVO_MOVES the level-up list
+// is every move of every stage of the family, and the randomizer gives each stage its own
+// 21-move learnset (RZ_LEARNSET_SLOTS), so a three-stage family can list 3 x 21 = 63
+// moves that barely overlap. Measured, not guessed: test/randolocke_relearner.c finds
+// 8-12 families over 60 for a given seed and a longest list of 63. At 60 the extra moves
+// ran off the end of movesToLearn and menuItems and over the relearner's own bookkeeping.
+#define MAX_RELEARNER_MOVES 64
 
 // Move Relearner menu change constants
 enum MoveRelearnerStates

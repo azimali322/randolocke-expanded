@@ -118,6 +118,56 @@
 #define RZ_TM_W_FILLER             2500
 #define RZ_TM_W_NICHE               800
 
+// --- Trainer EVs ------------------------------------------------------------
+
+// Not one of the 856 trainers in trainers.party specifies EVs, so every trainer Pokemon
+// in vanilla Emerald -- gym leaders included -- runs on zero. The player has no EV cap
+// and can train freely, which turns any boss into a pushover the moment you bother.
+//
+// If TRUE, trainers are given an EV spread that grows with your badge count, applied to
+// HP, Speed, and whichever of the attacking and defending pairs the Pokemon is actually
+// better at. That last part matters here: the species is randomized, so a fixed spread
+// would land on the wrong stats half the time. Ported from pokeemerald_rando_enh.
+#define RZ_TRAINER_EV_SCALING       TRUE
+
+// EVs per stat, by badges earned. 252 is the per-stat maximum.
+#define RZ_TRAINER_EVS_BY_BADGE   { 12, 24, 36, 48, 60, 72, 80, 100, 128 }
+
+// --- Trainer AI ---------------------------------------------------------------
+
+// Measured from trainers.party: 640 trainers run Check Bad Move alone and 173 run Basic
+// Trainer -- and every boss is in the second group. Archie, Matt, Shelly and the gym
+// leaders all fight with the weakest AI in the game, which is the single largest
+// difficulty gap left once the levels and EVs are scaled.
+//
+// If TRUE, AI flags are raised at battle start by trainer importance rather than edited
+// into the data file, so the tiers stay one readable place and trainers.party stays a
+// diff of levels and parties.
+//
+//   every trainer   Check Bad Move, Try To Faint, Check Viability
+//   notable         + HP Aware, Smart Mon Choices, Try To 2HKO
+//   boss            + Smart Switching, Ace Pokemon, Omniscient
+//   Champion        + move and switch prediction
+//
+// Omniscience means the AI knows your moves, abilities and held items without having seen
+// them: it will not Surf into a Water Absorb it has never met, and it will not set up on
+// something that outspeeds and KOs it. All 55 boss trainers get it -- the gym leaders,
+// the Elite Four, Archie, Maxie and their admins. Weigh Ability Prediction is dropped
+// from the boss tier because omniscience supersedes it.
+//
+// "Notable" is by trainer class: rivals, the Aqua and Magma admins, and the Elite Four.
+// Bosses are the `Boss: Yes` tag from Phase 7c.
+#define RZ_TRAINER_AI_TIERS         TRUE
+
+#define RZ_AI_BASE      (AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_TRY_TO_FAINT | AI_FLAG_CHECK_VIABILITY)
+#define RZ_AI_NOTABLE   (RZ_AI_BASE | AI_FLAG_HP_AWARE | AI_FLAG_SMART_MON_CHOICES | AI_FLAG_TRY_TO_2HKO)
+#define RZ_AI_BOSS      (RZ_AI_NOTABLE | AI_FLAG_SMART_SWITCHING | AI_FLAG_ACE_POKEMON \
+                         | AI_FLAG_OMNISCIENT)
+// The Champion also reads ahead: which move you are about to use, and when you are about
+// to switch and to what. Both flags are documented as wanting omniscience, which it has.
+#define RZ_AI_CHAMPION  (RZ_AI_BOSS | AI_FLAG_PREDICT_MOVE | AI_FLAG_PREDICT_SWITCH \
+                         | AI_FLAG_PREDICT_INCOMING_MON)
+
 // --- Berry trees ------------------------------------------------------------
 
 // Berries are randomized where they are found, at berry trees, rather than in the field
@@ -145,6 +195,11 @@
 // picked uniformly and the spread comes from this assignment instead.
 #define RZ_TM_MOVES_TIER_MODE       RZ_TIER_MODE_MOVES
 
+// Reassigns what each of Emerald's ten move tutors teaches. Drawn through the same bands
+// as TMs, with no duplicates and no overlap with the TM list -- a tutor that teaches a
+// move you can already buy on a reusable TM is a wasted tutor.
+#define RZ_TUTOR_MOVES_TIER_MODE    RZ_TM_MOVES_TIER_MODE
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
@@ -162,6 +217,17 @@
 // If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
 // physical attacker gets physical STAB, a special attacker special STAB. Without this a
 // pure physical attacker can roll seven special STAB moves and be unable to use any of them.
+// If TRUE, each of the three move groups is sorted by Base Power so stronger moves are
+// learned later -- Randolocke's default. FALSE fills the 21 slots in whatever order they
+// roll, which is the older, wilder behaviour.
+#define RZ_LEARNSET_SORT_BY_POWER   TRUE
+
+// A trainer Pokemon whose species was substituted gets a fresh moveset from its level-up
+// learnset instead of the moves written for the species it replaced. Without this, a
+// randomized gym leader's whole team carries the original team's moves -- no same-type
+// attacks, and every Pokemon on the team fighting the same way.
+#define RZ_TRAINER_REGENERATE_MOVES TRUE
+
 #define RZ_STAB_MATCH_CATEGORY      TRUE
 
 // How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a
@@ -226,6 +292,10 @@
 
 #ifndef FORCE_RANDOMIZE_TM_MOVES
 #define RANDOMIZER_FLAG_TM_MOVES                      FLAG_UNUSED_0x02A
+#endif
+
+#ifndef FORCE_RANDOMIZE_TUTOR_MOVES
+#define RANDOMIZER_FLAG_TUTOR_MOVES                   FLAG_UNUSED_0x02E
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

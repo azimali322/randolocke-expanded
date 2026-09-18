@@ -1,4 +1,5 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "malloc.h"
 #include "bg.h"
 #include "data.h"
@@ -92,6 +93,7 @@ enum {
     MSG_BYE_BYE,
     MSG_MARK_POKE,
     MSG_LAST_POKE,
+    MSG_RANDOLOCKE_DEAD,
     MSG_PARTY_FULL,
     MSG_HOLDING_POKE,
     MSG_WHICH_ONE_WILL_TAKE,
@@ -487,6 +489,8 @@ struct PokemonStorageSystemData
     u8 displayMonMarkings;
     u8 displayMonLevel;
     bool8 displayMonIsEgg;
+    // randolocke: the Pokemon on display fainted and is locked in its box.
+    bool8 displayMonIsDead;
     u8 displayMonName[POKEMON_NAME_LENGTH + 1];
     u8 displayMonNameText[36];
     u8 displayMonSpeciesName[36];
@@ -659,6 +663,7 @@ static void InitSummaryScreenData(void);
 static void SetSelectionAfterSummaryScreen(void);
 static void SetMonMarkings(u8);
 static bool8 IsRemovingLastPartyMon(void);
+static bool8 IsCursorMonPermanentlyDead(void);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
@@ -1062,6 +1067,7 @@ static const struct StorageMessage sMessages[] =
     [MSG_BYE_BYE]              = {COMPOUND_STRING("Bye-bye, {DYNAMIC 0}!"),      MSG_VAR_RELEASE_MON_3},
     [MSG_MARK_POKE]            = {COMPOUND_STRING("Mark your POKéMON."),         MSG_VAR_NONE},
     [MSG_LAST_POKE]            = {COMPOUND_STRING("That's your last POKéMON!"),  MSG_VAR_NONE},
+    [MSG_RANDOLOCKE_DEAD]      = {COMPOUND_STRING("This POKéMON is gone for good."), MSG_VAR_NONE},
     [MSG_PARTY_FULL]           = {gText_YourPartysFull,                          MSG_VAR_NONE},
     [MSG_HOLDING_POKE]         = {COMPOUND_STRING("You're holding a POKéMON!"),  MSG_VAR_NONE},
     [MSG_WHICH_ONE_WILL_TAKE]  = {COMPOUND_STRING("Which one will you take?"),   MSG_VAR_NONE},
@@ -2234,6 +2240,7 @@ enum {
     MSTATE_SCROLL_BOX,
     MSTATE_WAIT_MSG,
     MSTATE_ERROR_LAST_PARTY_MON,
+    MSTATE_ERROR_RANDOLOCKE_DEAD,
     MSTATE_ERROR_HAS_MAIL,
     MSTATE_WAIT_ERROR_MSG,
     MSTATE_MULTIMOVE_RUN,
@@ -2343,7 +2350,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_MOVE_MON:
-            if (IsRemovingLastPartyMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (IsRemovingLastPartyMon())
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
@@ -2354,7 +2365,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_SHIFT_MON:
-            if (!CanShiftMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (!CanShiftMon())
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
@@ -2365,6 +2380,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_WITHDRAW:
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+                break;
+            }
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_WithdrawMon);
             break;
@@ -2463,6 +2483,11 @@ static void Task_PokeStorageMain(u8 taskId)
     case MSTATE_ERROR_LAST_PARTY_MON:
         PlaySE(SE_FAILURE);
         PrintMessage(MSG_LAST_POKE);
+        sStorage->state = MSTATE_WAIT_ERROR_MSG;
+        break;
+    case MSTATE_ERROR_RANDOLOCKE_DEAD:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_RANDOLOCKE_DEAD);
         sStorage->state = MSTATE_WAIT_ERROR_MSG;
         break;
     case MSTATE_ERROR_HAS_MAIL:
@@ -2585,7 +2610,11 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_PokeStorageMain);
             break;
         case MENU_MOVE:
-            if (IsRemovingLastPartyMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (IsRemovingLastPartyMon())
             {
                 sStorage->state = 3;
             }
@@ -2602,7 +2631,11 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_PlaceMon);
             break;
         case MENU_SHIFT:
-            if (!CanShiftMon())
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+            }
+            else if (!CanShiftMon())
             {
                 sStorage->state = 3;
             }
@@ -2614,6 +2647,11 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_WITHDRAW:
+            if (IsCursorMonPermanentlyDead())
+            {
+                sStorage->state = MSTATE_ERROR_RANDOLOCKE_DEAD;
+                break;
+            }
             PlaySE(SE_SELECT);
             ClearBottomWindow();
             SetPokeStorageTask(Task_WithdrawMon);
@@ -4002,6 +4040,15 @@ static void LoadDisplayMonGfx(enum Species species, u32 pid, bool32 isEgg)
         LoadSpecialPokePicIsEgg(sStorage->tileBuffer, species, pid, TRUE, isEgg);
         CpuCopy32(sStorage->tileBuffer, sStorage->displayMonTilePtr, MON_PIC_SIZE);
         LoadPalette(sStorage->displayMonPalette, sStorage->displayMonPalOffset, PLTT_SIZE_4BPP);
+        // randolocke: grey rather than transparent for the portrait. The icon in the box
+        // is dimmed by the blend, but the portrait sits on a light panel where a blend
+        // barely reads -- and draining the colour out of it says "gone" more plainly than
+        // fading it would. Both buffers, or the next fade puts the colour back.
+        if (sStorage->displayMonIsDead)
+        {
+            TintPalette_GrayScale2(&gPlttBufferUnfaded[sStorage->displayMonPalOffset], 16);
+            TintPalette_GrayScale2(&gPlttBufferFaded[sStorage->displayMonPalOffset], 16);
+        }
         sStorage->displayMonSprite->invisible = FALSE;
     }
     else
@@ -4464,6 +4511,12 @@ static bool32 ShouldBoxmonSpriteBeTransparent(u32 boxId, u32 boxPosition)
         return TRUE;
     if (sStorage->boxOption == OPTION_SELECT_MON
      && IsBoxMonExcluded(GetBoxedMonPtr(boxId, boxPosition)))
+        return TRUE;
+    // randolocke: a Pokemon that fainted is still in its box but is not the player's to
+    // use, and nothing else on this screen says so. The blend registers are already set
+    // up for the item mode's dimming, so this costs nothing.
+    if (RandolockeDeadMonsAreLocked()
+     && RandolockeMonIsDead(GetBoxedMonPtr(boxId, boxPosition)))
         return TRUE;
     return FALSE;
 }
@@ -6875,6 +6928,15 @@ static void SetMonMarkings(u8 markings)
     }
 }
 
+// randolocke: a Pokemon that fainted stays in its box until the run is over. It can still
+// be released -- tidying the graveyard is allowed -- but not moved, shifted or withdrawn.
+static bool8 IsCursorMonPermanentlyDead(void)
+{
+    if (!RandolockeDeadMonsAreLocked() || sInPartyMenu)
+        return FALSE;
+    return GetCurrentBoxMonData(sCursorPosition, RANDOLOCKE_MON_DATA_FAINTED) != 0;
+}
+
 static bool8 IsRemovingLastPartyMon(void)
 {
     if (sCursorArea == CURSOR_AREA_IN_PARTY && !sIsMonBeingMoved && CountPartyAliveNonEggMonsExcept(sCursorPosition) == 0)
@@ -6988,6 +7050,7 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
     bool8 sanityIsBadEgg;
 
     sStorage->displayMonItemId = ITEM_NONE;
+    sStorage->displayMonIsDead = FALSE;
     gender = MON_MALE;
     sanityIsBadEgg = FALSE;
     if (mode == MODE_PARTY)
@@ -7011,6 +7074,10 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
             sStorage->displayMonPalette = GetMonFrontSpritePal(mon);
             gender = GetMonGender(mon);
             sStorage->displayMonItemId = GetMonData(mon, MON_DATA_HELD_ITEM);
+            // A dead Pokemon only turns up in the party when the boxes were full when it
+            // fainted, but it should still read as dead when it does.
+            if (RandolockeDeadMonsAreLocked() && RandolockeMonIsDead(&mon->box))
+                sStorage->displayMonIsDead = TRUE;
         }
     }
     else if (mode == MODE_BOX)
@@ -7036,6 +7103,8 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
             sStorage->displayMonPalette = GetMonSpritePalFromSpeciesAndPersonalityIsEgg(sStorage->displayMonSpecies, isShiny, sStorage->displayMonPersonality, sStorage->displayMonIsEgg);
             gender = GetGenderFromSpeciesAndPersonality(sStorage->displayMonSpecies, sStorage->displayMonPersonality);
             sStorage->displayMonItemId = GetBoxMonData(boxMon, MON_DATA_HELD_ITEM);
+            if (RandolockeDeadMonsAreLocked() && RandolockeMonIsDead(boxMon))
+                sStorage->displayMonIsDead = TRUE;
         }
     }
     else
@@ -7115,7 +7184,13 @@ static void SetDisplayMonData(void *pokemon, u8 mode)
         txtPtr[0] = CHAR_SPACE;
         txtPtr[1] = EOS;
 
-        if (sStorage->displayMonItemId != ITEM_NONE)
+        // randolocke: the held item line is always blank for a Pokemon that fainted -- the
+        // item was taken off it when it was boxed -- so it is free to say so outright. The
+        // greyed portrait alone leaves room for doubt, and the only other place the state
+        // shows up is the refusal when you try to withdraw it.
+        if (sStorage->displayMonIsDead)
+            StringCopyPadded(sStorage->displayMonItemName, COMPOUND_STRING("FAINTED"), CHAR_SPACE, 8);
+        else if (sStorage->displayMonItemId != ITEM_NONE)
             StringCopyPadded(sStorage->displayMonItemName, GetItemName(sStorage->displayMonItemId), CHAR_SPACE, 8);
         else
             StringFill(sStorage->displayMonItemName, CHAR_SPACE, 8);

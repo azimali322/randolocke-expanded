@@ -52,6 +52,8 @@ to nothing. Zipping saves a further ~4 MB.
 | File | Size | CRC32 |
 | --- | --- | --- |
 | Vanilla Emerald (US) — the only valid base | 16,777,216 | `1f1c08fb` |
+| 0.9.1 release | 33,554,432 | `9d3b03d1` |
+| 0.9.1 test build | 33,554,432 | `eb51e720` |
 | 0.9.0 release | 33,554,432 | `c165e622` |
 | 0.9.0 test build | 33,554,432 | `359e5b0f` |
 
