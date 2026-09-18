@@ -1173,6 +1173,89 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 43 — A bad free no longer freezes the game
+
+Reported as random freezes with the log full of
+
+```
+[ERROR] GBA Debug:  ASSERTION FAILED  FILE=[src/malloc.c] LINE=[98]  EXP=[block->allocated == TRUE]
+[WARN] GBA:         Illegal opcode: 0000efff
+```
+
+Line 98 is `Free()` finding that the block it was handed is already free — a double free,
+or a stale pointer to a block someone else has since freed.
+
+### Why a bad free froze the game
+
+Only the debug ROM (`make`) has these asserts; `make release` compiles them out. A failed
+`AGB_ASSERT` prints its line and then executes `0xEFFF`, a break opcode meant to stop the
+game for a debugger. Without one, mGBA's BIOS returns from it **two bytes early**, into the
+second half of the `bl MgbaPrintf` just before it, with a stale link register. The CPU
+jumps a few kilobytes into unrelated code. The first `ASSERTION FAILED` line is the real
+event; the repeats and the freeze are fallout.
+
+- **RANDOLOCKE_DEBUG_ASSERTS_RESUME** — a failed `AGB_ASSERT` in the debug ROM is logged
+  exactly as before, then play carries on. That is what the release ROM already did, minus
+  the log. Test builds keep the break.
+- **RANDOLOCKE_SKIP_BAD_FREES** — `Free()` refuses a block that is already free, or a
+  pointer without the allocator's magic number, and skips it. Skipping is the safe answer
+  to both: a free block is already accounted for, and a header without the magic number
+  cannot be trusted to walk. Both ROMs skip; only the debug ROM prints.
+
+### Reading the new log line
+
+```
+Free(0x2014814) skipped: already free. Called from 0x8176157, allocated at src/foo.c:133
+```
+
+- `allocated at` — the file and line whose `Alloc` made the block. The header still records
+  it after the first `Free()`.
+- `Called from` — the function that made the bad call. Look it up against the ELF **of the
+  same build**:
+
+  ```
+  arm-none-eabi-addr2line -f -e pokeemerald.elf 0x8176157
+  ```
+
+Verified with a throwaway ROM that double-freed on purpose at boot. It printed both lines,
+the failed assert logged, and the game kept running.
+
+### A real overflow found on the way: the move relearner
+
+With P_ENABLE_ALL_LEVEL_UP_MOVES and P_PRE_EVO_MOVES the relearner's level-up list is every
+move of every stage of the family, and the randomizer gives each stage its own 21-move
+learnset. A three-stage family can list 63 moves; the relearner held 60 and never checked.
+`test/randolocke_relearner.c` measured 8–12 families over 60 per seed, a longest list of
+63. The overflow ran off `movesToLearn` and `menuItems` onto the relearner's own task IDs
+and counters. It only triggers on a Pokémon that knows moves outside its learnset, which
+universal TM compatibility makes common.
+
+- `MAX_RELEARNER_MOVES` 60 → 64.
+- All four list builders (level-up, egg, TM, tutor) stop at the capacity, whatever the data.
+
+The playtest save that reported the freeze has none of the affected species, so this is a
+second bug, not the cause of that report.
+
+### Two small fixes
+
+- The relearner's EV line read `gParties[0][gSpecialVar_0x8004]` — the wrong Pokémon when
+  the relearner was opened from the PC. It now asks `GetSelectedBoxMonFromPcOrParty()`,
+  the same as the relearner itself.
+- The friendship window started at tile 902, inside the move-select stats overlay (822–921,
+  enlarged to 10×10 in Phase 40). Now at 922. They never showed together, so nothing
+  visible changed.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T43.1 | **Regression test** | `make check TESTS="Randolocke"` | PASS, three seeds |
+| T43.2 | Relearner on a long family | Relearner on a fully evolved three-stage Pokémon that knows TM moves | List opens, scrolls to the end, CANCEL works, nothing corrupted |
+| T43.3 | Relearner from the PC | Open the relearner on a boxed Pokémon | EV line shows *that* Pokémon's Attack and Sp. Atk EVs |
+| T43.4 | Friendship readout | Skills page, then a move-select screen, then the skills page again | Friendship number intact |
+| T43.5 | **If it happens again** | Copy the `Free(...) skipped` line from the log | Game keeps running; the line names the caller and the allocation site |
+| T43.6 | Release ROM unchanged | Play normally on `pokeemerald-release.gba` | No difference in behaviour |
+
+---
+
 ## Phase 42 — Easy fishing
 
 Ported from Modern Emerald's EASIER FISHING option. Once something bites, the rod reels

@@ -406,4 +406,28 @@
 // restricted legendaries, sub-legendaries, mythicals and Ultra Beasts.
 #define RANDOLOCKE_LEGENDARY_CLAUSE         TRUE
 
+// --- Debug ROM stability -----------------------------------------------------
+
+// The debug ROM -- `make`, not `make release` -- keeps the old AGB_ASSERT checks, and a
+// failed one ends in a break opcode meant to stop the game for a debugger. mGBA has no
+// debugger attached for a player, so its BIOS returns from the opcode two bytes early:
+// into the second half of the `bl MgbaPrintf` just before it, with a stale link register.
+// The CPU lands a few kilobytes away in unrelated code, and whatever happens next -- more
+// asserts, a freeze -- is fallout from that one failure. The release ROM compiles every
+// AGB_ASSERT out and carries on.
+//
+// If TRUE, a failed AGB_ASSERT in the debug ROM is logged exactly as before and then play
+// carries on, which is what the release ROM already does minus the log line. Test builds
+// are unaffected: a failed assert still fails the test.
+#define RANDOLOCKE_DEBUG_ASSERTS_RESUME     TRUE
+
+// If TRUE, Free() refuses a pointer it can tell is wrong -- a block that is already free,
+// or one whose header lacks the allocator's magic number -- and logs it instead of
+// asserting. Skipping is the safe response to both: a block already free is already
+// accounted for, and a header without the magic number cannot be trusted to walk. The
+// log line names the function that called Free(), as an address to look up with
+// `arm-none-eabi-addr2line -f -e pokeemerald.elf`, and for a block freed twice, the file
+// and line that allocated it. Applies to both ROMs; only the debug ROM prints.
+#define RANDOLOCKE_SKIP_BAD_FREES           TRUE
+
 #endif // GUARD_CONFIG_RANDOLOCKE_H
