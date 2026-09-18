@@ -763,15 +763,18 @@ static void MoveRelearnerLoadBattleMoveDescription(u32 chosenMove)
     #if RANDOLOCKE_RELEARNER_SHOW_EVS == TRUE
     {
         // The panel is full, so this takes the heading's row rather than adding one.
-        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
+        // The relearner can be opened on a Pokemon in the PC as well as in the party, so
+        // this asks the same helper the relearner itself does rather than indexing the
+        // party with gSpecialVar_0x8004, which for a boxed Pokemon is not a party slot.
+        struct BoxPokemon *boxMon = GetSelectedBoxMonFromPcOrParty();
         u8 evText[32];
         u8 num[8];
 
         StringCopy(evText, COMPOUND_STRING("Atk EV "));
-        ConvertIntToDecimalStringN(num, GetMonData(mon, MON_DATA_ATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
+        ConvertIntToDecimalStringN(num, GetBoxMonData(boxMon, MON_DATA_ATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
         StringAppend(evText, num);
         StringAppend(evText, COMPOUND_STRING("  SpA EV "));
-        ConvertIntToDecimalStringN(num, GetMonData(mon, MON_DATA_SPATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
+        ConvertIntToDecimalStringN(num, GetBoxMonData(boxMon, MON_DATA_SPATK_EV), STR_CONV_MODE_LEFT_ALIGN, 3);
         StringAppend(evText, num);
 
         x = GetStringCenterAlignXOffset(FONT_SMALL, evText, 128);

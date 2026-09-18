@@ -663,7 +663,7 @@ static const struct WindowTemplate sSummaryTemplate[] =
         .width = 6,
         .height = 2,
         .paletteNum = 6,
-        .baseBlock = 902,   // past the stats overlay, which ends at 901
+        .baseBlock = 922,   // past the stats overlay: 10x10 tiles from 822 ends at 921
     },
     [PSS_LABEL_WINDOW_END] = DUMMY_WIN_TEMPLATE
 };
