@@ -1173,6 +1173,57 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 44 — Flash's Regi shortcuts hand the player back
+
+Reported from the Sealed Chamber: Flash opened the door, and then the game stopped
+responding. Not an allocator fault, and nothing in the log — a plain lock-up.
+
+### What happened
+
+Flash's stand-ins for the Braille puzzles (Phase 17's RANDOLOCKE_FLASH_OPENS_REGI_CAVES)
+run as `gPostMenuFieldCallback`: straight off the party menu, after a fade, with the
+player's field controls locked and object events frozen. Whatever the callback does, it
+has to hand the player back. The vanilla puzzle effects do —
+`DoBrailleRegirockEffect` and `DoBrailleRegisteelEffect` both end with
+`UnlockPlayerFieldControls()` and `UnfreezeObjectEvents()`, and the Dig route ends in
+`EventScript_DigSealedChamber`, whose `releaseall` does the same. Three of our four did
+not:
+
+| Room | Callback | What went wrong |
+| --- | --- | --- |
+| Desert Ruins (Regirock) | `SetUpPuzzleEffectRegirock` | Nothing — it goes through vanilla's field-effect chain, which ends in `DoBrailleRegirockEffect` |
+| Sealed Chamber outer | `DoBrailleDigEffect` | Vanilla only ever calls it from a script that releases afterwards. Called directly, the door opened and the player stayed locked |
+| Island Cave (Regice) | `RandolockeOpenRegiceWall` | Opened the wall, never unlocked |
+| Sealed Chamber inner | `RandolockeOpenRegiDoors` | Ends in `DoSealedChamberShakingEffect_Short`, whose task finishes with `ScriptContext_Enable()` — which *locks* the player (script.c) and marks a script running that does not exist |
+
+The outer room is the reported one: the door is the metatile swap in `DoBrailleDigEffect`.
+
+### The fix
+
+`RandolockeOpenRegiceWall` and the new `RandolockeOpenSealedChamberDoor` end with
+`UnlockPlayerFieldControls()` and `UnfreezeObjectEvents()`, as vanilla's effects do. The
+shaking effect takes a flag: started from the party menu it frees the player at the end
+instead of resuming a script, and started from a script it behaves exactly as before.
+
+Proven both ways. `test/randolocke_regi_flash.c` locks the controls, runs each callback and
+checks the player is free afterwards. With the unlocks removed it fails on the Sealed
+Chamber's door — the reported bug — and passes with them in.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T44.1 | **The reported case** | Sealed Chamber outer room, Flash from the party menu | Door opens, and you can walk |
+| T44.2 | Through the door | Walk into the inner room | Normal |
+| T44.3 | **The three caves** | Sealed Chamber inner room, Flash | Room shakes, you can walk, the three Regi caves are open |
+| T44.4 | Regice | Island Cave, Flash | Wall opens, you can walk |
+| T44.5 | Regirock | Desert Ruins, Flash | Wall opens, you can walk (this one always worked) |
+| T44.6 | Registeel | Ancient Tomb, Flash on the Braille tile | Vanilla behaviour, unchanged |
+| T44.7 | The Braille puzzles still work | Solve one the vanilla way instead | Opens as before |
+| T44.8 | Flash still lights caves | Any dark cave | Normal Flash |
+| T44.9 | The script route still works | Dig in the Sealed Chamber outer room | Door opens, player released — the shared effect is unchanged for scripts |
+| T44.10 | Regression test | `make check TESTS="Randolocke"` | PASS |
+
+---
+
 ## Phase 43 — A bad free no longer freezes the game
 
 Reported as random freezes with the log full of

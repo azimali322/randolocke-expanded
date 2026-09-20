@@ -16,6 +16,13 @@
 
 EWRAM_DATA static bool8 sIsRegisteelPuzzle = 0;
 
+#if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
+// Set when the Sealed Chamber's shaking effect was started from the party menu rather than
+// from a script, so its ending hands the player back instead of resuming a script that is
+// not running. See RandolockeOpenRegiDoors.
+EWRAM_DATA static bool8 sRandolockeUnlockAfterShake = 0;
+#endif
+
 static const u8 sRegicePathCoords[][2] =
 {
     {4,  21},
@@ -153,7 +160,23 @@ static void Task_SealedChamberShakingEffect(u8 taskId)
         if (task->tShakeCounter == task->tNumShakes)
         {
             DestroyTask(taskId);
+        #if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
+            // ScriptContext_Enable resumes the script that was waiting on this effect, and
+            // locks the player while it runs. Reached from the party menu there is no such
+            // script, so that call would lock the player and never let go.
+            if (sRandolockeUnlockAfterShake)
+            {
+                sRandolockeUnlockAfterShake = FALSE;
+                UnlockPlayerFieldControls();
+                UnfreezeObjectEvents();
+            }
+            else
+            {
+                ScriptContext_Enable();
+            }
+        #else
             ScriptContext_Enable();
+        #endif
             InstallCameraPanAheadCallback();
         }
     }
@@ -218,12 +241,30 @@ void RandolockeOpenRegiceWall(void)
     MapGridSetMetatileIdAt(9 + MAP_OFFSET, 20 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_BottomRight | MAPGRID_IMPASSABLE);
     DrawWholeMapView();
     PlaySE(SE_BANG);
+    // Every one of these runs as gPostMenuFieldCallback, straight off the party menu, with
+    // the player locked and object events frozen for the fade. Nothing else will hand them
+    // back: the vanilla puzzles end in a script that does it, or in DoBrailleRegirockEffect,
+    // which calls these two itself. Without them the wall opens and the game stops.
+    UnlockPlayerFieldControls();
+    UnfreezeObjectEvents();
 }
 
-// The three Regi caves, which vanilla gates behind Relicanth + Wailord.
+// The Sealed Chamber's own door. Vanilla reaches DoBrailleDigEffect from
+// EventScript_DigSealedChamber, which does the releaseall afterwards; called as a field
+// callback there is no script to do that.
+void RandolockeOpenSealedChamberDoor(void)
+{
+    DoBrailleDigEffect();
+    UnlockPlayerFieldControls();
+    UnfreezeObjectEvents();
+}
+
+// The three Regi caves, which vanilla gates behind Relicanth + Wailord. The shaking effect
+// ends by resuming the script that started it, so it is told to free the player instead.
 void RandolockeOpenRegiDoors(void)
 {
     FlagSet(FLAG_REGI_DOORS_OPENED);
+    sRandolockeUnlockAfterShake = TRUE;
     DoSealedChamberShakingEffect_Short();
 }
 

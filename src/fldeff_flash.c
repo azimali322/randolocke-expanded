@@ -102,7 +102,7 @@ bool32 SetUpFieldMove_Flash(void)
     {
         gSpecialVar_Result = GetCursorSelectionMonId();
         gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
-        gPostMenuFieldCallback = DoBrailleDigEffect;
+        gPostMenuFieldCallback = RandolockeOpenSealedChamberDoor;
         return TRUE;
     }
     else if (RandolockeFlashOpensRegiDoors())
