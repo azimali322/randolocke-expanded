@@ -1194,26 +1194,34 @@ not:
 | Desert Ruins (Regirock) | `SetUpPuzzleEffectRegirock` | Nothing — it goes through vanilla's field-effect chain, which ends in `DoBrailleRegirockEffect` |
 | Sealed Chamber outer | `DoBrailleDigEffect` | Vanilla only ever calls it from a script that releases afterwards. Called directly, the door opened and the player stayed locked |
 | Island Cave (Regice) | `RandolockeOpenRegiceWall` | Opened the wall, never unlocked |
-| Sealed Chamber inner | `RandolockeOpenRegiDoors` | Ends in `DoSealedChamberShakingEffect_Short`, whose task finishes with `ScriptContext_Enable()` — which *locks* the player (script.c) and marks a script running that does not exist |
+| Sealed Chamber inner | `RandolockeOpenRegiDoors` | Ended in `DoSealedChamberShakingEffect_Short`, whose task finishes with `ScriptContext_Enable()` — which *locks* the player (script.c) and marks a script running that does not exist. Now runs a script of its own |
 
 The outer room is the reported one: the door is the metatile swap in `DoBrailleDigEffect`.
 
 ### The fix
 
 `RandolockeOpenRegiceWall` and the new `RandolockeOpenSealedChamberDoor` end with
-`UnlockPlayerFieldControls()` and `UnfreezeObjectEvents()`, as vanilla's effects do. The
-shaking effect takes a flag: started from the party menu it frees the player at the end
-instead of resuming a script, and started from a script it behaves exactly as before.
+`UnlockPlayerFieldControls()` and `UnfreezeObjectEvents()`, as vanilla's effects do.
+
+The three Regi caves go further: `RandolockeOpenRegiDoors` now runs
+`RandolockeEventScript_FlashOpensRegiDoors`, which is the Braille route's own sequence
+minus the Relicanth and Wailord check — the long rumble, three shakes each with a door
+sound, and "A door opened far away!" Its `releaseall` is what hands the player back, and
+its `setflag` is what opens the caves. Ordinary Flash reaches its script the same way,
+from `FldEff_UseFlash`. Before this the route gave a two-frame shake, no sound and no
+message, so there was no way to tell it had worked.
 
 Proven both ways. `test/randolocke_regi_flash.c` locks the controls, runs each callback and
-checks the player is free afterwards. With the unlocks removed it fails on the Sealed
-Chamber's door — the reported bug — and passes with them in.
+checks the player is free afterwards, and for the inner room that the hand-off to the
+script happened (the script itself cannot run in a test: its message box waits on the
+player). With the unlocks removed it fails on the Sealed Chamber's door — the reported
+bug — and passes with them in.
 
 | # | Test | Steps | Expected |
 | --- | --- | --- | --- |
 | T44.1 | **The reported case** | Sealed Chamber outer room, Flash from the party menu | Door opens, and you can walk |
 | T44.2 | Through the door | Walk into the inner room | Normal |
-| T44.3 | **The three caves** | Sealed Chamber inner room, Flash | Room shakes, you can walk, the three Regi caves are open |
+| T44.3 | **The three caves** | Sealed Chamber inner room, Flash | Music fades, the room rumbles, three door sounds, "A door opened far away!", then you can walk |
 | T44.4 | Regice | Island Cave, Flash | Wall opens, you can walk |
 | T44.5 | Regirock | Desert Ruins, Flash | Wall opens, you can walk (this one always worked) |
 | T44.6 | Registeel | Ancient Tomb, Flash on the Braille tile | Vanilla behaviour, unchanged |

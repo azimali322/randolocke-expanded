@@ -4,7 +4,6 @@
 #include "fldeff.h"
 #include "party_menu.h"
 #include "script.h"
-#include "task.h"
 #include "test/test.h"
 #include "constants/flags.h"
 #include "constants/map_groups.h"
@@ -42,17 +41,17 @@ TEST("Randolocke: Flash's Regi shortcuts hand the player back")
     EXPECT(FlagGet(FLAG_SYS_BRAILLE_REGICE_COMPLETED));
     EXPECT(!ArePlayerFieldControlsLocked());
 
-    // The three Regi caves. This one shakes the room first, and the shaking effect ends by
-    // resuming the script that started it -- which also locks the player, and off the party
-    // menu there is no such script. It runs as a task, so give it frames to finish.
+    // The three Regi caves. This one hands off to a script -- the rumble, the three door
+    // sounds and the message, ending in the releaseall that frees the player and the
+    // setflag that opens the caves. The script cannot be run from here, since its message
+    // box waits on the player, so what is checked is that the hand-off happened.
     PutPlayerOnMap(MAP_SEALED_CHAMBER_INNER_ROOM);
     FlagClear(FLAG_REGI_DOORS_OPENED);
     LockPlayerFieldControls();
     EXPECT(SetUpFieldMove_Flash());
     EXPECT(gPostMenuFieldCallback == RandolockeOpenRegiDoors);
     gPostMenuFieldCallback();
-    EXPECT(FlagGet(FLAG_REGI_DOORS_OPENED));
-    for (u32 i = 0; i < 120 && ArePlayerFieldControlsLocked(); i++)
-        RunTasks();
-    EXPECT(!ArePlayerFieldControlsLocked());
+    EXPECT(ScriptContext_IsEnabled());
+    ScriptContext_Stop();
+    UnlockPlayerFieldControls();
 }

@@ -13,15 +13,9 @@
 #include "fieldmap.h"
 #include "party_menu.h"
 #include "fldeff.h"
+#include "event_scripts.h"
 
 EWRAM_DATA static bool8 sIsRegisteelPuzzle = 0;
-
-#if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
-// Set when the Sealed Chamber's shaking effect was started from the party menu rather than
-// from a script, so its ending hands the player back instead of resuming a script that is
-// not running. See RandolockeOpenRegiDoors.
-EWRAM_DATA static bool8 sRandolockeUnlockAfterShake = 0;
-#endif
 
 static const u8 sRegicePathCoords[][2] =
 {
@@ -160,23 +154,7 @@ static void Task_SealedChamberShakingEffect(u8 taskId)
         if (task->tShakeCounter == task->tNumShakes)
         {
             DestroyTask(taskId);
-        #if RANDOLOCKE_FLASH_OPENS_REGI_CAVES == TRUE
-            // ScriptContext_Enable resumes the script that was waiting on this effect, and
-            // locks the player while it runs. Reached from the party menu there is no such
-            // script, so that call would lock the player and never let go.
-            if (sRandolockeUnlockAfterShake)
-            {
-                sRandolockeUnlockAfterShake = FALSE;
-                UnlockPlayerFieldControls();
-                UnfreezeObjectEvents();
-            }
-            else
-            {
-                ScriptContext_Enable();
-            }
-        #else
             ScriptContext_Enable();
-        #endif
             InstallCameraPanAheadCallback();
         }
     }
@@ -259,13 +237,14 @@ void RandolockeOpenSealedChamberDoor(void)
     UnfreezeObjectEvents();
 }
 
-// The three Regi caves, which vanilla gates behind Relicanth + Wailord. The shaking effect
-// ends by resuming the script that started it, so it is told to free the player instead.
+// The three Regi caves, which vanilla gates behind Relicanth + Wailord. The rumble, the
+// three door sounds and the message are a script, the same one the Braille route plays
+// minus the Relicanth and Wailord check -- a message box is not something to reimplement
+// in C -- and its releaseall is what hands the player back. Ordinary Flash reaches its own
+// script the same way, from FldEff_UseFlash.
 void RandolockeOpenRegiDoors(void)
 {
-    FlagSet(FLAG_REGI_DOORS_OPENED);
-    sRandolockeUnlockAfterShake = TRUE;
-    DoSealedChamberShakingEffect_Short();
+    ScriptContext_SetupScript(RandolockeEventScript_FlashOpensRegiDoors);
 }
 
 #endif // RANDOLOCKE_FLASH_OPENS_REGI_CAVES
