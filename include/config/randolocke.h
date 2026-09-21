@@ -36,6 +36,15 @@
 // "moderately increased wild catch rates".
 #define RANDOLOCKE_CATCH_RATE_PERCENT        150
 
+// If TRUE, the Bag cannot be opened in a battle against a trainer: no Potions, no Revives,
+// no Full Restores mid-fight, held items only. Wild battles are untouched, which they have
+// to be -- the same check gates Poke Balls, so blocking the Bag there would mean never
+// catching anything again.
+//
+// This reads the config directly rather than B_VAR_NO_BAG_USE, which a new game clears, so
+// it applies to a save already in progress.
+#define RANDOLOCKE_NO_BAG_VS_TRAINERS        TRUE
+
 // The catch rate a legendary, mythical or Ultra Beast is caught at, in place of its own.
 // 0 leaves every species on its own rate. This is the final rate, so it does not move when
 // RANDOLOCKE_CATCH_RATE_PERCENT above does.

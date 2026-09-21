@@ -1173,6 +1173,90 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 46 — Kaizo-style trainer pressure
+
+Emerald Kaizo's trainers run perfect IVs, 252 EVs, optimal natures and held items, with an
+AI that predicts and exploits, and the bag shut in battle. Measured against that, this
+project already had an AI beyond it — bosses are omniscient, the Champion predicts moves
+and switches — and hard caps that put every boss at the player's own ceiling. Five things
+were missing.
+
+### IVs — a boss's are perfect, everyone else rolls
+
+Vanilla gives a trainer one flat IV value for every stat of every Pokémon it owns, scaled
+by how important the trainer is. Measured over trainers.party:
+
+| | Pokémon | IVs |
+| --- | --- | --- |
+| The 55 `Boss: Yes` trainers | 255 | 70% at 31, the rest between 6 and 30 |
+| Everyone else | 1570 | **40% at 0**, most of the rest 1 to 12, 1% at 31 |
+
+A gym leader should not be fighting you with a 6 IV Pokémon, so a boss's are now perfect
+across all six stats. Everyone else rolls each stat separately between 0 and 31 rather than
+carrying one number six times — an average of 15.5 a stat against the 0 to 3 most of them
+have now, which makes ordinary trainers the biggest gainer in this phase. Rolled from the
+trainer and the slot, so a trainer is the same fight every time you meet them.
+
+### Natures — every trainer Pokémon was Hardy
+
+Not one entry in trainers.party carries a `Nature:` line, so all 1825 fought on the neutral
+default: nothing raised, nothing lowered, while the player's Pokémon have one. They now get
+the nature a player would pick, on the same reading of base stats the EVs use — the fast
+ones buy Speed with the attacking stat they do not use (Jolly, Timid), the slow ones buy
+power with it (Adamant, Modest). Nothing a Pokémon uses is ever what drops.
+
+### EVs — 252 and 252, the legal 510
+
+The old spread put one value on four stats, which at eight badges came to 512: marginally
+over the 510 the player is held to, and spread too thin to be felt. It is now two stats at
+the badge value, `{ 24, 48, 72, 100, 140, 180, 220, 252, 252 }`:
+
+- an attacking stat the species can actually use, read off its base stats, since the
+  species is randomized;
+- then **Speed** if base Speed is at least 67 — the measured median of every species — and
+  **HP** if it is not, because 252 Speed on a Shuckle is 252 EVs in the bin;
+- the 6 the two 252s leave over go to its better defence.
+
+The first three rows are the old totals, so the early gyms are where they were; from the
+fourth badge it climbs, ending at a legal 510 rather than 512 spread four ways.
+
+### Held items
+
+142 of 1825 carried one, mostly in-battle restores the AI throws rather than something
+held. A Pokémon with no item of its own now gets one — bosses always, everyone else 35% —
+from eleven items that suit any species (Leftovers, Sitrus, Lum, Focus Band, Focus Sash,
+Bright Powder, Quick Claw, Scope Lens, Expert Belt, Life Orb, Shell Bell) plus the booster
+for the category it attacks from. Items written into trainers.party are left alone. The
+roll is seeded from the trainer and the slot, so a trainer holds the same thing every time.
+
+No Choice items: they lock the holder into one move, and an AI that mishandles that is
+easier to beat, not harder.
+
+### No bag against a trainer
+
+RANDOLOCKE_NO_BAG_VS_TRAINERS closes the bag in trainer battles — no Potions, no Revives,
+held items only. Wild battles are deliberately untouched: the same check gates Poké Balls
+(item_use.c), so closing it there would mean never catching anything again. It reads the
+config rather than B_VAR_NO_BAG_USE, which a new game clears, so it applies to a save
+already in progress.
+
+Boss party sizes are left alone, at Randolocke v1.1's teams.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T46.1 | **No bag vs a trainer** | Any trainer battle → BAG | Refused; held items still work |
+| T46.2 | Bag in a wild battle | Wild encounter → BAG | Opens as before |
+| T46.3 | **Poké Balls still work** | Throw a ball at a wild Pokémon | Catches normally |
+| T46.4 | Trainers hit harder | Fight a gym leader | Noticeably faster and stronger than before |
+| T46.5 | Boss items | Watch a boss's Pokémon | Leftovers recovery, a Berry eaten, a Focus Band survival |
+| T46.6 | Same every time | Lose to a boss, fight again | Same items on the same Pokémon |
+| T46.7 | Early game is not brutal | Roxanne | Close to before: same EV total at one badge |
+| T46.8 | **Boss IVs** | Fight a gym leader | Stats noticeably higher than the same species elsewhere |
+| T46.9 | Ordinary trainer IVs | Fight the same route trainer twice | Same Pokémon both times, not six identical IVs |
+| T46.10 | Regression tests | `make check TESTS="Randolocke"` | PASS — EV total ≤ 510, exactly two stats capped, a nature that raises a stat the Pokémon uses, an item on every boss Pokémon, perfect boss IVs and rolled ordinary ones |
+
+---
+
 ## Phase 45 — One catch rate for legendaries
 
 105 of the 136 species the legendary clause covers — restricted legendaries, sub-legendaries,

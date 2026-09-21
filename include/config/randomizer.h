@@ -130,8 +130,70 @@
 // would land on the wrong stats half the time. Ported from pokeemerald_rando_enh.
 #define RZ_TRAINER_EV_SCALING       TRUE
 
-// EVs per stat, by badges earned. 252 is the per-stat maximum.
-#define RZ_TRAINER_EVS_BY_BADGE   { 12, 24, 36, 48, 60, 72, 80, 100, 128 }
+// EVs per stat, by badges earned, given to TWO stats. 252 + 252 + the 6 left over is 510,
+// the most any Pokemon may legally hold and exactly the budget the player is held to --
+// the summary screen's editor enforces the same. The old spread put a smaller number on
+// four stats, which at eight badges came to 512, marginally over the player's limit and
+// spread too thin to be felt; two stats at the cap is both legal and the shape that makes
+// a boss frightening. The first three rows are the old totals, so the early gyms are where
+// they were.
+#define RZ_TRAINER_EVS_BY_BADGE   { 24, 48, 72, 100, 140, 180, 220, 252, 252 }
+
+// Which two stats. One is an attacking stat the species can actually use -- it is
+// randomized, so this is read off its base stats rather than fixed. The other is Speed if
+// the species is fast enough for that to be worth 252, and HP if it is not: 252 Speed on a
+// Shuckle is 252 EVs thrown away. The threshold is the median base Speed of every species
+// in the game, measured, so it splits the roster down the middle.
+#define RZ_TRAINER_EV_SPEED_THRESHOLD   67
+
+// --- Trainer IVs --------------------------------------------------------------
+
+// Vanilla gives a trainer one flat IV value for every stat of every Pokemon, scaled by how
+// important the trainer is. Measured over trainers.party: of the 1570 Pokemon belonging to
+// ordinary trainers, 40% run 0 across the board and most of the rest 1 to 12, while of the
+// 255 belonging to the 55 `Boss: Yes` trainers, 70% are already perfect and the other 30%
+// sit between 6 and 30.
+//
+// If TRUE, a boss's Pokemon are perfect, all six stats, all of them -- a gym leader should
+// not be fighting you with a 6 IV Pokemon -- and everyone else rolls each stat separately
+// between 0 and 31 instead of carrying the same number six times. That averages 15.5 a
+// stat against the 0 to 3 most of them have now, so ordinary trainers gain the most here.
+//
+// Rolled from the trainer and the party slot, so a trainer's Pokemon are the same every
+// time you meet them. The IVs line in trainers.party is left in place but no longer read
+// for anyone this touches.
+#define RZ_TRAINER_IVS              TRUE
+
+// --- Trainer natures ----------------------------------------------------------
+
+// Not one of the 1825 trainer Pokemon in trainers.party specifies a Nature either, so all
+// of them fight on Hardy: neither stat raised nor lowered. A nature is a flat 10% on two
+// stats, and the player's Pokemon have one.
+//
+// If TRUE, a trainer's Pokemon is given the nature a player would have picked for it, on
+// the same reading of its base stats the EVs use: the fast ones trade their unused
+// attacking stat for Speed (Jolly, Timid), the slow ones trade it for power (Adamant,
+// Modest). Nothing a Pokemon actually uses is ever the stat that drops.
+#define RZ_TRAINER_NATURES          TRUE
+
+// --- Trainer held items -------------------------------------------------------
+
+// 142 of the 1825 carry an item, and most of those are the in-battle restores the AI
+// throws rather than something held. If TRUE, a Pokemon that has no item of its own is
+// given one from a small list of battle items that suit any species -- Leftovers, Sitrus,
+// Lum, Focus Band, Life Orb and so on, plus the damage booster matching the category it
+// attacks from. Items written into trainers.party are left alone.
+//
+// Choice items are deliberately not on the list: they lock the holder into one move, and
+// an AI that mishandles that is easier to beat, not harder.
+//
+// The roll is seeded from the trainer and the party slot, like every other randomizer
+// decision, so a trainer's items are the same every time you meet them.
+#define RZ_TRAINER_HELD_ITEMS       TRUE
+
+// Percent chance of being given one. Bosses -- the 55 `Boss: Yes` trainers -- always are.
+#define RZ_TRAINER_ITEM_CHANCE          35
+#define RZ_TRAINER_ITEM_CHANCE_BOSS    100
 
 // --- Trainer AI ---------------------------------------------------------------
 
