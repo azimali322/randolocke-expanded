@@ -35,13 +35,23 @@ EXCLUDED = {"WONDER_GUARD", "NONE", "314", "317"}
 # Randolocke lists Z-moves as unavailable, so those are inert here.
 MOVES_EXCLUDED = {"STRUGGLE", "NONE", "SPACIAL_REND", "STRENGTH_SAP"}
 
-# Pushed to the bottom tier for nuzlocke play regardless of community placement: a move that
-# KOs its own user costs a permanently dead Pokemon, not a turn. Carried over from the
-# pokeemerald_rando_enh tables, which the community list is not aware of.
+# Pushed to the bottom tier regardless of community placement.
+#
+# The first two groups are nuzlocke play: a move that KOs its own user costs a permanently
+# dead Pokemon rather than a turn, and an OHKO move does the same to the run from the other
+# side of the field. Carried over from the pokeemerald_rando_enh tables, which the
+# community list is not aware of.
+#
+# TACKLE is here for a different reason. The community places it at Niche, which is a
+# reasonable read of a 40 BP move you are handed at level 1 -- but nothing in this hack is
+# handed anything at level 1: every learnset is rolled from these tiers, so a move only
+# appears if the roll puts it there. At Niche it lands about as often as any of the 383
+# moves in that band, which is far too often for what it does.
 MOVES_PUSHDOWN = {
     "EXPLOSION", "SELF_DESTRUCT", "MEMENTO", "MISTY_EXPLOSION", "FINAL_GAMBIT",
     "HEALING_WISH", "LUNAR_DANCE",                    # self-KO
     "FISSURE", "GUILLOTINE", "HORN_DRILL", "SHEER_COLD",  # OHKO
+    "TACKLE",                                         # the 40 BP starter move
 }
 
 

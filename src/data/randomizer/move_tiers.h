@@ -5,8 +5,9 @@
 // 844 rollable moves tiered; 91 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
-// 11 self-KO and OHKO moves were pushed to the bottom band for nuzlocke
-// play; see MOVES_PUSHDOWN in tools/randolocke/validate_tiers.py.
+// 12 moves were pushed to the bottom band regardless of where the
+// community list puts them; see MOVES_PUSHDOWN in
+// tools/randolocke/validate_tiers.py for which, and why.
 
 // Meta Defining -- 4 moves
 static const u16 sMoveTierMetaDefining[] =
@@ -276,7 +277,7 @@ static const u16 sMoveTierFiller[] =
     MOVE_WICKED_TORQUE,
 };
 
-// Niche -- 383 moves
+// Niche -- 382 moves
 static const u16 sMoveTierNiche[] =
 {
     MOVE_BEHEMOTH_BASH,
@@ -512,7 +513,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_BUBBLE,
     MOVE_CONVERSION_2,
     MOVE_IRON_TAIL,
-    MOVE_TACKLE,
     MOVE_STRING_SHOT,
     MOVE_ROCK_TOMB,
     MOVE_PRECIPICE_BLADES,
@@ -855,7 +855,7 @@ static const u16 sMoveTierBad[] =
     MOVE_HIGH_JUMP_KICK,
 };
 
-// Pokemon Homeless -- 22 moves
+// Pokemon Homeless -- 23 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
@@ -864,6 +864,7 @@ static const u16 sMoveTierHomeless[] =
     MOVE_EXPLOSION,
     MOVE_FINAL_GAMBIT,
     MOVE_SHEER_COLD,
+    MOVE_TACKLE,
     MOVE_SELF_DESTRUCT,
     MOVE_MEMENTO,
     MOVE_MISTY_EXPLOSION,

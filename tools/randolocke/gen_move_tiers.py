@@ -55,8 +55,9 @@ def main() -> int:
          f"// {len(covered)} rollable moves tiered; {len(excluded & valid)} excluded",
          "// (Z / Max / G-Max moves and Struggle).",
          "//",
-         f"// {pushed} self-KO and OHKO moves were pushed to the bottom band for nuzlocke",
-         "// play; see MOVES_PUSHDOWN in tools/randolocke/validate_tiers.py.",
+         f"// {pushed} moves were pushed to the bottom band regardless of where the",
+         "// community list puts them; see MOVES_PUSHDOWN in",
+         "// tools/randolocke/validate_tiers.py for which, and why.",
          ""]
     for tier in ORDER:
         names = resolved[tier]
