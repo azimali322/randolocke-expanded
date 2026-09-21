@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "event_data.h"
 #include "pokedex.h"
 #include "test/battle.h"
@@ -9,6 +10,17 @@ ASSUMPTIONS
     ASSUME(gSpeciesInfo[SPECIES_DITTO].catchRate == 35);
 }
 
+// randolocke: GetBattleMonCatchRate scales every base catch rate by
+// RANDOLOCKE_CATCH_RATE_PERCENT before the rest of the formula sees it, so these
+// expectations are derived from the effective rate instead of the vanilla one -- otherwise
+// every one of these tests fails on the fork's own setting rather than on a real bug. The
+// division by three is the full-health term: (3 * maxHP - 2 * hp) * rate / (3 * maxHP) is
+// rate / 3 when hp == maxHP. The bonuses each test is actually about are unchanged.
+#define RZ_EFFECTIVE_RATE(baseRate) ((baseRate) * RANDOLOCKE_CATCH_RATE_PERCENT / 100)
+#define RZ_FULL_HP_ODDS(baseRate)   (RZ_EFFECTIVE_RATE(baseRate) / 3)
+#define RZ_CLEFFA_ODDS              RZ_FULL_HP_ODDS(150)
+#define RZ_DITTO_ODDS               RZ_FULL_HP_ODDS(35)
+
 WILD_BATTLE_TEST("Capture: Incapacitated catch bonus apply correcly with all gen configs")
 {
     u32 expectedOdds;
@@ -16,10 +28,10 @@ WILD_BATTLE_TEST("Capture: Incapacitated catch bonus apply correcly with all gen
     u32 status;
     u32 gen;
 
-    PARAMETRIZE(expectedOdds = 100, status = STATUS1_SLEEP, gen = GEN_4);
-    PARAMETRIZE(expectedOdds = 100, status = STATUS1_FREEZE, gen = GEN_4);
-    PARAMETRIZE(expectedOdds = 125, status = STATUS1_SLEEP, gen = GEN_5);
-    PARAMETRIZE(expectedOdds = 125, status = STATUS1_FREEZE, gen = GEN_5);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 2, status = STATUS1_SLEEP, gen = GEN_4);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 2, status = STATUS1_FREEZE, gen = GEN_4);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 25 / 10, status = STATUS1_SLEEP, gen = GEN_5);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 25 / 10, status = STATUS1_FREEZE, gen = GEN_5);
 
     GIVEN {
         WITH_CONFIG(B_INCAPACITATED_CATCH_BONUS, gen);
@@ -42,15 +54,15 @@ WILD_BATTLE_TEST("Capture: Low level catch bonus apply correcly with all gen con
     u32 level;
     u32 gen;
 
-    PARAMETRIZE(expectedOdds = 50, level = 10, gen = GEN_7);
-    PARAMETRIZE(expectedOdds = 50, level = 15, gen = GEN_7);
-    PARAMETRIZE(expectedOdds = 50, level = 30, gen = GEN_7);
-    PARAMETRIZE(expectedOdds = 100, level = 10, gen = GEN_8);
-    PARAMETRIZE(expectedOdds = 75, level = 15, gen = GEN_8);
-    PARAMETRIZE(expectedOdds = 50, level = 30, gen = GEN_8);
-    PARAMETRIZE(expectedOdds = 80, level = 10, gen = GEN_9);
-    PARAMETRIZE(expectedOdds = 50, level = 15, gen = GEN_9);
-    PARAMETRIZE(expectedOdds = 50, level = 30, gen = GEN_9);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 10, gen = GEN_7);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 15, gen = GEN_7);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 30, gen = GEN_7);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * (30 - 10) / 10, level = 10, gen = GEN_8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * (30 - 15) / 10, level = 15, gen = GEN_8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 30, gen = GEN_8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * (36 - 2 * 10) / 10, level = 10, gen = GEN_9);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 15, gen = GEN_9);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, level = 30, gen = GEN_9);
 
     GIVEN {
         WITH_CONFIG(B_LOW_LEVEL_CATCH_BONUS, gen);
@@ -75,12 +87,12 @@ WILD_BATTLE_TEST("Capture: Missing badge malus apply correcly in gen 8")
 
     for (u32 j = 0; j < 8; j++)
     {
-        PARAMETRIZE(expectedOdds = 50, playerLevel = 100, numBadges = j);
-        PARAMETRIZE(expectedOdds = 5, playerLevel = 99, numBadges = j);
+        PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, playerLevel = 100, numBadges = j);
+        PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 410 / 4096, playerLevel = 99, numBadges = j);
     }
-    PARAMETRIZE(expectedOdds = 50, playerLevel = 100, numBadges = 8);
-    PARAMETRIZE(expectedOdds = 50, playerLevel = 99, numBadges = 8);
-    PARAMETRIZE(expectedOdds = 50, playerLevel = 21, numBadges = 8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, playerLevel = 100, numBadges = 8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, playerLevel = 99, numBadges = 8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS, playerLevel = 21, numBadges = 8);
 
     GIVEN {
         for (u32 j = 0; j < 8; j++)
@@ -109,15 +121,15 @@ WILD_BATTLE_TEST("Capture: Missing badge malus apply correcly in gen 9")
     u32 level = 0;
     u32 numBadges = 0;
 
-    PARAMETRIZE(expectedOdds = 250, level = 100, numBadges = 8);
-    PARAMETRIZE(expectedOdds = 200, level = 100, numBadges = 7);
-    PARAMETRIZE(expectedOdds = 160, level = 100, numBadges = 6);
-    PARAMETRIZE(expectedOdds = 128, level = 100, numBadges = 5);
-    PARAMETRIZE(expectedOdds = 250, level = 40, numBadges = 4);
-    PARAMETRIZE(expectedOdds = 250, level = 40, numBadges = 3);
-    PARAMETRIZE(expectedOdds = 200, level = 40, numBadges = 2);
-    PARAMETRIZE(expectedOdds = 160, level = 40, numBadges = 1);
-    PARAMETRIZE(expectedOdds = 128, level = 40, numBadges = 0);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5, level = 100, numBadges = 8);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5, level = 100, numBadges = 7);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5 * 4 / 5, level = 100, numBadges = 6);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5 * 4 / 5 * 4 / 5, level = 100, numBadges = 5);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5, level = 40, numBadges = 4);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5, level = 40, numBadges = 3);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5, level = 40, numBadges = 2);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5 * 4 / 5, level = 40, numBadges = 1);
+    PARAMETRIZE(expectedOdds = RZ_CLEFFA_ODDS * 5 * 4 / 5 * 4 / 5 * 4 / 5, level = 40, numBadges = 0);
 
     GIVEN {
         for (u32 j = 0; j < 8; j++)
@@ -145,8 +157,8 @@ WILD_BATTLE_TEST("Capture: Tranformed Pokemon get the catch rate of the copied s
     u32 expectedOdds = 0;
     u32 gen = 0;
 
-    const u32 DittoOdds = 11;
-    const u32 CleffaOdds = 50;
+    const u32 DittoOdds = RZ_DITTO_ODDS;
+    const u32 CleffaOdds = RZ_CLEFFA_ODDS;
     for (u32 j = GEN_1; j <= GEN_LATEST; j++)
     {
         if (j == GEN_3 || j == GEN_4)
