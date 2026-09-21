@@ -36,6 +36,25 @@
 // "moderately increased wild catch rates".
 #define RANDOLOCKE_CATCH_RATE_PERCENT        150
 
+// The catch rate a legendary, mythical or Ultra Beast is caught at, in place of its own.
+// 0 leaves every species on its own rate. This is the final rate, so it does not move when
+// RANDOLOCKE_CATCH_RATE_PERCENT above does.
+//
+// 105 of the 136 species this covers sit at the floor of 3, which after the percentage
+// above is 4 -- against 67 for the commonest wild Pokemon and 112 for the median one, so
+// 17 to 28 times harder to catch, or about ninety Ultra Balls at a quarter health. At 45
+// that is 1.5 to 2.5 times harder, around six balls: still the hardest thing on the route
+// without being a different game.
+//
+// One flat rate rather than a multiplier because the 136 do not start level. Twenty-three
+// of them are already at 30, 45 or 255 -- Mew, Celebi, the Ultra Beasts, Eternatus,
+// Terapagos -- and multiplying those lands past the 255 cap, which is a guaranteed catch
+// with any ball at full health. A flat rate does mean those twenty-three get *harder*
+// than they are now: set RANDOLOCKE_LEGENDARY_CATCH_RATE_IS_FLOOR to TRUE to only ever
+// raise a rate, which leaves those twenty-three exactly as they are.
+#define RANDOLOCKE_LEGENDARY_CATCH_RATE          45
+#define RANDOLOCKE_LEGENDARY_CATCH_RATE_IS_FLOOR FALSE
+
 // --- Move relearner ---------------------------------------------------------
 
 // If TRUE, the move relearner's battle-move panel shows the Pokemon's Attack and Sp. Atk

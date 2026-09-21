@@ -8060,6 +8060,13 @@ static u32 GetBattleMonCatchRate(struct BattlePokemon *battleMon)
         // Randolocke: scale the base catch rate. u8 field, so clamp at 255.
         u32 rate = gSpeciesInfo[species].catchRate * RANDOLOCKE_CATCH_RATE_PERCENT / 100;
 
+        #if RANDOLOCKE_LEGENDARY_CATCH_RATE > 0
+        // One rate for every legendary, in place of its own. See the config.
+        if (RandolockeSpeciesIsLegendary(species)
+         && (!RANDOLOCKE_LEGENDARY_CATCH_RATE_IS_FLOOR || rate < RANDOLOCKE_LEGENDARY_CATCH_RATE))
+            rate = RANDOLOCKE_LEGENDARY_CATCH_RATE;
+        #endif
+
         return (rate > 255) ? 255 : rate;
     }
 }

@@ -14,6 +14,22 @@
 #include "constants/items.h"
 #include "constants/flags.h"
 
+// The four categories the randomizer's own legend-aware substitution treats as legendary,
+// so both the catch clause and the legendary catch rate cover exactly the set that
+// substitution can drop onto a route. Mirrors IsRandomizerLegendary; kept separate because
+// that one is static to the randomizer. Outside the nuzlocke guard: the catch rate in
+// GetBattleMonCatchRate wants it whether or not the nuzlocke rules are on.
+bool32 RandolockeSpeciesIsLegendary(enum Species species)
+{
+    if (species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
+
+    return gSpeciesInfo[species].isRestrictedLegendary
+        || gSpeciesInfo[species].isSubLegendary
+        || gSpeciesInfo[species].isMythical
+        || gSpeciesInfo[species].isUltraBeast;
+}
+
 #if RANDOLOCKE_NUZLOCKE_RULES == TRUE
 
 STATIC_ASSERT(ARRAY_COUNT(((struct SaveBlock1 *)0)->caughtInArea) == RANDOLOCKE_AREA_BYTES,
@@ -56,20 +72,6 @@ static void MarkAreaUsed(u32 area)
 {
     if (area != RANDOLOCKE_NO_AREA)
         gSaveBlock1Ptr->caughtInArea[area / 8] |= 1 << (area % 8);
-}
-
-// The four categories the randomizer's own legend-aware substitution treats as legendary,
-// so the clause covers exactly the set that substitution can drop onto a route. Mirrors
-// IsRandomizerLegendary; kept separate because that one is static to the randomizer.
-static bool32 RandolockeIsLegendary(enum Species species)
-{
-    if (species == SPECIES_NONE || species >= NUM_SPECIES)
-        return FALSE;
-
-    return gSpeciesInfo[species].isRestrictedLegendary
-        || gSpeciesInfo[species].isSubLegendary
-        || gSpeciesInfo[species].isMythical
-        || gSpeciesInfo[species].isUltraBeast;
 }
 
 // True if anything in this species' evolution family is already registered as caught.
@@ -175,7 +177,7 @@ enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler)
     // And the legendary clause on the same terms. Species randomization can put one in
     // any route's encounter table.
     #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
-    if (RandolockeIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
+    if (RandolockeSpeciesIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
         return RANDOLOCKE_CATCH_OK;
     #endif
 
@@ -233,7 +235,7 @@ void RandolockeNoteCatch(struct Pokemon *mon)
     if (IsMonShiny(mon))
         return;
     #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
-    if (RandolockeIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
+    if (RandolockeSpeciesIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
         return;
     #endif
     if (FamilyAlreadyCaught(GetMonData(mon, MON_DATA_SPECIES)))

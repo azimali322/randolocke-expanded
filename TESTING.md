@@ -1173,6 +1173,59 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 45 — One catch rate for legendaries
+
+105 of the 136 species the legendary clause covers — restricted legendaries, sub-legendaries,
+mythicals and Ultra Beasts — sit at a base catch rate of 3, the floor. After
+RANDOLOCKE_CATCH_RATE_PERCENT that is 4, against 67 for the commonest wild Pokémon and 112
+for the median one: 17 to 28 times harder, about ninety Ultra Balls at a quarter health.
+A randomized run that drops a legendary on a route and then cannot keep it is worse than
+one that never drops it.
+
+RANDOLOCKE_LEGENDARY_CATCH_RATE puts all of them on one rate, 45, in place of their own.
+It is the final rate, so it does not move when the percentage does.
+
+| | Effective rate | Per Ultra Ball at 25% HP | Balls for ~90% |
+| --- | --- | --- | --- |
+| Legendary, before | 4 | 2.6% | 89 |
+| **Legendary, now** | **45** | **33.7%** | **6** |
+| Commonest wild Pokémon (base 45) | 67 | 50.3% | 4 |
+| Median wild Pokémon (base 75) | 112 | 78.5% | 2 |
+
+So a legendary stays the hardest thing on the route — 1.5× the commonest wild Pokémon, 2.5×
+the median — without being a different game.
+
+### Why a flat rate and not a multiplier
+
+The 136 do not start level. Twenty-three are already at 30, 45 or 255: Mew, Celebi, the
+Ultra Beasts, Phione, Eternatus, Terapagos. Ten times their rate lands past the 255 cap,
+which is a guaranteed catch with any ball at full health. A flat rate keeps every legendary
+worth the same number of balls.
+
+It does mean those twenty-three are now *harder* than they were — Mew 67 → 45, Eternatus
+255 → 45. `RANDOLOCKE_LEGENDARY_CATCH_RATE_IS_FLOOR TRUE` only ever raises a rate, leaving
+those twenty-three exactly as they were; it is FALSE.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T45.1 | **A legendary is catchable** | Wild legendary, weaken to ~25%, throw Ultra Balls | Caught in a handful, not ninety |
+| T45.2 | Every legendary alike | Repeat on a different one (a mythical or an Ultra Beast) | Same difficulty |
+| T45.3 | Ordinary Pokémon untouched | Catch anything non-legendary | As before |
+| T45.4 | Master Ball | On a legendary | Still always catches |
+| T45.5 | The clause still holds | Meet a wild legendary in a used-up area (Phase 39) | Still catchable, still does not consume the area |
+| T45.6 | Safari | Catch in the Safari Zone | Unaffected — that path uses its own factor |
+| T45.7 | Regression tests | `make check TESTS="Randolocke"` and `TESTS="Capture"` | PASS |
+
+The battle test throws a real ball: Mewtwo (base 3) and Mew (base 45) both record odds of
+15, a Beldum (base 3, not legendary) records 1, and a Chansey — base 30, which is 45 after
+the percentage — records 15 too, which is what 45 is worth.
+
+The eight upstream Capture tests were failing before this phase, on this fork's own
+RANDOLOCKE_CATCH_RATE_PERCENT rather than on any bug: they hardcoded vanilla rates. They
+now derive their expectations from the effective rate and pass.
+
+---
+
 ## Phase 44 — Flash's Regi shortcuts hand the player back
 
 Reported from the Sealed Chamber: Flash opened the door, and then the game stopped

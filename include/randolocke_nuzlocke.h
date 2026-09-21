@@ -13,6 +13,8 @@ static inline void RandolockeSetPlayerMonIVs(struct Pokemon *mon, bool32 isGiftO
 { (void)mon; (void)isGiftOrStarter; }
 #endif
 
+bool32 RandolockeSpeciesIsLegendary(enum Species species);
+
 enum RandolockeCatchRule
 {
     RANDOLOCKE_CATCH_OK,
