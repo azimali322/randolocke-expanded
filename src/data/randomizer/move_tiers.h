@@ -5,7 +5,7 @@
 // 844 rollable moves tiered; 91 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
-// 12 moves were pushed to the bottom band regardless of where the
+// 17 moves were pushed to the bottom band regardless of where the
 // community list puts them; see MOVES_PUSHDOWN in
 // tools/randolocke/validate_tiers.py for which, and why.
 
@@ -277,7 +277,7 @@ static const u16 sMoveTierFiller[] =
     MOVE_WICKED_TORQUE,
 };
 
-// Niche -- 382 moves
+// Niche -- 377 moves
 static const u16 sMoveTierNiche[] =
 {
     MOVE_BEHEMOTH_BASH,
@@ -386,7 +386,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_CRUSH_GRIP,
     MOVE_MINIMIZE,
     MOVE_DRILL_PECK,
-    MOVE_EMBER,
     MOVE_ICE_FANG,
     MOVE_ICE_HAMMER,
     MOVE_SING,
@@ -510,7 +509,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_FORESTS_CURSE,
     MOVE_ME_FIRST,
     MOVE_METEOR_ASSAULT,
-    MOVE_BUBBLE,
     MOVE_CONVERSION_2,
     MOVE_IRON_TAIL,
     MOVE_STRING_SHOT,
@@ -538,7 +536,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_SIMPLE_BEAM,
     MOVE_ROUND,
     MOVE_ROCK_POLISH,
-    MOVE_POUND,
     MOVE_PARABOLIC_CHARGE,
     MOVE_SPARKLING_ARIA,
     MOVE_SHELL_TRAP,
@@ -555,7 +552,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_CHARGE,
     MOVE_INFERNO,
     MOVE_LEAFAGE,
-    MOVE_WATER_GUN,
     MOVE_VOLT_TACKLE,
     MOVE_POISON_POWDER,
     MOVE_SWEET_SCENT,
@@ -585,7 +581,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_MEGA_DRAIN,
     MOVE_MIST_BALL,
     MOVE_NIGHT_SHADE,
-    MOVE_SCRATCH,
     MOVE_PAY_DAY,
     MOVE_SWITCHEROO,
     MOVE_SYNTHESIS,
@@ -855,16 +850,21 @@ static const u16 sMoveTierBad[] =
     MOVE_HIGH_JUMP_KICK,
 };
 
-// Pokemon Homeless -- 23 moves
+// Pokemon Homeless -- 28 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
     MOVE_FISSURE,
     MOVE_HORN_DRILL,
     MOVE_EXPLOSION,
+    MOVE_EMBER,
     MOVE_FINAL_GAMBIT,
     MOVE_SHEER_COLD,
+    MOVE_BUBBLE,
     MOVE_TACKLE,
+    MOVE_POUND,
+    MOVE_WATER_GUN,
+    MOVE_SCRATCH,
     MOVE_SELF_DESTRUCT,
     MOVE_MEMENTO,
     MOVE_MISTY_EXPLOSION,

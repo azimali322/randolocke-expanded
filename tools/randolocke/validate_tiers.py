@@ -51,7 +51,10 @@ MOVES_PUSHDOWN = {
     "EXPLOSION", "SELF_DESTRUCT", "MEMENTO", "MISTY_EXPLOSION", "FINAL_GAMBIT",
     "HEALING_WISH", "LUNAR_DANCE",                    # self-KO
     "FISSURE", "GUILLOTINE", "HORN_DRILL", "SHEER_COLD",  # OHKO
-    "TACKLE",                                         # the 40 BP starter move
+    # The starter moves, for the same reason: a 40 BP attack with nothing attached is not
+    # a roll worth spending on a 21-move learnset. The community list has them at Niche,
+    # which is where they belong for a game that hands them out at level 1 for free.
+    "TACKLE", "POUND", "SCRATCH", "EMBER", "BUBBLE", "WATER_GUN",
 }
 
 

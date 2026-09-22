@@ -1173,6 +1173,53 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 47 — The starter moves drop, and the tutors keep teaching
+
+### Tackle and its five friends
+
+Every learnset in this hack is rolled from the move bands, so a move appears only if the
+roll puts it there. The community list places the level-1 starter moves at Niche, which is
+a fair read of a game that hands them out for free — but here Niche is the second-heaviest
+band, 383 moves at 0.105% each, and a 40 BP attack with nothing attached is not worth one
+of a Pokémon's 21 slots.
+
+Tackle, Pound, Scratch, Ember, Bubble and Water Gun are now in Pokémon Homeless, the bottom
+band: **0.014% each, 7.5 times rarer**. They also stop being TMs — `sTmMoveTiers` draws from
+the top four bands only, by design, because a TM is permanent under I_REUSABLE_TMS.
+
+Done in MOVES_PUSHDOWN, beside the self-KO and OHKO moves, so the community sheet stays as
+voted and the override is one list. Peck, Vine Whip and Splash sit at Bad and were left
+there. `python3 tools/randolocke/gen_move_tiers.py` regenerates after any edit.
+
+### The town tutors teach as often as you like
+
+The ten tutors teach once each in vanilla: a flag is set when you accept, the offer never
+comes again, and the game warns you before you spend it. Ten moves for a whole run, and in
+a randomized run you do not choose which ten.
+
+RANDOLOCKE_REPEATABLE_MOVE_TUTORS drops all three halves of that gate in the `move_tutor`
+macro — the check that sends you away, the "can only be learned once" warning, and the
+setflag that remembers. Each tutor still teaches its own randomized move, the same one
+every time; what changes is how many of your Pokémon can have it.
+
+A save that already spent some tutors is fine: the flags it set are simply no longer read.
+The Battle Frontier's two tutors are a separate script and still charge BP.
+
+Verified in the built ROM rather than by eye: the Slateport tutor's compiled script is
+`lock`, `faceplayer`, `setvar` — the `checkflag` that used to follow `faceplayer` is gone.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T47.1 | **A tutor teaches twice** | Any town tutor → teach → talk again → teach another Pokémon | Offers again, same move, no "only once" warning |
+| T47.2 | An already-spent tutor | A tutor used before this build | Offers again |
+| T47.3 | Declining still works | Say no | Declined message, nothing taught, offers again later |
+| T47.4 | The Frontier is unchanged | Battle Frontier tutors | Still charge BP, still once per move |
+| T47.5 | **Starter moves are rare** | Roll a few dozen learnsets (new save or the debug menu) | Tackle and friends turn up about a seventh as often |
+| T47.6 | No starter-move TMs | Check the TM list on a new save | None of the six appear as a TM |
+| T47.7 | Tier data regenerates clean | `python3 tools/randolocke/validate_tiers.py --moves` | All names resolved, 0 unresolved |
+
+---
+
 ## Phase 46 — Kaizo-style trainer pressure
 
 Emerald Kaizo's trainers run perfect IVs, 252 EVs, optimal natures and held items, with an

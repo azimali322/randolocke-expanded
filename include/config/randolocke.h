@@ -72,6 +72,21 @@
 // extra line; the heading is redundant when you are already looking at the move list.
 #define RANDOLOCKE_RELEARNER_SHOW_EVS   TRUE
 
+// --- Move tutors --------------------------------------------------------------
+
+// The ten tutors in the towns teach once each in vanilla: a flag is set when you accept,
+// the offer never comes again, and the game warns you before you spend it. Ten moves for
+// the whole run, and in a randomized one you do not get to choose which ten.
+//
+// If TRUE, they teach as often as you like -- the flag is neither checked nor set, and the
+// "this move can only be learned once" confirmation is skipped with it. Each tutor still
+// teaches its own randomized move, the same one every time, so what changes is only how
+// many of your Pokemon can have it. A save that already spent some of them is unaffected
+// by the flags it has already set, since nothing reads them any more.
+//
+// The Battle Frontier's two tutors are a separate script and still charge BP per move.
+#define RANDOLOCKE_REPEATABLE_MOVE_TUTORS   TRUE
+
 // --- Registered key items ---------------------------------------------------
 
 // If TRUE, a second key item can be registered and used by *holding* SELECT, while a tap

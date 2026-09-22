@@ -2773,7 +2773,11 @@
 
 	.macro move_tutor moveId:req, wantTeachingMsg:req, monSelectMsg:req, declinedJmp:req, taughtJmp:req, flagId=0
 	.if \flagId
+	@ randolocke: RANDOLOCKE_REPEATABLE_MOVE_TUTORS drops the once-only gate -- the check
+	@ that sends you away, the warning before you spend it, and the flag that remembers.
+	.if RANDOLOCKE_REPEATABLE_MOVE_TUTORS == FALSE
 		goto_if_set \flagId, \taughtJmp
+	.endif
 	.endif
 	@ randolocke: resolve the move first, so the offer can name the one actually taught.
 	setvar VAR_0x8005, \moveId
@@ -2782,14 +2786,18 @@
 	msgbox MoveTutor_Text_RandolockeOffer, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, \declinedJmp
 	.if \flagId
+	.if RANDOLOCKE_REPEATABLE_MOVE_TUTORS == FALSE
 		call MoveTutor_EventScript_CanOnlyBeLearnedOnce
 		goto_if_eq VAR_RESULT, NO, \declinedJmp
+	.endif
 	.endif
 	msgbox MoveTutor_Text_RandolockeWhichMon, MSGBOX_DEFAULT
 	call MoveTutor_EventScript_OpenBox
 	goto_if_eq VAR_RESULT, FALSE, \declinedJmp
 	.if \flagId
+	.if RANDOLOCKE_REPEATABLE_MOVE_TUTORS == FALSE
 		setflag \flagId
+	.endif
 	.endif
 	goto \taughtJmp
 	.endm
