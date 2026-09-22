@@ -262,6 +262,30 @@
 // move you can already buy on a reusable TM is a wasted tutor.
 #define RZ_TUTOR_MOVES_TIER_MODE    RZ_TM_MOVES_TIER_MODE
 
+// --- Wild encounters ---------------------------------------------------------
+
+// Each wild slot is rolled on its own -- map, terrain, slot number and seed -- from the
+// species whose base stat total sits in a window around the slot's vanilla species. The
+// stock window is +/-10%, so half of every roll is weaker than what vanilla put there, and
+// on the opening routes, where vanilla's species are 195 to 240, that half is cocoons and
+// babies.
+//
+// These set the window for wild encounters only, as percentages of the vanilla species'
+// BST, when the species mode is MON_RANDOM_BST. A floor of 100 means a replacement is never
+// weaker than what vanilla had in that slot. Trainer parties keep the stock window.
+#define RZ_WILD_BST_FLOOR_PERCENT       100
+#define RZ_WILD_BST_CEILING_PERCENT     125
+
+// The lottery. The two rarest land slots -- 1% each, slots 10 and 11 -- skip the window
+// entirely and roll one of the ten lines that end in a 600-BST pseudo-legendary, as its
+// first stage: Dratini, Larvitar, Bagon, Beldum, Gible, Deino, Goomy, Jangmo-o, Dreepy,
+// Frigibax. Every route with grass has a ticket, and it is the same ticket every time.
+//
+// Worth knowing how often it pays out: the nuzlocke keeps your first encounter in an area,
+// and a 1% slot is rarely that. About 2% of first encounters, route by route.
+#define RZ_WILD_LOTTERY                 TRUE
+#define RZ_WILD_LOTTERY_FROM_SLOT       10
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and

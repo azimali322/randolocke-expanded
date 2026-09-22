@@ -1299,6 +1299,62 @@ enum Species RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMo
     }
 }
 
+#if RZ_WILD_LOTTERY == TRUE
+// The first stage of each line that ends in a 600-BST pseudo-legendary.
+static const u16 sRzWildLotterySpecies[] =
+{
+    SPECIES_DRATINI, SPECIES_LARVITAR, SPECIES_BAGON, SPECIES_BELDUM, SPECIES_GIBLE,
+    SPECIES_DEINO, SPECIES_GOOMY, SPECIES_JANGMO_O, SPECIES_DREEPY, SPECIES_FRIGIBAX,
+};
+#endif
+
+// A uniform pick among the species whose BST lies between floorPercent and ceilPercent of
+// the original's. MON_RANDOM_BST only, where a species' group is its BST. The original is
+// always inside its own window at a floor of 100, so the range is never empty.
+static u16 RzRandomizeBstWindow(struct Sfc32State *state, u16 species, u32 floorPercent, u32 ceilPercent)
+{
+    const struct SpeciesTable *table = GetSpeciesTable(MON_RANDOM_BST);
+    u16 group = GetSpeciesGroup(table, species);
+    u16 minIndex, maxIndex, result;
+    u32 lo, hi;
+
+    if (group == GROUP_INVALID)
+        return species;
+
+    lo = (u32)group * floorPercent / 100;
+    hi = min((u32)group * ceilPercent / 100, (u32)GROUP_INVALID - 1);
+    GetIndicesFromGroupRange(table, lo, hi, &minIndex, &maxIndex);
+    if (maxIndex < minIndex)
+        return species;
+    result = table->groupIndexToSpecies[RandomizerNextRange(state, maxIndex - minIndex + 1) + minIndex];
+
+    // The same form handling RandomizeMon gives any other pick -- but a form can carry a very
+    // different BST from the species that was picked, and the window is the whole point
+    // here. Across every wild slot in the game three picks were turned into forms of 575 and
+    // 700 from windows topping out near 640, so a form is only kept if it is in the window
+    // too; otherwise the pick stands as it was.
+    {
+        u16 form = result;
+        u32 formBst;
+
+        switch (gSpeciesInfo[result].randomizerMode)
+        {
+        case MON_RANDOMIZER_RANDOM_FORM:
+            form = ChooseRandomForm(state, result);
+            break;
+        case MON_RANDOMIZER_SPECIAL_FORM:
+            form = ChooseFormSpecial(state, result);
+            break;
+        default:
+            break;
+        }
+        formBst = gSpeciesInfo[form].baseHP + gSpeciesInfo[form].baseAttack
+                + gSpeciesInfo[form].baseDefense + gSpeciesInfo[form].baseSpeed
+                + gSpeciesInfo[form].baseSpAttack + gSpeciesInfo[form].baseSpDefense;
+        return (formBst >= lo && formBst <= hi) ? form : result;
+    }
+}
+
 enum Species RandomizeWildEncounter(enum Species species, u8 mapNum, u8 mapGroup, enum WildPokemonArea area, u8 slot)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_WILD_MON))
@@ -1310,6 +1366,25 @@ enum Species RandomizeWildEncounter(enum Species species, u8 mapNum, u8 mapGroup
         seed |= ((u32)mapNum) << 16;
         seed |= ((u32)area) << 8;
         seed |= slot;
+
+        #if RZ_WILD_LOTTERY == TRUE
+        // randolocke: the two 1% land slots are a lottery ticket. See the config.
+        if (area == WILD_AREA_LAND && slot >= RZ_WILD_LOTTERY_FROM_SLOT && IsSpeciesPermitted(species))
+        {
+            struct Sfc32State state = RandomizerRandSeed(RANDOMIZER_REASON_WILD_LOTTERY, seed, species);
+
+            return sRzWildLotterySpecies[RandomizerNextRange(&state, ARRAY_COUNT(sRzWildLotterySpecies))];
+        }
+        #endif
+
+        // randolocke: wild encounters get their own BST window, never weaker than vanilla by
+        // default. Same seed as the stock roll, so only the window differs.
+        if (GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE) == MON_RANDOM_BST && IsSpeciesPermitted(species))
+        {
+            struct Sfc32State state = RandomizerRandSeed(RANDOMIZER_REASON_WILD_ENCOUNTER, seed, species);
+
+            return RzRandomizeBstWindow(&state, species, RZ_WILD_BST_FLOOR_PERCENT, RZ_WILD_BST_CEILING_PERCENT);
+        }
 
         return RandomizeMon(RANDOMIZER_REASON_WILD_ENCOUNTER, GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE), seed, species);
     }

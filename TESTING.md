@@ -1173,6 +1173,70 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 50 — Wild encounters are never weaker, and every route has a lottery ticket
+
+### How the randomization works
+
+Every wild slot is rolled on its own, seeded by map, terrain, slot number and Trainer ID,
+so a route vanilla fills with three species can show twelve. The pick is uniform over every
+species whose BST is in a window around the slot's vanilla species, and the slot keeps its
+vanilla odds (20/20/10/10/10/10/5/5/4/4/1/1% on land).
+
+The stock window is ±10%, so half of every roll was weaker than what vanilla put there, and
+on the opening routes — vanilla's species there are 195 to 240 — that half was cocoons and
+babies: Kakuna, Silcoon, Cascoon, Spewpa on three routes, Burmy, and Cosmog at 20% on
+Route 104.
+
+### What changed
+
+- **RZ_WILD_BST_FLOOR/CEILING_PERCENT, 100 to 125** — for wild encounters only, a
+  replacement is never weaker than vanilla's species and at most a quarter stronger.
+  Trainers keep the stock window.
+- **RZ_WILD_LOTTERY** — the two 1% land slots skip the window and roll the first stage of
+  one of the ten 600-BST pseudo-legendary lines: Dratini, Larvitar, Bagon, Beldum, Gible,
+  Deino, Goomy, Jangmo-o, Dreepy, Frigibax.
+
+A form can carry a very different BST from the species that was picked, and the stock form
+handling does not know about the window: across every wild slot in the game three picks
+became forms of 575 and 700. A form is now kept only if it is inside the window too.
+
+### Route 101 on the playtest seed
+
+| Slot odds | Vanilla (BST) | Window | Before | Now |
+| --- | --- | --- | --- | --- |
+| 20% | Wurmple (195) | 195–243 | Weedle | **Feebas** |
+| 20% | Poochyena (220) | 220–275 | Zigzagoon | **Yungoos** |
+| 10% | Wurmple | | Kakuna | **Igglybuff** |
+| 10% | Wurmple | | Azurill | **Ralts** |
+| 10% | Poochyena | | Wimpod | **Slugma** |
+| 10% | Poochyena | | Silcoon | **Makuhita** |
+| 5% | Wurmple | | Wooper | **Nymble** |
+| 5% | Poochyena | | Pawmi | **Wynaut** |
+| 4% | Zigzagoon (240) | 240–300 | Starly | **Varoom** |
+| 4% | Zigzagoon | | Togepi | **Morelull** |
+| 1% | — | lottery | Gossifleur | **Deino** |
+| 1% | — | lottery | Wiglett | **Frigibax** |
+
+Weighted average BST of an encounter: 217 before, 233 now. No cocoons.
+
+The lottery is fair over the whole game: across all 194 lottery slots each line lands 14 to
+26 times against 19.4 expected, a chi-square of 4.8 on 9 degrees of freedom. The early
+routes happening to draw Frigibax five times out of twelve is a small sample doing what
+small samples do.
+
+Under nuzlocke rules the first encounter in an area is the one that counts, so a 1% slot
+pays out about 2% of the time, route by route.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T50.1 | **Route 101** | Walk in the grass on the playtest save | The table above |
+| T50.2 | No cocoons early | Routes 101–104, Petalburg Woods | None of Kakuna, Silcoon, Cascoon, Metapod |
+| T50.3 | A lottery hit | Encounter until a 1% slot comes up (debug menu helps) | One of the ten pseudo-legendary lines |
+| T50.4 | Trainers unchanged | Route trainers | Same species as before this phase |
+| T50.5 | **Regression test** | `make check TESTS="Randolocke"` | PASS — every wild slot in the game inside its window, every lottery slot a prize, on two seeds |
+
+---
+
 ## Phase 49 — One legendary into the League; one bike that is both
 
 ### The League's one-legendary rule
