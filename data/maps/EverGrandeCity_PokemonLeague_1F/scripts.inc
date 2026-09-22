@@ -80,6 +80,7 @@ EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryLimit::
 	callnative RandolockeCheckEliteFourLegendaries
 	goto_if_eq VAR_RESULT, FALSE, EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryOk
 	lockall
+	buffernumberstring STR_VAR_1, VAR_0x8004
 	playse SE_FAILURE
 	msgbox EverGrandeCity_PokemonLeague_1F_Text_RandolockeOneLegendary, MSGBOX_DEFAULT
 	closemessage
@@ -156,8 +157,8 @@ EverGrandeCity_PokemonLeague_1F_Text_GoForth:
 
 EverGrandeCity_PokemonLeague_1F_Text_RandolockeOneLegendary:
 	.string "Hold on!\p"
-	.string "The POKéMON LEAGUE allows each\n"
-	.string "challenger only one legendary\l"
-	.string "POKéMON.\p"
-	.string "Please leave the rest in the PC\n"
-	.string "before you go on.$"
+	.string "Only one legendary POKéMON may be\n"
+	.string "in your party for the ELITE FOUR.\p"
+	.string "You have {STR_VAR_1} with you right now.\p"
+	.string "Leave the others in the PC here,\n"
+	.string "then come back and try again.$"

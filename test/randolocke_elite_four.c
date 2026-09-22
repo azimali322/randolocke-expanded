@@ -30,10 +30,11 @@ TEST("Randolocke: the League lets one legendary through, not two")
     RandolockeCheckEliteFourLegendaries();
     EXPECT_EQ(gSpecialVar_Result, FALSE);
 
-    // A restricted legendary and a mythical.
+    // A restricted legendary and a mythical -- and the count the refusal quotes.
     SetParty(SPECIES_MEWTWO, SPECIES_MEW);
     RandolockeCheckEliteFourLegendaries();
     EXPECT_EQ(gSpecialVar_Result, TRUE);
+    EXPECT_EQ(gSpecialVar_0x8004, 2);
 
     // Ultra Beasts count, as they do for the clause and the catch rate.
     SetParty(SPECIES_MEWTWO, SPECIES_POIPOLE);

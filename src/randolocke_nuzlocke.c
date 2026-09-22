@@ -31,8 +31,9 @@ bool32 RandolockeSpeciesIsLegendary(enum Species species)
 }
 
 #if RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT == TRUE
-// VAR_RESULT = TRUE if the party carries more legendaries than the League allows. Called
-// from the trigger in front of the Elite Four's door; see the config.
+// VAR_RESULT = TRUE if the party carries more legendaries than the League allows, and
+// VAR_0x8004 = how many it carries, so the refusal can say. Called from the trigger in
+// front of the Elite Four's door; see the config.
 void RandolockeCheckEliteFourLegendaries(void)
 {
     u32 i, count = 0;
@@ -46,6 +47,7 @@ void RandolockeCheckEliteFourLegendaries(void)
         if (RandolockeSpeciesIsLegendary(GetMonData(mon, MON_DATA_SPECIES, NULL)))
             count++;
     }
+    gSpecialVar_0x8004 = count;
     gSpecialVar_Result = (count > RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES);
 }
 #endif
