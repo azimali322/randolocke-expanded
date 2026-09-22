@@ -2,6 +2,7 @@
 #include "test/test.h"
 #include "battle.h"
 #include "battle_setup.h"
+#include "config/randomizer.h"
 #include "data.h"
 #include "malloc.h"
 #include "random.h"
@@ -36,8 +37,15 @@ TEST("CreateNPCTrainerPartyForTrainer generates customized Pokémon")
     EXPECT(GetMonData(&testParty[1], MON_DATA_FRIENDSHIP, 0) == 0);
 
     EXPECT(GetMonData(&testParty[0], MON_DATA_HELD_ITEM, 0) == ITEM_ASSAULT_VEST);
+    // randolocke: the trainer rules below replace what a party file sets -- rolled or
+    // perfect IVs, a badge-scaled EV spread, a nature for the species and a chance of an
+    // item -- so the file's own values only hold with them off. test/randolocke_trainers.c
+    // covers the rules themselves.
+#if RZ_TRAINER_HELD_ITEMS == FALSE
     EXPECT(GetMonData(&testParty[1], MON_DATA_HELD_ITEM, 0) == ITEM_NONE);
+#endif
 
+#if RZ_TRAINER_IVS == FALSE
     EXPECT(GetMonData(&testParty[0], MON_DATA_HP_IV, 0) == 25);
     EXPECT(GetMonData(&testParty[0], MON_DATA_ATK_IV, 0) == 26);
     EXPECT(GetMonData(&testParty[0], MON_DATA_DEF_IV, 0) == 27);
@@ -51,7 +59,9 @@ TEST("CreateNPCTrainerPartyForTrainer generates customized Pokémon")
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPEED_IV, 0) == 0);
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPATK_IV, 0) == 0);
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPDEF_IV, 0) == 0);
+#endif
 
+#if RZ_TRAINER_EV_SCALING == FALSE
     EXPECT(GetMonData(&testParty[0], MON_DATA_HP_EV, 0) == 252);
     EXPECT(GetMonData(&testParty[0], MON_DATA_ATK_EV, 0) == 0);
     EXPECT(GetMonData(&testParty[0], MON_DATA_DEF_EV, 0) == 0);
@@ -65,6 +75,7 @@ TEST("CreateNPCTrainerPartyForTrainer generates customized Pokémon")
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPEED_EV, 0) == 0);
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPATK_EV, 0) == 0);
     EXPECT(GetMonData(&testParty[1], MON_DATA_SPDEF_EV, 0) == 0);
+#endif
 
     EXPECT(GetMonData(&testParty[0], MON_DATA_LEVEL, 0) == 67);
     EXPECT(GetMonData(&testParty[1], MON_DATA_LEVEL, 0) == 5);
@@ -81,8 +92,10 @@ TEST("CreateNPCTrainerPartyForTrainer generates customized Pokémon")
     EXPECT(StringCompare(nickBuffer, COMPOUND_STRING("Wobbuffet")) == 0);
 
     EXPECT(GetMonGender(&testParty[0]) == MON_FEMALE);
+#if RZ_TRAINER_NATURES == FALSE
     EXPECT(GetNature(&testParty[0]) == NATURE_HASTY);
     EXPECT(GetNature(&testParty[1]) == NATURE_HARDY);
+#endif
 
     EXPECT_EQ(GetMonData(&testParty[0], MON_DATA_DYNAMAX_LEVEL), 5);
     EXPECT_EQ(GetMonData(&testParty[1], MON_DATA_DYNAMAX_LEVEL), 10);
