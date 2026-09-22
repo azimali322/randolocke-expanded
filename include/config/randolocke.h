@@ -87,6 +87,33 @@
 // The Battle Frontier's two tutors are a separate script and still charge BP per move.
 #define RANDOLOCKE_REPEATABLE_MOVE_TUTORS   TRUE
 
+// --- The Elite Four ----------------------------------------------------------
+
+// If TRUE, the League will not let you through to the Elite Four with more than
+// RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES legendaries in the party -- the same 136 species the
+// legendary clause and the legendary catch rate cover: restricted legendaries,
+// sub-legendaries, mythicals and Ultra Beasts. Eggs do not count.
+//
+// Checked on the two tiles in front of the door rather than by the guards, because the
+// guards only step aside once: after the first visit you walk straight past them, and a
+// check that lived in their script would miss every attempt after a loss. The Pokemon
+// Center and its PC are in the same room, so a party that is refused can be fixed on the
+// spot.
+#define RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT   TRUE
+#define RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES   1
+
+// --- Bike ----------------------------------------------------------------------
+
+// One bike, both bikes. Rydel hands over a single BIKE, and pressing R while riding
+// switches it between Mach and Acro on the spot -- no trip back to Mauville to trade.
+// Ported from pokeemerald_rando_enh's "bike combined".
+//
+// The switch runs the same transition as getting on, so the sprite, the avatar state and
+// the bike's momentum all reset together. Both bike items are renamed BIKE, so a save that
+// already holds the Acro Bike keeps it and it behaves identically: R switches whichever
+// one you are riding.
+#define RANDOLOCKE_DUAL_BIKE                    TRUE
+
 // --- Registered key items ---------------------------------------------------
 
 // If TRUE, a second key item can be registered and used by *holding* SELECT, while a tap

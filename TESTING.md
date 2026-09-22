@@ -1173,6 +1173,57 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 49 — One legendary into the League; one bike that is both
+
+### The League's one-legendary rule
+
+RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT refuses the Elite Four to a party carrying more than
+RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES (1) legendaries — the same 136 species the legendary
+clause and the legendary catch rate count: restricted legendaries, sub-legendaries,
+mythicals and Ultra Beasts. Eggs do not count.
+
+It is checked on the two tiles in front of the door, (9,2) and (10,2) of the League 1F,
+not by the guards. The guards step aside once and stay aside (`copyobjectxytoperm`,
+FLAG_ENTERED_ELITE_FOUR), so a check in their script would see your first attempt and none
+after — not the one after a loss, and not a rematch. Those two tiles are where the guards
+stood, so every route to the door crosses one. A refused player is stepped back one tile;
+the Pokémon Center's PC is in the same room.
+
+### One bike
+
+RANDOLOCKE_DUAL_BIKE, ported from pokeemerald_rando_enh's "bike combined":
+
+- Rydel gives one **BIKE** instead of asking you to choose, and on later visits reminds you
+  how it works instead of offering a trade.
+- **R while riding** switches Mach ↔ Acro in place — a hop sound going to Acro, the bell
+  going to Mach.
+
+The switch calls SetPlayerAvatarTransitionFlags, the same transition as getting on, so the
+sprite, the avatar state and the bike's momentum reset together. The fork swapped the flags
+by hand before calling it; the transition already does that. R is otherwise only DexNav's,
+which is off in this build.
+
+Both bike items are renamed BIKE, so a save that already holds the Acro Bike keeps it and
+it behaves identically — it starts in Acro and R switches it.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T49.1 | **One legendary is fine** | One legendary in the party, walk to the Elite Four's door | Through |
+| T49.2 | **Two are refused** | Two in the party | "Hold on!…", stepped back one tile |
+| T49.3 | Every attempt is checked | Lose to the Elite Four, try again with two | Refused again, although the guards are aside |
+| T49.4 | Fixable on the spot | Box one at the League PC, try again | Through |
+| T49.5 | Ultra Beasts count | A legendary and an Ultra Beast | Refused |
+| T49.6 | **Rydel gives one BIKE** | New save, Mauville | One BIKE, the R tip, no Mach/Acro menu |
+| T49.7 | **R switches** | Ride, press R | Acro with a hop; R again, Mach with the bell |
+| T49.8 | Mach behaviour | Mach mode on a muddy slope | Climbs it |
+| T49.9 | Acro behaviour | Acro mode on rails / hold B to hop | Rides them |
+| T49.10 | R on foot | Press R walking | Nothing happens |
+| T49.11 | An existing Acro Bike | Save that already had one | Named BIKE; starts in Acro, R switches |
+| T49.12 | Rydel again | Talk to him after | The R tip, no trade offer |
+| T49.13 | Regression tests | `make check TESTS="Randolocke"` | PASS — party checks for 0, 1 and 2 legendaries, and a UB |
+
+---
+
 ## Phase 48 — A Combee worth catching
 
 Combee evolves at level 21 into Vespiquen, but only if it is female, and vanilla makes it

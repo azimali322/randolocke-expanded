@@ -263,6 +263,27 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
         return TRUE;
 
+    #if RANDOLOCKE_DUAL_BIKE == TRUE
+    // randolocke: R switches bikes in place. SetPlayerAvatarTransitionFlags runs the same
+    // transition as getting on -- sprite, avatar state and bike momentum all reset -- so this
+    // is exactly mounting the other bike, minus the trip to Mauville. Ported from
+    // pokeemerald_rando_enh, which swapped the flags by hand; the transition does that part.
+    if (input->pressedRButton && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE))
+    {
+        if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE))
+        {
+            SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_ACRO_BIKE);
+            PlaySE(SE_BIKE_HOP);
+        }
+        else
+        {
+            SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_MACH_BIKE);
+            PlaySE(SE_BIKE_BELL);
+        }
+        return TRUE;
+    }
+    #endif
+
     if (input->pressedRButton && TryStartDexNavSearch())
         return TRUE;
 

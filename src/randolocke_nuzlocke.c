@@ -30,6 +30,26 @@ bool32 RandolockeSpeciesIsLegendary(enum Species species)
         || gSpeciesInfo[species].isUltraBeast;
 }
 
+#if RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT == TRUE
+// VAR_RESULT = TRUE if the party carries more legendaries than the League allows. Called
+// from the trigger in front of the Elite Four's door; see the config.
+void RandolockeCheckEliteFourLegendaries(void)
+{
+    u32 i, count = 0;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+
+        if (!GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL) || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+            continue;
+        if (RandolockeSpeciesIsLegendary(GetMonData(mon, MON_DATA_SPECIES, NULL)))
+            count++;
+    }
+    gSpecialVar_Result = (count > RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES);
+}
+#endif
+
 #if RANDOLOCKE_NUZLOCKE_RULES == TRUE
 
 STATIC_ASSERT(ARRAY_COUNT(((struct SaveBlock1 *)0)->caughtInArea) == RANDOLOCKE_AREA_BYTES,

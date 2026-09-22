@@ -19,6 +19,16 @@ MauvilleCity_BikeShop_EventScript_SkipGreeting::
 	end
 
 MauvilleCity_BikeShop_EventScript_ChooseBike::
+@ randolocke: RANDOLOCKE_DUAL_BIKE -- one BIKE that is both, switched with R while riding,
+@ so there is nothing to choose between and nothing to come back and trade.
+.if RANDOLOCKE_DUAL_BIKE == TRUE
+	msgbox MauvilleCity_BikeShop_Text_RandolockeOneBike, MSGBOX_DEFAULT
+	giveitem ITEM_MACH_BIKE
+	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	msgbox MauvilleCity_BikeShop_Text_RandolockeBikeTip, MSGBOX_DEFAULT
+	release
+	end
+.else
 	message MauvilleCity_BikeShop_Text_ExplainBikesChooseWhichOne
 	waitmessage
 	multichoice 21, 8, MULTI_BIKE, TRUE
@@ -26,6 +36,7 @@ MauvilleCity_BikeShop_EventScript_ChooseBike::
 	case 0, MauvilleCity_BikeShop_EventScript_GetMachBike
 	case 1, MauvilleCity_BikeShop_EventScript_GetAcroBike
 	end
+.endif
 
 MauvilleCity_BikeShop_EventScript_NotFar::
 	setflag FLAG_DECLINED_BIKE
@@ -59,10 +70,16 @@ MauvilleCity_BikeShop_EventScript_ComeBackToSwitchBikes::
 	end
 
 MauvilleCity_BikeShop_EventScript_AskSwitchBikes::
+.if RANDOLOCKE_DUAL_BIKE == TRUE
+	msgbox MauvilleCity_BikeShop_Text_RandolockeBikeTip, MSGBOX_DEFAULT
+	release
+	end
+.else
 	msgbox MauvilleCity_BikeShop_Text_WantToSwitchBikes, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, YES, MauvilleCity_BikeShop_EventScript_SwitchBikes
 	goto_if_eq VAR_RESULT, NO, MauvilleCity_BikeShop_EventScript_KeepBike
 	end
+.endif
 
 @ If the player does not have a bike on them Rydel assumes its stored in the PC
 MauvilleCity_BikeShop_EventScript_SwitchBikes::
@@ -320,3 +337,17 @@ MauvilleCity_BikeShop_Text_Jumps:
 	.string "change directions while jumping.\p"
 	.string "Want to read a different page?$"
 
+MauvilleCity_BikeShop_Text_RandolockeOneBike:
+	.string "RYDEL: Hm, hm… … … … …\p"
+	.string "You're saying that you came all this\n"
+	.string "way from LITTLEROOT?\p"
+	.string "My goodness!\n"
+	.string "That's ridiculously far!\p"
+	.string "I'll tell you what!\n"
+	.string "Take my newest model!\p"
+	.string "It's a MACH BIKE and an ACRO BIKE\n"
+	.string "all in one!$"
+
+MauvilleCity_BikeShop_Text_RandolockeBikeTip:
+	.string "RYDEL: Press R while you're riding\n"
+	.string "to switch between MACH and ACRO!$"

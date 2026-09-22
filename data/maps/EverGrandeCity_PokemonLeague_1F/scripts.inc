@@ -71,6 +71,25 @@ EverGrandeCity_PokemonLeague_1F_EventScript_DoorGuard::
 	releaseall
 	end
 
+@ randolocke: the League's one-legendary rule, run from the two tiles in front of the
+@ door every time -- the guards only step aside once, so their script cannot be where it
+@ lives. RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT; the check itself is C. The all-clear path
+@ just ends, which releases the player without a lockall to undo.
+EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryLimit::
+.if RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT == TRUE
+	callnative RandolockeCheckEliteFourLegendaries
+	goto_if_eq VAR_RESULT, FALSE, EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryOk
+	lockall
+	playse SE_FAILURE
+	msgbox EverGrandeCity_PokemonLeague_1F_Text_RandolockeOneLegendary, MSGBOX_DEFAULT
+	closemessage
+	applymovement LOCALID_PLAYER, Common_Movement_WalkDown
+	waitmovement 0
+	releaseall
+.endif
+EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryOk::
+	end
+
 EverGrandeCity_PokemonLeague_1F_EventScript_PlayerMoveToFrontFromRight::
 	applymovement LOCALID_PLAYER, EverGrandeCity_PokemonLeague_1F_Movement_MoveToFrontFromRight
 	waitmovement 0
@@ -135,3 +154,10 @@ EverGrandeCity_PokemonLeague_1F_Text_GoForth:
 	.string "TRAINER! Believe in yourself and your\n"
 	.string "POKéMON, and go forth!$"
 
+EverGrandeCity_PokemonLeague_1F_Text_RandolockeOneLegendary:
+	.string "Hold on!\p"
+	.string "The POKéMON LEAGUE allows each\n"
+	.string "challenger only one legendary\l"
+	.string "POKéMON.\p"
+	.string "Please leave the rest in the PC\n"
+	.string "before you go on.$"

@@ -14008,12 +14008,22 @@ const struct ItemInfo gItemsInfo[] =
 
     [ITEM_MACH_BIKE] =
     {
+    #if RANDOLOCKE_DUAL_BIKE == TRUE
+        // randolocke: one bike, both bikes -- R while riding switches Mach and Acro.
+        .name = ITEM_NAME("Bike"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Mach and Acro in\n"
+            "one. Press R while\n"
+            "riding to switch."),
+    #else
         .name = ITEM_NAME("Mach Bike"),
         .price = 0,
         .description = COMPOUND_STRING(
             "A folding bicycle\n"
             "that doubles your\n"
             "speed or better."),
+    #endif
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_FIELD,
@@ -14025,12 +14035,22 @@ const struct ItemInfo gItemsInfo[] =
 
     [ITEM_ACRO_BIKE] =
     {
+    #if RANDOLOCKE_DUAL_BIKE == TRUE
+        // randolocke: one bike, both bikes -- R while riding switches Mach and Acro.
+        .name = ITEM_NAME("Bike"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Mach and Acro in\n"
+            "one. Press R while\n"
+            "riding to switch."),
+    #else
         .name = ITEM_NAME("Acro Bike"),
         .price = 0,
         .description = COMPOUND_STRING(
             "A folding bicycle\n"
             "capable of jumps\n"
             "and wheelies."),
+    #endif
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_FIELD,
