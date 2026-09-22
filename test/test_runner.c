@@ -197,6 +197,10 @@ static void ClearSaveBlocks(void)
     ClearSav1();
     ClearSav2();
     ClearSav3();
+    // randolocke: a real save's name always ends. All zeroes do not -- zero is a space to
+    // the text engine -- so anything that copied the name ran on through memory looking
+    // for the end: a shiny wild Pokemon's TV news does, and trampled the heap behind it.
+    gSaveBlock2Ptr->playerName[0] = EOS;
 }
 
 void CB2_TestRunner(void)
