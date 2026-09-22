@@ -1173,6 +1173,92 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 51 — Straight to Birch, the Running Shoes at the truck, shinies at 1 in 128
+
+### What changed
+
+- **`RANDOLOCKE_QUICK_START`** — the first morning loses its errands. Mom meets you at the
+  truck, says she has set the clock, hands over the Running Shoes and sends you to
+  Professor Birch, then goes back inside. No trip into the house, no bedroom clock, no Dad
+  on TV, no visit next door. The clock is set to the cartridge's real-time clock — in an
+  emulator that is your computer's clock — with the same call the wall clock makes.
+  Everything the skipped scenes would have set is set instead: intro state 7, the rival's
+  mother and the rival counted as met (town state 1, rival state 3), the rival waiting in
+  their bedroom as vanilla leaves them, the movers gone. The twin moves to her state-1 spot
+  at (10,1), so walking north still gets "go see what's happening".
+- The Running Shoes now come early, so after the Pokédex the lab moves the town state
+  straight past the scene where Mom would wait outside to give them again (3 → 4).
+- The rival is MAY or BRENDAN, as always in Emerald — the game never asks for a rival name.
+- **`RANDOLOCKE_SKIP_WALLY_TUTORIAL`** — the first time you enter Petalburg, the state the
+  catching tutorial leaves behind is set instead: the gym at "come back with four badges"
+  (gym state 2, as vanilla leaves it), the city past the tutorial, Wally, the gym's Wally
+  and Wally's mother hidden, the rival gone from the lab, Birch's day reset. The gym boy
+  stays where he stands and never walks you to the gym. Norman is optional until you want
+  the badge. Wally's later appearances do not read any of this.
+- **`SHINY_ODDS` 256 → 512** — 1 in 128.
+
+Only a **new game** sees the quick start: a save already past the truck never comes back
+to it. The Wally skip applies the first time any save enters Petalburg with the city still
+at state 0. No save-layout change.
+
+### Headless playthrough
+
+A throwaway autopilot build (not committed) played New Game from the title screen, pressing
+A every eighth frame and walking the shortest path, and printed the story state.
+
+| | Boy | Girl |
+| --- | --- | --- |
+| New game → out of the truck | 935 frames (vanilla truck ride) | same |
+| Quick start (Mom's scene) | 521 frames, 8.7 s | same |
+| State afterwards | intro 7, town 1, rival 3, houses(Brendan) 2; shoes, dash, clock, met rival mom, TV set; Mom gone; May in her bedroom | the mirror image: houses(May) 2, Brendan in his bedroom |
+| Player / twin | (4,10) facing east / (10,1) facing up, face-up movement | (13,10) / same |
+| Walk north | "Go see what's happening" at (11,1), town state 1 → 2 | same |
+| Route 101 | Rescue scene, player left at (11,15) | same |
+| **New game → starter bag open** | **2,248 frames, 37 s** | 2,208 frames, 36 s |
+
+A third run stepped out of the truck and warped to Petalburg: city state 3, gym state 2,
+Birch state 0, Wally, the gym's Wally, Wally's mother and the lab rival hidden, the gym boy
+at his usual (12,15). Walking from x=27 to x=6 along row 13 — across the gym boy's trigger
+column — started no script. None of the three runs logged an assert, a skipped free or an
+illegal opcode.
+
+### Shiny odds
+
+| Situation | Odds per Pokémon |
+| --- | --- |
+| Any wild or gift Pokémon | 1 in 128 (0.78%) |
+| With a lure (one reroll) | about 1 in 64 |
+| With the Shiny Charm (two rerolls; debug menu only) | about 1 in 43 |
+
+A 50% chance of seeing one takes about 89 encounters, 90% about 294.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T51.1 | **Quick start** | New game, step off the truck | Mom comes out, welcomes you, says the clock is set, gives the Running Shoes and sends you to Birch, then goes back inside. You are left at the truck, free to move |
+| T51.2 | Running Shoes | Walk | Running works straight away |
+| T51.3 | **The clock is set** | Go up to your bedroom and read the clock | It shows your computer's time. No "set the clock" prompt anywhere |
+| T51.4 | Your house | Go in | Mom inside, no movers, no boxes; nothing triggers |
+| T51.5 | The rival's house | Visit next door | The rival's mother says they are busy; the rival is in their bedroom, as after meeting in vanilla |
+| T51.6 | **The twin** | Walk to the north exit | She asks you to go and see what's happening |
+| T51.7 | **Birch** | Walk onto Route 101 | The rescue plays; the bag offers three random starters — 37 s after New Game in the headless run, a little longer reading the text |
+| T51.8 | Re-roll | Soft reset, New Game again | A new Trainer ID, so three different starters |
+| T51.9 | After the rescue | Back to Littleroot | The rival has gone from their bedroom to Route 103 |
+| T51.10 | **No second shoe scene** | Get the Pokédex, leave the lab | Mom is not waiting outside |
+| T51.11 | The girl's version | T51.1–T51.10 as a girl | The same, with May's house as yours and Brendan as the rival |
+| T51.12 | **No Wally tutorial** | Enter Petalburg from Route 102 | No Wally, no gym boy walking you back; the west exit to Route 104 is open |
+| T51.13 | Norman | Enter the gym, talk to him | "Come back with four badges" |
+| T51.14 | Norman's badge count | Earn badges | He opens the gym at four, as vanilla |
+| T51.15 | Wally later | Mauville | Wally and his uncle appear and battle as normal |
+| T51.16 | **Shinies** | Run through grass | Roughly one in 128 encounters is shiny |
+| T51.17 | Regression tests | `make check TESTS="Randolocke"`, `TESTS="Shininess"`, `TESTS="Capture"`, `TESTS="CreateNPCTrainerPartyForTrainer"` | PASS — 8, 2, 8 and 4 |
+
+The trainer-party test had been failing since Phase 46: it checks the party file's own IVs,
+EVs and natures, which the Phase 46 trainer rules replace by design. Those checks now run
+only with the matching `RZ_TRAINER_*` setting off; `test/randolocke_trainers.c` covers the
+rules themselves.
+
+---
+
 ## Phase 50 — Wild encounters are never weaker, and every route has a lottery ticket
 
 ### How the randomization works

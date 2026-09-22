@@ -3,6 +3,7 @@
 #include "constants/pokedex.h"
 #include "battle.h"
 #include "event_data.h"
+#include "rtc.h"
 #include "pokedex.h"
 #include "pokemon.h"
 #include "randolocke_nuzlocke.h"
@@ -29,6 +30,20 @@ bool32 RandolockeSpeciesIsLegendary(enum Species species)
         || gSpeciesInfo[species].isMythical
         || gSpeciesInfo[species].isUltraBeast;
 }
+
+#if RANDOLOCKE_QUICK_START == TRUE
+// Sets the in-game clock to the real-time clock's current time, which is what a player
+// would dial into the bedroom clock anyway: in an emulator the RTC is the host's own
+// clock. Same call the wall clock makes on confirming, so days start counting from here.
+void RandolockeAutoSetClock(void)
+{
+    struct SiiRtcInfo rtc;
+
+    RtcGetInfo(&rtc);
+    RtcInitLocalTimeOffset(ConvertBcdToBinary(rtc.hour), ConvertBcdToBinary(rtc.minute));
+    FlagSet(FLAG_SET_WALL_CLOCK);
+}
+#endif
 
 #if RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT == TRUE
 // VAR_RESULT = TRUE if the party carries more legendaries than the League allows, and

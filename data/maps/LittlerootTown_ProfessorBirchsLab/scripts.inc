@@ -520,8 +520,17 @@ LittlerootTown_ProfessorBirchsLab_EventScript_GivePokedex::
 	setvar VAR_OLDALE_TOWN_STATE, 1
 	setvar VAR_LITTLEROOT_RIVAL_STATE, 4
 	setvar VAR_LITTLEROOT_TOWN_STATE, 3
+.if RANDOLOCKE_QUICK_START == TRUE
+	@ randolocke: state 3 is Mom waiting outside to give the Running Shoes. Under the quick
+	@ start she gave them on the first morning, so go straight to the state after it.
+	call_if_set FLAG_RECEIVED_RUNNING_SHOES, LittlerootTown_ProfessorBirchsLab_EventScript_RandolockeShoesAlreadyGiven
+.endif
 	releaseall
 	end
+
+LittlerootTown_ProfessorBirchsLab_EventScript_RandolockeShoesAlreadyGiven::
+	setvar VAR_LITTLEROOT_TOWN_STATE, 4
+	return
 
 LittlerootTown_ProfessorBirchsLab_EventScript_MayGivePokeBalls::
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_MayGotPokedexTooTakeThese, MSGBOX_DEFAULT

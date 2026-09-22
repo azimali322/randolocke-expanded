@@ -104,12 +104,12 @@ enum __attribute__((packed)) Stat
 #define MAX_STAT_STAGE    12
 
 // Shiny odds
-// randolocke: 256/65536 is 1 in 256, up from the stock 8 (1 in 8192). The nuzlocke shiny
+// randolocke: 512/65536 is 1 in 128, up from the stock 8 (1 in 8192). The nuzlocke shiny
 // clause -- a shiny is catchable even in an area already used up, and catching it does not
 // consume the area -- is only a real rule if shinies actually turn up; at 1 in 8192 it was
 // decoration. A lure, the Shiny Charm, chain fishing or DexNav each add rerolls on top of
 // this, so the effective rate in those situations is higher again.
-#define SHINY_ODDS 256 // Actual probability is SHINY_ODDS/65536
+#define SHINY_ODDS 512 // Actual probability is SHINY_ODDS/65536
 
 // Ribbon IDs used by TV and Pokénav
 #define CHAMPION_RIBBON       0

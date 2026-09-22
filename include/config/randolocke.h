@@ -114,6 +114,31 @@
 // one you are riding.
 #define RANDOLOCKE_DUAL_BIKE                    TRUE
 
+// --- Story shortcuts ----------------------------------------------------------
+
+// If TRUE, the first morning in Littleroot skips its errands. Mom meets you at the truck,
+// sets the clock herself -- to the cartridge's real-time clock, which in an emulator is
+// your own -- hands over the Running Shoes, and sends you to Professor Birch. The bedroom
+// clock, Dad on TV and the visit next door are skipped, and the states they would have
+// set are set, so the rest of the story finds what it expects: the rival counts as met,
+// which is what the twin at the north exit waits for, and May or Brendan is still waiting
+// on Route 103 for the battle.
+//
+// The Running Shoes come early, so the lab moves straight past the scene where Mom would
+// wait outside to give them after the Pokedex. The rival's name is the game's default,
+// MAY or BRENDAN, as it always is in Emerald.
+//
+// Only affects new games: a save already past the truck never comes back to it.
+#define RANDOLOCKE_QUICK_START              TRUE
+
+// If TRUE, there is no Wally catching tutorial. Vanilla makes it effectively mandatory:
+// until it runs, a boy at Petalburg's west side walks you back to the gym every time you
+// cross his row. The first time you enter Petalburg, the state the tutorial leaves behind
+// is set instead -- Wally and his mother hidden, Norman already asking for four badges --
+// so the gym boy never stops you and the gym is optional until you want the badge.
+// Wally's later appearances do not depend on the tutorial and are unaffected.
+#define RANDOLOCKE_SKIP_WALLY_TUTORIAL      TRUE
+
 // --- Registered key items ---------------------------------------------------
 
 // If TRUE, a second key item can be registered and used by *holding* SELECT, while a tap

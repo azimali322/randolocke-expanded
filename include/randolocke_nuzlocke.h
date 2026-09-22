@@ -15,6 +15,7 @@ static inline void RandolockeSetPlayerMonIVs(struct Pokemon *mon, bool32 isGiftO
 
 bool32 RandolockeSpeciesIsLegendary(enum Species species);
 void RandolockeCheckEliteFourLegendaries(void);
+void RandolockeAutoSetClock(void);
 
 enum RandolockeCatchRule
 {
