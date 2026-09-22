@@ -21,6 +21,8 @@
 #include "palette.h"
 #include "party_menu.h"
 #include "pokemon_animation.h"
+#include "config/randolocke.h"
+#include "randolocke_battle_log.h"
 #include "recorded_battle.h"
 #include "string_util.h"
 #include "sound.h"
@@ -2644,6 +2646,9 @@ void BtlController_HandlePrintString(enum BattlerId battler)
     gBattle_BG0_Y = 0;
     stringId = (u16 *)(&gBattleResources->bufferA[battler][2]);
     BufferStringBattle(*stringId, battler);
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+    RandolockeBattleLog_AddMessage(gDisplayedStringBattle);
+#endif
 
     if (gTestRunnerEnabled)
     {

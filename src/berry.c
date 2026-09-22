@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "berry.h"
 #include "randomizer.h"
 #include "event_data.h"
@@ -2724,7 +2725,14 @@ static u32 GetBerryTreeAge(u8 id, u8 stage)
 
 static u8 GetBerryCountByBerryTreeId(u8 id)
 {
-    return gSaveBlock1Ptr->berryTrees[id].berryYield;
+    u32 yield = gSaveBlock1Ptr->berryTrees[id].berryYield;
+
+    // randolocke: trees hand over a bigger pile. What grows on them is randomized, so
+    // coming back for a second helping of the same berry is not really an option.
+    yield *= RANDOLOCKE_BERRY_YIELD_MULTIPLIER;
+    if (yield > 255)
+        yield = 255;
+    return yield;
 }
 
 static u16 GetStageDurationByBerryType(u8 berry)

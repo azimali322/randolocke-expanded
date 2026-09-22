@@ -1,4 +1,6 @@
 #include "global.h"
+#include "config/randolocke.h"
+#include "randolocke_nuzlocke.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -393,6 +395,26 @@ static void (*const sMovementStatusHandler[])(struct LinkPlayerObjectEvent *, st
 // code
 void DoWhiteOut(void)
 {
+    #if RANDOLOCKE_WIPE_COSTS_PARTY == TRUE
+        if (RandolockeNuzlockeActive())
+        {
+            // The whole party is down, so the whole party is lost: boxed and marked.
+            RandolockeBoxWipedParty();
+
+            // If nothing living is left anywhere, the run is finished and the game goes
+            // back to the title. The save is deliberately left alone -- it is the record
+            // of the run, and restarting is the player's call.
+            #if RANDOLOCKE_RUN_OVER_ON_WIPE == TRUE
+                if (!RandolockeAnyLivingMonInBoxes())
+                {
+                    DoSoftReset();
+                    return;
+                }
+            #endif
+            // Otherwise the player walks out of the Pokemon Center with an empty party
+            // and picks a new team off the PC.
+        }
+    #endif
     RunScriptImmediately(EventScript_WhiteOut);
     HealPlayerParty();
     Overworld_ResetStateAfterWhiteOut();
@@ -1122,7 +1144,13 @@ void SetFlashLevel(s32 flashLevel)
 
 u8 GetFlashLevel(void)
 {
+#if RANDOLOCKE_NO_DARK_AREAS == TRUE
+    // randolocke: everything reads the darkness through here, so a saved level -- a save
+    // made inside a dark cave, or Dewford Gym's per-trainer levels -- never shows.
+    return 0;
+#else
     return gSaveBlock1Ptr->flashLevel;
+#endif
 }
 
 void SetCurrentMapLayout(u16 mapLayoutId)

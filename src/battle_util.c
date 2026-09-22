@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_anim_scripts.h"
@@ -10850,6 +10851,13 @@ bool32 IsBattlerInvalidForSpreadMove(enum BattlerId battlerAtk, enum BattlerId b
 
 bool32 IsAllowedToUseBag(void)
 {
+    #if RANDOLOCKE_NO_BAG_VS_TRAINERS == TRUE
+    // randolocke: held items only against a trainer. Wild battles are left alone on
+    // purpose -- this same check gates Poke Balls in item_use.c.
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+        return FALSE;
+    #endif
+
     switch (VarGet(B_VAR_NO_BAG_USE))
     {
     case NO_BAG_RESTRICTION:

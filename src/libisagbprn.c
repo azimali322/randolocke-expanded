@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "gba/gba.h"
 #include "config/general.h"
+#include "config/randolocke.h"
 #include "malloc.h"
 #include "mini_printf.h"
 
@@ -246,7 +247,11 @@ void MgbaAssert(const char *pFile, s32 nLine, const char *pExpression, bool32 nS
     if (nStopProgram)
     {
         MgbaPrintf(MGBA_LOG_ERROR, "ASSERTION FAILED  FILE=[%s] LINE=[%d]  EXP=[%s]", pFile, nLine, pExpression);
+    #if RANDOLOCKE_DEBUG_ASSERTS_RESUME == FALSE || TESTING
+        // randolocke: see RANDOLOCKE_DEBUG_ASSERTS_RESUME. Under mGBA without a debugger this
+        // opcode does not stop the game; it resumes into the middle of the call above.
         asm(".hword 0xEFFF");
+    #endif
     }
     else
     {

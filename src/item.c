@@ -16,6 +16,9 @@
 #include "battle_pyramid_bag.h"
 #include "graphics.h"
 #include "shop_criteria.h"
+#include "move.h"
+#include "line_break.h"
+#include "config/randolocke.h"
 #include "constants/battle.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -865,6 +868,35 @@ const u8 *GetItemDescription(enum Item itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].description;
 }
+
+#if RANDOLOCKE_TM_MOVE_DESCRIPTIONS == TRUE
+// randolocke: a randomized TM no longer teaches the move its own printed description
+// describes -- TM23 still read "slams the foe with a hard tail" while teaching Roar. The
+// name, type, power, accuracy and PP all came off the real move already; only the
+// description did not. Return the move's description for the whole TM/HM pocket, so a
+// TM's description always matches what it teaches.
+//
+// Move descriptions are authored for the summary screen's 20-tile window (up to 30
+// characters a line) and these windows are 14, so the text has to be re-laid-out. The
+// longest move description is 59 characters against the longest item description's 65,
+// both over three lines, so it always fits once re-wrapped.
+const u8 *GetItemDescriptionForWindow(enum Item itemId, u8 *buffer, u32 maxWidth)
+{
+    enum Move move;
+
+    if (GetItemPocket(itemId) != POCKET_TM_HM)
+        return GetItemDescription(itemId);
+
+    move = GetItemTMHMMoveId(itemId);
+    if (move == MOVE_NONE)
+        return GetItemDescription(itemId);
+
+    StringCopy(buffer, GetMoveDescription(move));
+    StripLineBreaks(buffer);
+    BreakStringAutomatic(buffer, maxWidth, ITEM_DESCRIPTION_LINES, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+    return buffer;
+}
+#endif
 
 u8 GetItemImportance(enum Item itemId)
 {

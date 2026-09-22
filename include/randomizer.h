@@ -1,6 +1,8 @@
 #ifndef GUARD_RANDOMIZER_H
 #define GUARD_RANDOMIZER_H
 
+#include "constants/randolocke.h"
+
 #include "config/randomizer.h"
 #if RANDOMIZER_AVAILABLE == TRUE
 
@@ -47,6 +49,7 @@ enum RandomizerFeature
     RANDOMIZE_BERRY_TREES,
     // Randomization of which move each TM teaches.
     RANDOMIZE_TM_MOVES,
+    RANDOMIZE_TUTOR_MOVES,
 };
 
 enum RandomizerReason
@@ -61,6 +64,9 @@ enum RandomizerReason
     RANDOMIZER_REASON_STARTER_AND_GIFT_MON,
     RANDOMIZER_REASON_EGG,
     RANDOMIZER_REASON_ABILITIES,
+    RANDOMIZER_REASON_TRAINER_ITEM,
+    RANDOMIZER_REASON_TRAINER_IV,
+    RANDOMIZER_REASON_WILD_LOTTERY,
 };
 
 enum RandomizerOption {
@@ -111,6 +117,9 @@ static inline enum Type RandomizeMonType(enum Species species, u8 typeNum)
 enum Item RandomizeFoundItem(enum Item itemId, u8 mapNum, u8 mapGroup, u8 localId);
 void FindItemRandomize_NativeCall(struct ScriptContext *ctx);
 void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx);
+// Items an NPC hands over, via Std_ObtainItem. Rewrites VAR_0x8000 before the item is
+// added and before its name is buffered, so the message names what was really received.
+void GiftItemRandomize_NativeCall(struct ScriptContext *ctx);
 
 enum Species RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);
 enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species);
@@ -143,6 +152,8 @@ u8 RandomizeBerryTree(u8 treeId, u8 plantedBerry);
 // Which move a TM teaches. Returns MOVE_NONE when the feature is off or the item is not a
 // randomizable TM, in which case the caller keeps the vanilla mapping.
 enum Move RandomizeTMMove(u16 tmIndex);
+enum Move RandomizeTutorMove(enum Move move);
+extern const enum Move gRandolockeTutorMoves[RANDOLOCKE_TUTOR_COUNT];
 // Reverse of the above: which TM item teaches this move, or ITEM_NONE.
 u16 RandomizeTMMoveReverse(enum Move move);
 

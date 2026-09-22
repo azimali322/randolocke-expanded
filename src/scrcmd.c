@@ -16,6 +16,7 @@
 #include "field_door.h"
 #include "field_effect.h"
 #include "field_move.h"
+#include "config/randolocke.h"
 #include "event_object_lock.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
@@ -776,9 +777,16 @@ bool8 ScrCmd_animateflash(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
 
+#if RANDOLOCKE_NO_DARK_AREAS == TRUE
+    // randolocke: nothing is dark, so there is nothing to animate. The animation is what
+    // would restart the script, so carry on instead of stopping for it.
+    (void)level;
+    return FALSE;
+#else
     AnimateFlash(level);
     ScriptContext_Stop();
     return TRUE;
+#endif
 }
 
 bool8 ScrCmd_setflashlevel(struct ScriptContext *ctx)
@@ -2322,6 +2330,32 @@ bool8 ScrCmd_checkfieldmove(struct ScriptContext *ctx)
         }
     }
 
+    #if RANDOLOCKE_FIELD_MOVES_NEED_NO_USER == TRUE
+    // randolocke: no HM slave required. When nobody knows the move, the lead Pokemon uses
+    // it anyway -- the scripts only want a party index to name and to animate. Restricted
+    // to the badge-gated moves, which is exactly the HM set: the always-unlocked ones
+    // (Teleport, Dig, Sweet Scent, Soft-Boiled, Secret Power) are real moves a Pokemon has
+    // to have earned, and Secret Power in particular reaches here from the base scripts.
+    // The badge itself is still required.
+    if (gSpecialVar_Result == PARTY_SIZE
+     && gFieldMoveInfo[fieldMove].unlockType == BADGE_UNLOCK
+     && IsFieldMoveUnlocked(fieldMove))
+    {
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            enum Species species = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES);
+
+            if (!species)
+                break;
+            if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_IS_EGG))
+                continue;
+            gSpecialVar_Result = i;
+            gSpecialVar_0x8004 = species;
+            break;
+        }
+    }
+    #endif
+
     return FALSE;
 }
 
@@ -2470,6 +2504,46 @@ bool8 ScrCmd_cleartrainerflag(struct ScriptContext *ctx)
 
     ClearTrainerFlag(index);
     return FALSE;
+}
+
+// randolocke: re-roll a party Pokemon's hidden nature to a different one. "Set Hidden
+// Nature" already exists for picking one deliberately; this is for when you want the
+// dice to decide, which is the thing a randomizer run actually wants. Always lands on
+// something other than the current nature, so it is never a no-op.
+void RandolockeRollHiddenNature(struct ScriptContext *ctx)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
+    u32 current, nature;
+
+    if (gSpecialVar_0x8004 >= PARTY_SIZE
+     || !GetMonData(mon, MON_DATA_SANITY_HAS_SPECIES, NULL)
+     || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+        return;
+
+    current = GetMonData(mon, MON_DATA_HIDDEN_NATURE, NULL);
+    do {
+        nature = Random() % NUM_NATURES;
+    } while (nature == current);
+
+    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+    CalculateMonStats(mon);
+
+    GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
+    StringGet_Nickname(gStringVar1);
+    StringCopy(gStringVar2, gNaturesInfo[nature].name);
+}
+
+// randolocke: the move tutor's move lives in VAR_0x8005. Rewrite it, and buffer the name
+// of whatever it ends up being into STR_VAR_1 so the tutor can say it out loud -- the
+// vanilla messages name the move in their own text, which would otherwise be a lie.
+void RandolockeTutorMove(struct ScriptContext *ctx)
+{
+    #if RANDOMIZER_AVAILABLE == TRUE
+        enum Move move = RandomizeTutorMove(VarGet(VAR_0x8005));
+
+        VarSet(VAR_0x8005, move);
+        StringCopy(gStringVar1, GetMoveName(move));
+    #endif
 }
 
 bool8 ScrCmd_setwildbattle(struct ScriptContext *ctx)

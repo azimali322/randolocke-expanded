@@ -13,6 +13,7 @@
 #include "fieldmap.h"
 #include "party_menu.h"
 #include "fldeff.h"
+#include "event_scripts.h"
 
 EWRAM_DATA static bool8 sIsRegisteelPuzzle = 0;
 
@@ -218,13 +219,32 @@ void RandolockeOpenRegiceWall(void)
     MapGridSetMetatileIdAt(9 + MAP_OFFSET, 20 + MAP_OFFSET, METATILE_Cave_SealedChamberEntrance_BottomRight | MAPGRID_IMPASSABLE);
     DrawWholeMapView();
     PlaySE(SE_BANG);
+    // Every one of these runs as gPostMenuFieldCallback, straight off the party menu, with
+    // the player locked and object events frozen for the fade. Nothing else will hand them
+    // back: the vanilla puzzles end in a script that does it, or in DoBrailleRegirockEffect,
+    // which calls these two itself. Without them the wall opens and the game stops.
+    UnlockPlayerFieldControls();
+    UnfreezeObjectEvents();
 }
 
-// The three Regi caves, which vanilla gates behind Relicanth + Wailord.
+// The Sealed Chamber's own door. Vanilla reaches DoBrailleDigEffect from
+// EventScript_DigSealedChamber, which does the releaseall afterwards; called as a field
+// callback there is no script to do that.
+void RandolockeOpenSealedChamberDoor(void)
+{
+    DoBrailleDigEffect();
+    UnlockPlayerFieldControls();
+    UnfreezeObjectEvents();
+}
+
+// The three Regi caves, which vanilla gates behind Relicanth + Wailord. The rumble, the
+// three door sounds and the message are a script, the same one the Braille route plays
+// minus the Relicanth and Wailord check -- a message box is not something to reimplement
+// in C -- and its releaseall is what hands the player back. Ordinary Flash reaches its own
+// script the same way, from FldEff_UseFlash.
 void RandolockeOpenRegiDoors(void)
 {
-    FlagSet(FLAG_REGI_DOORS_OPENED);
-    DoSealedChamberShakingEffect_Short();
+    ScriptContext_SetupScript(RandolockeEventScript_FlashOpensRegiDoors);
 }
 
 #endif // RANDOLOCKE_FLASH_OPENS_REGI_CAVES

@@ -1,4 +1,5 @@
 #include "global.h"
+#include "constants/randolocke.h"
 #include "battle_setup.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -419,6 +420,11 @@ u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, en
     }
 }
 
+// The nuzlocke's per-area bits are indexed by header id, so the table has to fit.
+// Without this the tracking would just stop working for areas past the end, silently.
+STATIC_ASSERT(ARRAY_COUNT(gWildMonHeaders) <= RANDOLOCKE_MAX_AREAS,
+              RandolockeAreaBitfieldTooSmall);
+
 u16 GetCurrentMapWildMonHeaderId(void)
 {
     u16 i;
@@ -683,6 +689,11 @@ bool8 AreLegendariesInSootopolisPreventingEncounters(void)
 
 bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 {
+    // randolocke: after a wipe the party is empty until the player reaches a PC. A wild
+    // battle with nothing to send out would be unwinnable and unrunnable, so suppress it.
+    if (CalculatePlayerPartyCount() == 0)
+        return FALSE;
+
     u32 headerId;
     enum TimeOfDay timeOfDay;
     struct Roamer *roamer;
@@ -871,6 +882,9 @@ void RockSmashWildEncounter(void)
 
 bool8 SweetScentWildEncounter(void)
 {
+    if (CalculatePlayerPartyCount() == 0)
+        return FALSE;
+
     s16 x, y;
     u32 headerId;
     enum TimeOfDay timeOfDay;

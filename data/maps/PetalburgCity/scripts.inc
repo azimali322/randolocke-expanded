@@ -5,11 +5,30 @@ PetalburgCity_MapScripts::
 
 PetalburgCity_OnTransition:
 	setflag FLAG_VISITED_PETALBURG_CITY
+.if RANDOLOCKE_SKIP_WALLY_TUTORIAL == TRUE
+	@ randolocke: before anything checks it, so the gym boy is never put in your way.
+	call_if_eq VAR_PETALBURG_CITY_STATE, 0, PetalburgCity_EventScript_RandolockeSkipWallyTutorial
+.endif
 	call_if_eq VAR_PETALBURG_CITY_STATE, 0, PetalburgCity_EventScript_MoveGymBoyToWestEntrance
 	call_if_eq VAR_PETALBURG_CITY_STATE, 2, PetalburgCity_EventScript_DisableMapNameAndMusic
 	call_if_eq VAR_PETALBURG_CITY_STATE, 4, PetalburgCity_EventScript_DisableMapNameAndMusic
 	call_if_eq VAR_PETALBURG_GYM_STATE, 8, PetalburgCity_EventScript_SetGymDoorsUnlocked
 	end
+
+@ randolocke: RANDOLOCKE_SKIP_WALLY_TUTORIAL. The state the catching tutorial leaves once it
+@ is over, set on the first visit instead: the gym at "come back with four badges" and the
+@ city past the tutorial, Wally and his mother hidden, the rival gone from Birch's lab and
+@ Birch's day reset -- everything the gym and city scripts set across the tutorial, with
+@ its end values. The gym's own Wally is hidden too; vanilla hides him with removeobject.
+PetalburgCity_EventScript_RandolockeSkipWallyTutorial::
+	setvar VAR_PETALBURG_GYM_STATE, 2
+	setvar VAR_PETALBURG_CITY_STATE, 3
+	setflag FLAG_HIDE_PETALBURG_CITY_WALLY
+	setflag FLAG_HIDE_PETALBURG_GYM_WALLY
+	setflag FLAG_HIDE_PETALBURG_CITY_WALLYS_MOM
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_RIVAL
+	special InitBirchState
+	return
 
 PetalburgCity_EventScript_MoveGymBoyToWestEntrance::
 	setobjectxyperm LOCALID_GYM_BOY, 5, 11

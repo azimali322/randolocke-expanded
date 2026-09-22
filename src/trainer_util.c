@@ -1,4 +1,7 @@
 #include "global.h"
+#include "constants/flags.h"
+#include "event_data.h"
+#include "config/randomizer.h"
 #include "main.h"
 #include "data.h"
 #include "move.h"
@@ -18,7 +21,157 @@ rng_value_t GeneratePartySeed(const struct Trainer *trainer)
     return LocalRandomSeed(seed);
 }
 
-static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
+#if RZ_TRAINER_EV_SCALING == TRUE
+// Trainer Pokemon get an EV spread that grows with the player's badge count. Which stats
+// it lands on is decided from the Pokemon's own base stats rather than fixed, because the
+// species may have been randomized into something that wants the other half of the sheet.
+// Only ordinary trainers reach here -- Frontier and Battle Tower parties are built
+// elsewhere -- so there is no facility check to make.
+static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
+{
+    static const u8 sEvsByBadge[] = RZ_TRAINER_EVS_BY_BADGE;
+    static const u16 sBadgeFlags[] = {
+        FLAG_BADGE01_GET, FLAG_BADGE02_GET, FLAG_BADGE03_GET, FLAG_BADGE04_GET,
+        FLAG_BADGE05_GET, FLAG_BADGE06_GET, FLAG_BADGE07_GET, FLAG_BADGE08_GET,
+    };
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    u32 badges = 0, i;
+    u8 ev;
+
+    for (i = 0; i < ARRAY_COUNT(sBadgeFlags); i++)
+    {
+        if (FlagGet(sBadgeFlags[i]))
+            badges++;
+    }
+    ev = sEvsByBadge[badges];
+    if (ev == 0)
+        return;
+
+    // The attacking stat the species can actually use.
+    if (gSpeciesInfo[species].baseAttack >= gSpeciesInfo[species].baseSpAttack)
+        SetMonData(mon, MON_DATA_ATK_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_SPATK_EV, &ev);
+
+    // Then Speed if it is fast enough to be worth the investment, HP if it is not.
+    if (gSpeciesInfo[species].baseSpeed >= RZ_TRAINER_EV_SPEED_THRESHOLD)
+        SetMonData(mon, MON_DATA_SPEED_EV, &ev);
+    else
+        SetMonData(mon, MON_DATA_HP_EV, &ev);
+
+    // 252 and 252 leaves 6 of the legal 510. A player would put them somewhere, so the
+    // better defence gets them.
+    if (ev >= MAX_PER_STAT_EVS)
+    {
+        u8 spare = MAX_TOTAL_EVS - (2 * MAX_PER_STAT_EVS);
+
+        if (gSpeciesInfo[species].baseDefense >= gSpeciesInfo[species].baseSpDefense)
+            SetMonData(mon, MON_DATA_DEF_EV, &spare);
+        else
+            SetMonData(mon, MON_DATA_SPDEF_EV, &spare);
+    }
+}
+#endif
+
+#if RZ_TRAINER_IVS == TRUE
+// Perfect for a boss, rolled per stat for everyone else. See the config for what the data
+// file hands out instead.
+static void RandolockeGiveTrainerIVs(struct Pokemon *mon, u32 trainerId, u32 slot, bool32 isBoss)
+{
+    static const u32 sIvFields[NUM_STATS] =
+    {
+        MON_DATA_HP_IV, MON_DATA_ATK_IV, MON_DATA_DEF_IV,
+        MON_DATA_SPEED_IV, MON_DATA_SPATK_IV, MON_DATA_SPDEF_IV,
+    };
+    struct Sfc32State state;
+    u32 i;
+    u8 iv;
+
+    if (isBoss)
+    {
+        iv = MAX_PER_STAT_IVS;
+        for (i = 0; i < NUM_STATS; i++)
+            SetMonData(mon, sIvFields[i], &iv);
+        return;
+    }
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_TRAINER_IV, trainerId, slot);
+    for (i = 0; i < NUM_STATS; i++)
+    {
+        iv = RandomizerNextRange(&state, MAX_PER_STAT_IVS + 1);
+        SetMonData(mon, sIvFields[i], &iv);
+    }
+}
+#endif
+
+#if RZ_TRAINER_NATURES == TRUE
+// Trainer Pokemon carry no Nature of their own, so every one of them fights on Hardy,
+// which modifies nothing. This hands out the nature a player would have picked, read off
+// the same base stats the EV spread reads: the fast ones buy Speed with the attacking stat
+// they do not use, the slow ones buy power with it. Written as the hidden nature because
+// that is what CalculateMonStats reads here, and because rerolling the personality to move
+// a nature would take the Pokemon's gender and shininess with it.
+static void RandolockeGiveTrainerNature(struct Pokemon *mon)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    bool32 physical = gSpeciesInfo[species].baseAttack >= gSpeciesInfo[species].baseSpAttack;
+    bool32 fast = gSpeciesInfo[species].baseSpeed >= RZ_TRAINER_EV_SPEED_THRESHOLD;
+    u32 nature;
+
+    if (physical)
+        nature = fast ? NATURE_JOLLY : NATURE_ADAMANT;   // -Sp. Atk either way
+    else
+        nature = fast ? NATURE_TIMID : NATURE_MODEST;    // -Attack either way
+
+    SetMonData(mon, MON_DATA_HIDDEN_NATURE, &nature);
+}
+#endif
+
+#if RZ_TRAINER_HELD_ITEMS == TRUE
+// Items that suit any species: recovery, a survival aid, a damage boost. No Choice items --
+// they lock the holder into one move, and an AI that mishandles that is easier to beat.
+static const u16 sRandolockeTrainerItems[] =
+{
+    ITEM_LEFTOVERS, ITEM_SITRUS_BERRY, ITEM_LUM_BERRY, ITEM_FOCUS_BAND, ITEM_FOCUS_SASH,
+    ITEM_BRIGHT_POWDER, ITEM_QUICK_CLAW, ITEM_SCOPE_LENS, ITEM_EXPERT_BELT, ITEM_LIFE_ORB,
+    ITEM_SHELL_BELL,
+};
+
+// A Pokemon with no item of its own is given one, seeded from the trainer and the slot so
+// the same trainer is always holding the same thing.
+static void RandolockeGiveTrainerHeldItem(struct Pokemon *mon, u32 trainerId, u32 slot, bool32 isBoss)
+{
+    struct Sfc32State state;
+    enum Species species;
+    u32 chance, roll;
+    u16 item;
+
+    if (GetMonData(mon, MON_DATA_HELD_ITEM, NULL) != ITEM_NONE)
+        return;
+
+    state = RandomizerRandSeed(RANDOMIZER_REASON_TRAINER_ITEM, trainerId, slot);
+    chance = isBoss ? RZ_TRAINER_ITEM_CHANCE_BOSS : RZ_TRAINER_ITEM_CHANCE;
+    if (RandomizerNextRange(&state, 100) >= chance)
+        return;
+
+    // One more slot than the shared list: the last is the booster for the category this
+    // species attacks from.
+    roll = RandomizerNextRange(&state, ARRAY_COUNT(sRandolockeTrainerItems) + 1);
+    if (roll < ARRAY_COUNT(sRandolockeTrainerItems))
+    {
+        item = sRandolockeTrainerItems[roll];
+    }
+    else
+    {
+        species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+        item = (gSpeciesInfo[species].baseAttack >= gSpeciesInfo[species].baseSpAttack)
+             ? ITEM_MUSCLE_BAND : ITEM_WISE_GLASSES;
+    }
+    SetMonData(mon, MON_DATA_HELD_ITEM, &item);
+}
+#endif
+
+static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry, bool32 speciesWasRandomized)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
@@ -28,6 +181,20 @@ static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct Trai
         if (partyEntry->moves[j] != MOVE_NONE)
             noMoveSet = FALSE;
     }
+    // randolocke: a hand-written moveset belongs to the species it was written for. Once
+    // the species has been substituted it is worse than useless -- Roxanne's three
+    // Pokemon all carried Tackle / Defense Curl / Rock Throw / Rock Tomb whatever they
+    // turned into, so none of them had a single same-type move and all three fought
+    // identically. Fall back to the level-up moveset, which GetSpeciesLevelUpLearnset
+    // routes through the randomizer, so the Pokemon gets moves that suit the species it
+    // actually is: same-type attacks included, strongest first.
+    #if RZ_TRAINER_REGENERATE_MOVES == TRUE && RANDOMIZER_AVAILABLE == TRUE
+    // The same applies once learnsets are randomized even if the species survived: this
+    // run's Geodude does not learn Rock Tomb either way, so a hand-written moveset is a
+    // list of moves the Pokemon in front of you cannot actually have.
+    if (speciesWasRandomized || RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
+        noMoveSet = TRUE;
+    #endif
     if (noMoveSet)
     {
         GiveMonInitialMoveset(mon);
@@ -180,7 +347,7 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
     }
 
     SetMonData(mon, MON_DATA_IVS, &trainerMon->iv);
-    CustomTrainerPartyAssignMoves(mon, trainerMon);
+    CustomTrainerPartyAssignMoves(mon, trainerMon, species != trainerMon->species);
     SetMonData(mon, MON_DATA_HELD_ITEM, &trainerMon->heldItem);
 
     bool32 abilitySet = FALSE;
@@ -250,6 +417,21 @@ void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *tra
         data = TYPE_MYSTERY;
         SetMonData(mon, MON_DATA_TERA_TYPE, &data);
     }
+
+    #if RZ_TRAINER_IVS == TRUE
+        RandolockeGiveTrainerIVs(mon, trainer->rzTrainerId, trainer->rzSlot,
+                                 trainer->rzIsBossTrainer);
+    #endif
+    #if RZ_TRAINER_EV_SCALING == TRUE
+        RandolockeGiveTrainerEVs(mon);
+    #endif
+    #if RZ_TRAINER_NATURES == TRUE
+        RandolockeGiveTrainerNature(mon);
+    #endif
+    #if RZ_TRAINER_HELD_ITEMS == TRUE
+        RandolockeGiveTrainerHeldItem(mon, trainer->rzTrainerId, trainer->rzSlot,
+                                      trainer->rzIsBossTrainer);
+    #endif
 
     CalculateMonStats(mon);
     SetMonData(mon, MON_DATA_OT_NAME, trainer->name);

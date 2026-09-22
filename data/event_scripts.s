@@ -1,4 +1,5 @@
 #include "config/general.h"
+#include "config/randolocke.h"
 #include "config/battle.h"
 #include "config/item.h"
 #include "constants/global.h"

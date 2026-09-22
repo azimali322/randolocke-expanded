@@ -1,5 +1,8 @@
 #include "global.h"
+#include "randolocke_nuzlocke.h"
 #include "battle.h"
+#include "config/randolocke.h"
+#include "randolocke_battle_log.h"
 #include "battle_anim.h"
 #include "battle_ai_main.h"
 #include "battle_ai_record.h"
@@ -2770,6 +2773,9 @@ static void BattleStartClearSetData(void)
 {
     s32 i;
 
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+    RandolockeBattleLog_Reset();
+#endif
     TurnValuesCleanUp(FALSE);
     memset(&gSpecialStatuses, 0, sizeof(gSpecialStatuses));
 
@@ -4331,6 +4337,9 @@ static void HandleTurnActionSelectionState(void)
                 gChosenActionByBattler[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)] = B_ACTION_NOTHING_FAINTED;
         }
 
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+        RandolockeBattleLog_BeginTurn();
+#endif
         gBattleMainFunc = SetActionsAndBattlersTurnOrder;
 
         if (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER)

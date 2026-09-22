@@ -11,6 +11,7 @@
 #include "fpmath.h"
 #include "metaprogram.h"
 #include "constants/global.h"
+#include "constants/randolocke.h"
 #include "constants/flags.h"
 #include "constants/vars.h"
 #include "constants/species.h"
@@ -1119,7 +1120,11 @@ struct SaveBlock1
     /*0x560*/ struct Bag bag;
     /*0x848*/ struct Pokeblock pokeblocks[POKEBLOCKS_COUNT];
 #if FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1 == FALSE
-    /*0x988*/ u8 filler1[0x34]; // Previously Dex Flags, feel free to remove.
+    // randolocke: one bit per wild-encounter area, set once something is caught there.
+    // Carved out of the existing filler rather than appended, so the save layout is
+    // unchanged and saves made before the nuzlocke rules existed still load.
+    /*0x988*/ u8 caughtInArea[RANDOLOCKE_AREA_BYTES];
+              u8 filler1[0x34 - RANDOLOCKE_AREA_BYTES]; // Previously Dex Flags.
 #endif //FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1
     /*0x9BC*/ u16 berryBlenderRecords[3];
     /*0x9C2*/ u8 unused_9C2[2];

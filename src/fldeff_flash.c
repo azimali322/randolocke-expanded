@@ -102,7 +102,7 @@ bool32 SetUpFieldMove_Flash(void)
     {
         gSpecialVar_Result = GetCursorSelectionMonId();
         gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
-        gPostMenuFieldCallback = DoBrailleDigEffect;
+        gPostMenuFieldCallback = RandolockeOpenSealedChamberDoor;
         return TRUE;
     }
     else if (RandolockeFlashOpensRegiDoors())
@@ -113,7 +113,9 @@ bool32 SetUpFieldMove_Flash(void)
         return TRUE;
     }
     #endif
-    else if (gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_USE_FLASH))
+    // randolocke: with no dark areas a cave is already lit, and Flash would only shrink the
+    // light to its own radius.
+    else if (RANDOLOCKE_NO_DARK_AREAS == FALSE && gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_USE_FLASH))
     {
         gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
         gPostMenuFieldCallback = FieldCallback_Flash;

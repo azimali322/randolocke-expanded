@@ -436,7 +436,9 @@
 #define SHOW_EFFECTIVENESS_ALWAYS   1           // Always show type effectiveness when selecting moves.
 #define SHOW_EFFECTIVENESS_CAUGHT   2           // Only show type effectiveness if you've caught a Pokémon of that species.
 #define SHOW_EFFECTIVENESS_SEEN     3           // Only show type effectiveness if you've seen a Pokémon of that species.
-#define B_SHOW_EFFECTIVENESS        SHOW_EFFECTIVENESS_SEEN // If not SHOW_EFFECTIVENESS_NEVER, the PP string is replaced by a type effectiveness indicator based on the move and the target.
+// randolocke: ALWAYS, not SEEN. The "have you seen this species" gate is exactly wrong
+// in a randomizer -- you have never seen any of them, so the hint never appeared.
+#define B_SHOW_EFFECTIVENESS        SHOW_EFFECTIVENESS_ALWAYS // If not SHOW_EFFECTIVENESS_NEVER, the PP string is replaced by a type effectiveness indicator based on the move and the target.
 
 // Pokémon battle sprite settings
 #define B_ENEMY_MON_SHADOW_STYLE        GEN_LATEST // In Gen4+, all opposing Pokémon will have a shadow drawn beneath them.

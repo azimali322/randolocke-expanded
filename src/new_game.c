@@ -104,10 +104,13 @@ static void InitPlayerTrainerId(void)
 // L=A isnt set here for some reason.
 static void SetDefaultOptions(void)
 {
-    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_MID;
+    gSaveBlock2Ptr->optionsTextSpeed = RANDOLOCKE_DEFAULT_TEXT_SPEED;
     gSaveBlock2Ptr->optionsWindowFrameType = 0;
     gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_MONO;
-    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
+    // randolocke: SET, not SHIFT. Being offered a free switch every time a trainer's
+    // Pokemon faints is the single biggest difficulty giveaway in the game, and this is
+    // a challenge hack. Still changeable in the options menu.
+    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SET;
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
 }
@@ -282,6 +285,9 @@ static void RandolockeApplyNewGameDefaults(void)
     #endif
     #if RANDOLOCKE_DEFAULT_TM_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TM_MOVES)
         FlagSet(RANDOMIZER_FLAG_TM_MOVES);
+    #endif
+    #if RANDOLOCKE_DEFAULT_TUTOR_MOVES == TRUE && !defined(FORCE_RANDOMIZE_TUTOR_MOVES)
+        FlagSet(RANDOMIZER_FLAG_TUTOR_MOVES);
     #endif
     VarSet(RANDOMIZER_VAR_SPECIES_MODE, RANDOLOCKE_DEFAULT_SPECIES_MODE);
 #endif

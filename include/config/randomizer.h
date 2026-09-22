@@ -118,6 +118,118 @@
 #define RZ_TM_W_FILLER             2500
 #define RZ_TM_W_NICHE               800
 
+// --- Trainer EVs ------------------------------------------------------------
+
+// Not one of the 856 trainers in trainers.party specifies EVs, so every trainer Pokemon
+// in vanilla Emerald -- gym leaders included -- runs on zero. The player has no EV cap
+// and can train freely, which turns any boss into a pushover the moment you bother.
+//
+// If TRUE, trainers are given an EV spread that grows with your badge count, applied to
+// HP, Speed, and whichever of the attacking and defending pairs the Pokemon is actually
+// better at. That last part matters here: the species is randomized, so a fixed spread
+// would land on the wrong stats half the time. Ported from pokeemerald_rando_enh.
+#define RZ_TRAINER_EV_SCALING       TRUE
+
+// EVs per stat, by badges earned, given to TWO stats. 252 + 252 + the 6 left over is 510,
+// the most any Pokemon may legally hold and exactly the budget the player is held to --
+// the summary screen's editor enforces the same. The old spread put a smaller number on
+// four stats, which at eight badges came to 512, marginally over the player's limit and
+// spread too thin to be felt; two stats at the cap is both legal and the shape that makes
+// a boss frightening. The first three rows are the old totals, so the early gyms are where
+// they were.
+#define RZ_TRAINER_EVS_BY_BADGE   { 24, 48, 72, 100, 140, 180, 220, 252, 252 }
+
+// Which two stats. One is an attacking stat the species can actually use -- it is
+// randomized, so this is read off its base stats rather than fixed. The other is Speed if
+// the species is fast enough for that to be worth 252, and HP if it is not: 252 Speed on a
+// Shuckle is 252 EVs thrown away. The threshold is the median base Speed of every species
+// in the game, measured, so it splits the roster down the middle.
+#define RZ_TRAINER_EV_SPEED_THRESHOLD   67
+
+// --- Trainer IVs --------------------------------------------------------------
+
+// Vanilla gives a trainer one flat IV value for every stat of every Pokemon, scaled by how
+// important the trainer is. Measured over trainers.party: of the 1570 Pokemon belonging to
+// ordinary trainers, 40% run 0 across the board and most of the rest 1 to 12, while of the
+// 255 belonging to the 55 `Boss: Yes` trainers, 70% are already perfect and the other 30%
+// sit between 6 and 30.
+//
+// If TRUE, a boss's Pokemon are perfect, all six stats, all of them -- a gym leader should
+// not be fighting you with a 6 IV Pokemon -- and everyone else rolls each stat separately
+// between 0 and 31 instead of carrying the same number six times. That averages 15.5 a
+// stat against the 0 to 3 most of them have now, so ordinary trainers gain the most here.
+//
+// Rolled from the trainer and the party slot, so a trainer's Pokemon are the same every
+// time you meet them. The IVs line in trainers.party is left in place but no longer read
+// for anyone this touches.
+#define RZ_TRAINER_IVS              TRUE
+
+// --- Trainer natures ----------------------------------------------------------
+
+// Not one of the 1825 trainer Pokemon in trainers.party specifies a Nature either, so all
+// of them fight on Hardy: neither stat raised nor lowered. A nature is a flat 10% on two
+// stats, and the player's Pokemon have one.
+//
+// If TRUE, a trainer's Pokemon is given the nature a player would have picked for it, on
+// the same reading of its base stats the EVs use: the fast ones trade their unused
+// attacking stat for Speed (Jolly, Timid), the slow ones trade it for power (Adamant,
+// Modest). Nothing a Pokemon actually uses is ever the stat that drops.
+#define RZ_TRAINER_NATURES          TRUE
+
+// --- Trainer held items -------------------------------------------------------
+
+// 142 of the 1825 carry an item, and most of those are the in-battle restores the AI
+// throws rather than something held. If TRUE, a Pokemon that has no item of its own is
+// given one from a small list of battle items that suit any species -- Leftovers, Sitrus,
+// Lum, Focus Band, Life Orb and so on, plus the damage booster matching the category it
+// attacks from. Items written into trainers.party are left alone.
+//
+// Choice items are deliberately not on the list: they lock the holder into one move, and
+// an AI that mishandles that is easier to beat, not harder.
+//
+// The roll is seeded from the trainer and the party slot, like every other randomizer
+// decision, so a trainer's items are the same every time you meet them.
+#define RZ_TRAINER_HELD_ITEMS       TRUE
+
+// Percent chance of being given one. Bosses -- the 55 `Boss: Yes` trainers -- always are.
+#define RZ_TRAINER_ITEM_CHANCE          35
+#define RZ_TRAINER_ITEM_CHANCE_BOSS    100
+
+// --- Trainer AI ---------------------------------------------------------------
+
+// Measured from trainers.party: 640 trainers run Check Bad Move alone and 173 run Basic
+// Trainer -- and every boss is in the second group. Archie, Matt, Shelly and the gym
+// leaders all fight with the weakest AI in the game, which is the single largest
+// difficulty gap left once the levels and EVs are scaled.
+//
+// If TRUE, AI flags are raised at battle start by trainer importance rather than edited
+// into the data file, so the tiers stay one readable place and trainers.party stays a
+// diff of levels and parties.
+//
+//   every trainer   Check Bad Move, Try To Faint, Check Viability
+//   notable         + HP Aware, Smart Mon Choices, Try To 2HKO
+//   boss            + Smart Switching, Ace Pokemon, Omniscient
+//   Champion        + move and switch prediction
+//
+// Omniscience means the AI knows your moves, abilities and held items without having seen
+// them: it will not Surf into a Water Absorb it has never met, and it will not set up on
+// something that outspeeds and KOs it. All 55 boss trainers get it -- the gym leaders,
+// the Elite Four, Archie, Maxie and their admins. Weigh Ability Prediction is dropped
+// from the boss tier because omniscience supersedes it.
+//
+// "Notable" is by trainer class: rivals, the Aqua and Magma admins, and the Elite Four.
+// Bosses are the `Boss: Yes` tag from Phase 7c.
+#define RZ_TRAINER_AI_TIERS         TRUE
+
+#define RZ_AI_BASE      (AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_TRY_TO_FAINT | AI_FLAG_CHECK_VIABILITY)
+#define RZ_AI_NOTABLE   (RZ_AI_BASE | AI_FLAG_HP_AWARE | AI_FLAG_SMART_MON_CHOICES | AI_FLAG_TRY_TO_2HKO)
+#define RZ_AI_BOSS      (RZ_AI_NOTABLE | AI_FLAG_SMART_SWITCHING | AI_FLAG_ACE_POKEMON \
+                         | AI_FLAG_OMNISCIENT)
+// The Champion also reads ahead: which move you are about to use, and when you are about
+// to switch and to what. Both flags are documented as wanting omniscience, which it has.
+#define RZ_AI_CHAMPION  (RZ_AI_BOSS | AI_FLAG_PREDICT_MOVE | AI_FLAG_PREDICT_SWITCH \
+                         | AI_FLAG_PREDICT_INCOMING_MON)
+
 // --- Berry trees ------------------------------------------------------------
 
 // Berries are randomized where they are found, at berry trees, rather than in the field
@@ -145,6 +257,35 @@
 // picked uniformly and the spread comes from this assignment instead.
 #define RZ_TM_MOVES_TIER_MODE       RZ_TIER_MODE_MOVES
 
+// Reassigns what each of Emerald's ten move tutors teaches. Drawn through the same bands
+// as TMs, with no duplicates and no overlap with the TM list -- a tutor that teaches a
+// move you can already buy on a reusable TM is a wasted tutor.
+#define RZ_TUTOR_MOVES_TIER_MODE    RZ_TM_MOVES_TIER_MODE
+
+// --- Wild encounters ---------------------------------------------------------
+
+// Each wild slot is rolled on its own -- map, terrain, slot number and seed -- from the
+// species whose base stat total sits in a window around the slot's vanilla species. The
+// stock window is +/-10%, so half of every roll is weaker than what vanilla put there, and
+// on the opening routes, where vanilla's species are 195 to 240, that half is cocoons and
+// babies.
+//
+// These set the window for wild encounters only, as percentages of the vanilla species'
+// BST, when the species mode is MON_RANDOM_BST. A floor of 100 means a replacement is never
+// weaker than what vanilla had in that slot. Trainer parties keep the stock window.
+#define RZ_WILD_BST_FLOOR_PERCENT       100
+#define RZ_WILD_BST_CEILING_PERCENT     125
+
+// The lottery. The two rarest land slots -- 1% each, slots 10 and 11 -- skip the window
+// entirely and roll one of the ten lines that end in a 600-BST pseudo-legendary, as its
+// first stage: Dratini, Larvitar, Bagon, Beldum, Gible, Deino, Goomy, Jangmo-o, Dreepy,
+// Frigibax. Every route with grass has a ticket, and it is the same ticket every time.
+//
+// Worth knowing how often it pays out: the nuzlocke keeps your first encounter in an area,
+// and a 1% slot is rarely that. About 2% of first encounters, route by route.
+#define RZ_WILD_LOTTERY                 TRUE
+#define RZ_WILD_LOTTERY_FROM_SLOT       10
+
 // --- Learnset randomization -------------------------------------------------
 
 // Every Pokemon learns the same 21 moves at the same levels: 7 STAB, 7 status and
@@ -162,6 +303,17 @@
 // If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
 // physical attacker gets physical STAB, a special attacker special STAB. Without this a
 // pure physical attacker can roll seven special STAB moves and be unable to use any of them.
+// If TRUE, each of the three move groups is sorted by Base Power so stronger moves are
+// learned later -- Randolocke's default. FALSE fills the 21 slots in whatever order they
+// roll, which is the older, wilder behaviour.
+#define RZ_LEARNSET_SORT_BY_POWER   TRUE
+
+// A trainer Pokemon whose species was substituted gets a fresh moveset from its level-up
+// learnset instead of the moves written for the species it replaced. Without this, a
+// randomized gym leader's whole team carries the original team's moves -- no same-type
+// attacks, and every Pokemon on the team fighting the same way.
+#define RZ_TRAINER_REGENERATE_MOVES TRUE
+
 #define RZ_STAB_MATCH_CATEGORY      TRUE
 
 // How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a
@@ -226,6 +378,10 @@
 
 #ifndef FORCE_RANDOMIZE_TM_MOVES
 #define RANDOMIZER_FLAG_TM_MOVES                      FLAG_UNUSED_0x02A
+#endif
+
+#ifndef FORCE_RANDOMIZE_TUTOR_MOVES
+#define RANDOMIZER_FLAG_TUTOR_MOVES                   FLAG_UNUSED_0x02E
 #endif
 
 #define RANDOMIZER_VAR_SPECIES_MODE                   VAR_UNUSED_0x404E

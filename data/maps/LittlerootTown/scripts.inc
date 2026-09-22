@@ -111,23 +111,115 @@ LittlerootTown_EventScript_StepOffTruckMale::
 	lockall
 	setvar VAR_0x8004, 5
 	setvar VAR_0x8005, 8
+.if RANDOLOCKE_QUICK_START == TRUE
+	call LittlerootTown_EventScript_RandolockeQuickStart
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_TRUCK
+	releaseall
+	end
+.else
 	call LittlerootTown_EventScript_GoInsideWithMom
 	setflag FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_TRUCK
 	warpsilent MAP_LITTLEROOT_TOWN_BRENDANS_HOUSE_1F, 8, 8
 	waitstate
 	releaseall
 	end
+.endif
 
 LittlerootTown_EventScript_StepOffTruckFemale::
 	lockall
 	setvar VAR_0x8004, 14
 	setvar VAR_0x8005, 8
+.if RANDOLOCKE_QUICK_START == TRUE
+	call LittlerootTown_EventScript_RandolockeQuickStart
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_TRUCK
+	releaseall
+	end
+.else
 	call LittlerootTown_EventScript_GoInsideWithMom
 	setflag FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_TRUCK
 	warpsilent MAP_LITTLEROOT_TOWN_MAYS_HOUSE_1F, 2, 8
 	waitstate
 	releaseall
 	end
+.endif
+
+@ randolocke: RANDOLOCKE_QUICK_START. The first morning without its errands: Mom meets you
+@ at the truck, has already set the clock, gives you the Running Shoes and sends you to
+@ Professor Birch. Everything the house, the bedroom clock, the TV and the visit next door
+@ would have set is set here instead, so the story after this finds the state it expects.
+LittlerootTown_EventScript_RandolockeQuickStart::
+	delay 15
+	playse SE_LEDGE
+	applymovement LOCALID_PLAYER, LittlerootTown_Movement_PlayerStepOffTruck
+	waitmovement 0
+	opendoor VAR_0x8004, VAR_0x8005
+	waitdooranim
+	addobject LOCALID_LITTLEROOT_MOM
+	applymovement LOCALID_LITTLEROOT_MOM, LittlerootTown_Movement_MomExitHouse
+	waitmovement 0
+	closedoor VAR_0x8004, VAR_0x8005
+	waitdooranim
+	delay 10
+	applymovement LOCALID_LITTLEROOT_MOM, LittlerootTown_Movement_MomApproachPlayerAtTruck
+	waitmovement 0
+	msgbox LittlerootTown_Text_RandolockeWelcome, MSGBOX_DEFAULT
+	playfanfare MUS_OBTAIN_ITEM
+	message LittlerootTown_Text_SwitchShoesWithRunningShoes
+	waitfanfare
+	setflag FLAG_RECEIVED_RUNNING_SHOES
+	setflag FLAG_SYS_B_DASH
+	msgbox LittlerootTown_Text_ExplainRunningShoes, MSGBOX_DEFAULT
+	msgbox LittlerootTown_Text_RandolockeGoSeeBirch, MSGBOX_DEFAULT
+	closemessage
+	applymovement LOCALID_LITTLEROOT_MOM, LittlerootTown_Movement_MomApproachDoor
+	waitmovement 0
+	opendoor VAR_0x8004, VAR_0x8005
+	waitdooranim
+	applymovement LOCALID_LITTLEROOT_MOM, LittlerootTown_Movement_MomEnterHouse
+	waitmovement 0
+	removeobject LOCALID_LITTLEROOT_MOM
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_MOM_OUTSIDE
+	closedoor VAR_0x8004, VAR_0x8005
+	waitdooranim
+	@ The bedroom clock: set to the real-time clock, and the movers gone with it.
+	callnative RandolockeAutoSetClock
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_PLAYERS_HOUSE_VIGOROTH_1
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_PLAYERS_HOUSE_VIGOROTH_2
+	@ Dad on TV.
+	setflag FLAG_SYS_TV_HOME
+	setvar VAR_LITTLEROOT_INTRO_STATE, 7
+	@ Next door: the rival's mother met, the rival met and gone for Route 103.
+	setflag FLAG_MET_RIVAL_MOM
+	checkplayergender
+	call_if_eq VAR_RESULT, MALE, LittlerootTown_EventScript_RandolockeMetMay
+	call_if_eq VAR_RESULT, FEMALE, LittlerootTown_EventScript_RandolockeMetBrendan
+	setvar VAR_LITTLEROOT_RIVAL_STATE, 3
+	setvar VAR_LITTLEROOT_TOWN_STATE, 1
+	@ The twin stood guard for state 0 when the map loaded. At state 1 vanilla has her on
+	@ (10,1) facing the route, leaving (11,1) -- and its "go see what's happening" -- as the
+	@ way north. Respawn her from the moved template now, as the next map load would; she
+	@ has no hide flag, so removeobject sets nothing.
+	setobjectxyperm LOCALID_LITTLEROOT_TWIN, 10, 1
+	setobjectmovementtype LOCALID_LITTLEROOT_TWIN, MOVEMENT_TYPE_FACE_UP
+	removeobject LOCALID_LITTLEROOT_TWIN
+	addobject LOCALID_LITTLEROOT_TWIN
+	clearflag FLAG_HIDE_LITTLEROOT_TOWN_FAT_MAN
+	clearflag FLAG_HIDE_MAP_NAME_POPUP
+	return
+
+LittlerootTown_EventScript_RandolockeMetMay::
+	setvar VAR_LITTLEROOT_HOUSES_STATE_BRENDAN, 2
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_MAY
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_2F_POKE_BALL
+	clearflag FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_RIVAL_BEDROOM
+	return
+
+LittlerootTown_EventScript_RandolockeMetBrendan::
+	setvar VAR_LITTLEROOT_HOUSES_STATE_MAY, 2
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_BRENDAN
+	setflag FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_2F_POKE_BALL
+	clearflag FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_RIVAL_BEDROOM
+	return
 
 LittlerootTown_EventScript_GoInsideWithMom::
 	delay 15
@@ -245,9 +337,47 @@ LittlerootTown_EventScript_FatMan::
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
+@ randolocke: all four key items, from one person you meet before leaving town.
 LittlerootTown_EventScript_Boy::
-	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_NPC
+	lock
+	faceplayer
+	setvar VAR_0x8009, 0
+	setvar VAR_0x8008, ITEM_PORTA_HEAL
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_ENDLESS_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_CAP_CANDY
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_REPELLANT
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	goto_if_eq VAR_0x8009, 0, LittlerootTown_EventScript_BoyNothingToGive
+	msgbox LittlerootTown_Text_BoyKeepThemSafe, MSGBOX_DEFAULT
+	release
 	end
+
+LittlerootTown_EventScript_GiveKeyItemIfMissing::
+	checkitem VAR_0x8008
+	goto_if_eq VAR_RESULT, TRUE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	giveitem VAR_0x8008
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_EventScript_KeyItemAlreadyHeld
+	setvar VAR_0x8009, 1
+	return
+
+LittlerootTown_EventScript_KeyItemAlreadyHeld::
+	return
+
+LittlerootTown_EventScript_BoyNothingToGive::
+	msgbox LittlerootTown_Text_BirchSpendsDaysInLab, MSGBOX_DEFAULT
+	release
+	end
+
+LittlerootTown_Text_BoyKeepThemSafe:
+	.string "Dad said to hand these out to anyone\n"
+	.string "mad enough to try a run like yours.\p"
+	.string "The CAP CANDY takes a POKéMON as far\n"
+	.string "as the badges allow, all at once.\p"
+	.string "None of them ever run out.\n"
+	.string "Don't ask me how.$"
 
 LittlerootTown_EventScript_Twin::
 	lock
@@ -1014,3 +1144,18 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
+LittlerootTown_Text_RandolockeWelcome:
+	.string "MOM: {PLAYER}, we're here, honey!\p"
+	.string "This is LITTLEROOT TOWN.\n"
+	.string "Our new home!\p"
+	.string "I've already set the clock in your\n"
+	.string "room, so don't you worry about that.\p"
+	.string "And here, a little something for\n"
+	.string "your first day!$"
+
+LittlerootTown_Text_RandolockeGoSeeBirch:
+	.string "MOM: PROF. BIRCH lives right next\n"
+	.string "door, but I hear he's out on\l"
+	.string "ROUTE 101 doing his fieldwork.\p"
+	.string "Why don't you go and say hello?\n"
+	.string "Come home if anything happens!$"

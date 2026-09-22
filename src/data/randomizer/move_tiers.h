@@ -5,8 +5,9 @@
 // 844 rollable moves tiered; 91 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
-// 11 self-KO and OHKO moves were pushed to the bottom band for nuzlocke
-// play; see MOVES_PUSHDOWN in tools/randolocke/validate_tiers.py.
+// 18 moves were pushed to the bottom band regardless of where the
+// community list puts them; see MOVES_PUSHDOWN in
+// tools/randolocke/validate_tiers.py for which, and why.
 
 // Meta Defining -- 4 moves
 static const u16 sMoveTierMetaDefining[] =
@@ -276,7 +277,7 @@ static const u16 sMoveTierFiller[] =
     MOVE_WICKED_TORQUE,
 };
 
-// Niche -- 383 moves
+// Niche -- 377 moves
 static const u16 sMoveTierNiche[] =
 {
     MOVE_BEHEMOTH_BASH,
@@ -385,7 +386,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_CRUSH_GRIP,
     MOVE_MINIMIZE,
     MOVE_DRILL_PECK,
-    MOVE_EMBER,
     MOVE_ICE_FANG,
     MOVE_ICE_HAMMER,
     MOVE_SING,
@@ -509,10 +509,8 @@ static const u16 sMoveTierNiche[] =
     MOVE_FORESTS_CURSE,
     MOVE_ME_FIRST,
     MOVE_METEOR_ASSAULT,
-    MOVE_BUBBLE,
     MOVE_CONVERSION_2,
     MOVE_IRON_TAIL,
-    MOVE_TACKLE,
     MOVE_STRING_SHOT,
     MOVE_ROCK_TOMB,
     MOVE_PRECIPICE_BLADES,
@@ -538,7 +536,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_SIMPLE_BEAM,
     MOVE_ROUND,
     MOVE_ROCK_POLISH,
-    MOVE_POUND,
     MOVE_PARABOLIC_CHARGE,
     MOVE_SPARKLING_ARIA,
     MOVE_SHELL_TRAP,
@@ -555,7 +552,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_CHARGE,
     MOVE_INFERNO,
     MOVE_LEAFAGE,
-    MOVE_WATER_GUN,
     MOVE_VOLT_TACKLE,
     MOVE_POISON_POWDER,
     MOVE_SWEET_SCENT,
@@ -585,7 +581,6 @@ static const u16 sMoveTierNiche[] =
     MOVE_MEGA_DRAIN,
     MOVE_MIST_BALL,
     MOVE_NIGHT_SHADE,
-    MOVE_SCRATCH,
     MOVE_PAY_DAY,
     MOVE_SWITCHEROO,
     MOVE_SYNTHESIS,
@@ -664,7 +659,7 @@ static const u16 sMoveTierNiche[] =
     MOVE_MISTY_TERRAIN,
 };
 
-// Bad -- 186 moves
+// Bad -- 185 moves
 static const u16 sMoveTierBad[] =
 {
     MOVE_FREEZY_FROST,
@@ -779,7 +774,6 @@ static const u16 sMoveTierBad[] =
     MOVE_WING_ATTACK,
     MOVE_ZIPPY_ZAP,
     MOVE_SONIC_BOOM,
-    MOVE_SPLASH,
     MOVE_PRESENT,
     MOVE_SNIPE_SHOT,
     MOVE_TRIPLE_DIVE,
@@ -855,18 +849,25 @@ static const u16 sMoveTierBad[] =
     MOVE_HIGH_JUMP_KICK,
 };
 
-// Pokemon Homeless -- 22 moves
+// Pokemon Homeless -- 29 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
     MOVE_FISSURE,
     MOVE_HORN_DRILL,
     MOVE_EXPLOSION,
+    MOVE_EMBER,
     MOVE_FINAL_GAMBIT,
     MOVE_SHEER_COLD,
+    MOVE_BUBBLE,
+    MOVE_TACKLE,
+    MOVE_POUND,
+    MOVE_WATER_GUN,
+    MOVE_SCRATCH,
     MOVE_SELF_DESTRUCT,
     MOVE_MEMENTO,
     MOVE_MISTY_EXPLOSION,
+    MOVE_SPLASH,
     MOVE_HEALING_WISH,
     MOVE_LUNAR_DANCE,
     MOVE_DOUBLE_TEAM,

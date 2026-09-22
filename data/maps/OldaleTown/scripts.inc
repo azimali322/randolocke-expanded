@@ -215,6 +215,11 @@ OldaleTown_EventScript_NotBlockingPath::
 	release
 	end
 
+OldaleTown_EventScript_Unused_NotBlockingPath::
+	msgbox OldaleTown_Text_FinishedSketchingFootprints, MSGBOX_DEFAULT
+	release
+	end
+
 OldaleTown_EventScript_Rival::
 	lockall
 	applymovement LOCALID_OLDALE_RIVAL, Common_Movement_FacePlayer
@@ -401,6 +406,9 @@ OldaleTown_Text_TownSign:
 OldaleTown_EventScript_Financier::
 	lock
 	faceplayer
+	@ randolocke: nothing is handed out before Birch's five POKe BALLS, which is also when
+	@ the nuzlocke rules begin. Being given a fortune before the run has started is odd.
+	goto_if_unset FLAG_ADVENTURE_STARTED, OldaleTown_EventScript_FinancierNotYet
 	goto_if_set RANDOLOCKE_FLAG_OLDALE_MONEY_GIVEN, OldaleTown_EventScript_FinancierDone
 	msgbox OldaleTown_Text_FinancierOffer, MSGBOX_DEFAULT
 	addmoney 999999
@@ -415,6 +423,16 @@ OldaleTown_EventScript_FinancierDone::
 	msgbox OldaleTown_Text_FinancierDone, MSGBOX_DEFAULT
 	release
 	end
+
+OldaleTown_EventScript_FinancierNotYet::
+	msgbox OldaleTown_Text_FinancierNotYet, MSGBOX_DEFAULT
+	release
+	end
+
+OldaleTown_Text_FinancierNotYet:
+	.string "You're not on the road yet, are you?\p"
+	.string "Come and find me when the PROFESSOR\n"
+	.string "has sent you on your way.$"
 
 OldaleTown_Text_FinancierOffer:
 	.string "Money? I have far too much of it.\p"
