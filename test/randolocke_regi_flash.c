@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "braille_puzzles.h"
 #include "event_data.h"
 #include "fldeff.h"
@@ -7,6 +8,7 @@
 #include "test/test.h"
 #include "constants/flags.h"
 #include "constants/map_groups.h"
+#include "constants/map_scripts.h"
 
 // Flash's stand-ins for the Braille puzzles run as gPostMenuFieldCallback: straight off
 // the party menu, after a fade, with the player's field controls locked. Whatever one
@@ -55,3 +57,44 @@ TEST("Randolocke: Flash's Regi shortcuts hand the player back")
     ScriptContext_Stop();
     UnlockPlayerFieldControls();
 }
+
+#if RANDOLOCKE_REGI_CAVES_OPEN_AT_BADGE_8 == TRUE
+extern const u8 Route105_MapScripts[];
+extern const u8 Route111_MapScripts[];
+extern const u8 Route120_MapScripts[];
+
+// A route's own load script: the one that shuts its Regi cave while the doors are closed.
+static const u8 *GetOnLoadScript(const u8 *mapScripts)
+{
+    for (; *mapScripts != 0; mapScripts += 5)
+    {
+        if (*mapScripts == MAP_SCRIPT_ON_LOAD)
+            return T2_READ_PTR(&mapScripts[1]);
+    }
+    return NULL;
+}
+
+TEST("Randolocke: the Regi caves open with the eighth badge, no Sealed Chamber needed")
+{
+    const u8 *mapScripts = NULL;
+
+    PARAMETRIZE { mapScripts = Route105_MapScripts; } // Island Cave
+    PARAMETRIZE { mapScripts = Route111_MapScripts; } // Desert Ruins
+    PARAMETRIZE { mapScripts = Route120_MapScripts; } // Ancient Tomb
+
+    // Any save this late got the Devon Scope before Fortree's badge. Without it, Route 120's
+    // load script would move its bridge Kecleon, which is not on the map in a test.
+    FlagSet(FLAG_RECEIVED_DEVON_SCOPE);
+
+    // Seven badges and no Sealed Chamber: the entrance stays shut.
+    FlagClear(FLAG_REGI_DOORS_OPENED);
+    FlagClear(FLAG_BADGE08_GET);
+    RunScriptImmediately(GetOnLoadScript(mapScripts));
+    EXPECT(!FlagGet(FLAG_REGI_DOORS_OPENED));
+
+    // The eighth: the next time the route loads, the doors are open.
+    FlagSet(FLAG_BADGE08_GET);
+    RunScriptImmediately(GetOnLoadScript(mapScripts));
+    EXPECT(FlagGet(FLAG_REGI_DOORS_OPENED));
+}
+#endif

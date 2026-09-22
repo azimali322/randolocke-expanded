@@ -5,6 +5,9 @@ Route105_MapScripts::
 	.byte 0
 
 Route105_OnLoad:
+.if RANDOLOCKE_REGI_CAVES_OPEN_AT_BADGE_8 == TRUE
+	call_if_set FLAG_BADGE08_GET, RandolockeEventScript_OpenRegiDoorsAtBadge8
+.endif
 	call_if_unset FLAG_REGI_DOORS_OPENED, Route105_CloseRegiEntrance
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_105_NORTH, AbnormalWeather_EventScript_PlaceTilesRoute105North
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_105_SOUTH, AbnormalWeather_EventScript_PlaceTilesRoute105South

@@ -10,6 +10,12 @@ EventScript_UseFlash::
 @ the message -- minus that check. Reached from the party menu through
 @ RandolockeOpenRegiDoors, where the releaseall at the end is also what hands the player
 @ back: a field callback runs with the player's controls locked.
+@ randolocke: RANDOLOCKE_REGI_CAVES_OPEN_AT_BADGE_8. Called by the three routes with a Regi
+@ cave as they load, ahead of the check that closes each entrance while the doors are shut.
+RandolockeEventScript_OpenRegiDoorsAtBadge8::
+	setflag FLAG_REGI_DOORS_OPENED
+	return
+
 RandolockeEventScript_FlashOpensRegiDoors::
 	lockall
 	fadeoutbgm 0

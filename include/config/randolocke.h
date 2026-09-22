@@ -185,6 +185,15 @@
 // rely on having a Relicanth or a Wailord, which is what makes the vanilla gate unfair.
 #define RANDOLOCKE_FLASH_OPENS_REGI_CAVES   TRUE
 
+// If TRUE, the three Regi caves -- Desert Ruins on Route 111, Island Cave on Route 105 and
+// the Ancient Tomb on Route 120 -- are open once you hold the eighth badge, with no visit
+// to the Sealed Chamber. The first time one of those routes loads after the badge, the
+// doors are opened just as the Sealed Chamber opens them, so everything that asks whether
+// they are open agrees. Inside, each cave still keeps its Regi behind its own wall, opened
+// by its puzzle or by Flash as above. Before the eighth badge, the Sealed Chamber still
+// opens them as usual.
+#define RANDOLOCKE_REGI_CAVES_OPEN_AT_BADGE_8  TRUE
+
 // --- Nuzlocke options -------------------------------------------------------
 
 // If TRUE, catching a Pokemon goes straight to the naming screen instead of asking.

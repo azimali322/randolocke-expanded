@@ -1173,6 +1173,47 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 53 — The Regi caves open with the eighth badge
+
+### What changed
+
+**`RANDOLOCKE_REGI_CAVES_OPEN_AT_BADGE_8`** — hold the eighth badge and the three Regi caves
+are open, with no visit to the Sealed Chamber. Each of Route 111 (Desert Ruins), Route 105
+(Island Cave) and Route 120 (Ancient Tomb) shuts its cave as it loads unless the Sealed
+Chamber's doors flag is set; with the badge, that flag is now set first. So the Sealed
+Chamber, and Flash in its inner room, agree that the doors are open: there is nothing left
+for either to do. Inside each cave nothing changes — its Regi is still behind its own wall,
+opened by Flash anywhere in the Desert Ruins or Island Cave, or at the center of the
+Ancient Tomb, as well as by the original puzzles.
+
+A save that already holds the eighth badge gets it the next time it loads one of those
+routes — leave and come back if you are standing on one. No save-layout change.
+
+### Headless check
+
+A throwaway autopilot build (not committed) warped below each entrance with the doors flag
+cleared, so only the badge could open them:
+
+| Case | Doors flag after the route loads | Entrance | Walking up | Flash on the inner wall |
+| --- | --- | --- | --- | --- |
+| Desert Ruins, seven badges | clear | rock wall | stays on Route 111 | — |
+| Desert Ruins, eighth badge | set | open | into the ruins | would open it |
+| Island Cave, eighth badge | set | open | into the cave | would open it |
+| Ancient Tomb, eighth badge | set | open | into the tomb; walked to (8,25) | would open it |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T53.1 | **Without the Sealed Chamber** | With eight badges and the Sealed Chamber never solved, go to the Desert Ruins on Route 111 | The entrance is open |
+| T53.2 | Island Cave | Route 105 | Open |
+| T53.3 | Ancient Tomb | Route 120 | Open |
+| T53.4 | **The inner walls** | Use Flash in the Desert Ruins or Island Cave, and at the center of the Ancient Tomb | Each wall opens as in Phase 44 |
+| T53.5 | Before the badge | Seven badges, Sealed Chamber not solved | All three still shut; the Sealed Chamber (or Flash in it) opens them as before |
+| T53.6 | Standing on the route | Get the eighth badge, fly to Route 111 | Open on arrival — it is checked each time the route loads |
+| T53.7 | The Sealed Chamber after | Visit it once the caves are open | The Braille still reads, with no rumble after it; Flash there says "Can't use that here" |
+| T53.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 14, including all three routes' own load scripts with and without the badge |
+
+---
+
 ## Phase 52 — Nowhere dark, and the battle's messages on SELECT
 
 ### What changed
