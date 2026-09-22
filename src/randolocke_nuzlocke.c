@@ -261,25 +261,62 @@ bool32 RandolockeEncounterIsFirst(enum BattlerId battler)
     return RandolockeCatchRuleForBattler(battler) == RANDOLOCKE_CATCH_OK;
 }
 
-// Called once a wild Pokemon has actually been caught. Anything the clauses let through
-// does not use the area up -- that is the whole point of them. Has to run before the dex
-// caught flag for this catch is written, or FamilyAlreadyCaught would see the Pokemon
-// that was just caught and no catch would ever mark an area; see the call site.
+// Whether meeting this Pokemon uses the area up. Anything a clause lets through does not --
+// that is the whole point of them: a shiny, a legendary, or a Pokemon whose evolution family
+// is already caught.
+static bool32 EncounterUsesArea(struct Pokemon *mon)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
+
+    if (species == SPECIES_NONE || IsMonShiny(mon))
+        return FALSE;
+    #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
+    if (RandolockeSpeciesIsLegendary(species))
+        return FALSE;
+    #endif
+    return !FamilyAlreadyCaught(species);
+}
+
+// Called once a wild Pokemon has actually been caught. Has to run before the dex caught
+// flag for this catch is written, or FamilyAlreadyCaught would see the Pokemon that was
+// just caught and no catch would ever mark an area; see the call site.
 void RandolockeNoteCatch(struct Pokemon *mon)
 {
     if (!RandolockeNuzlockeActive() || (gBattleTypeFlags & BATTLE_TYPE_CATCH_TUTORIAL))
         return;
-    if (IsMonShiny(mon))
-        return;
-    #if RANDOLOCKE_LEGENDARY_CLAUSE == TRUE
-    if (RandolockeSpeciesIsLegendary(GetMonData(mon, MON_DATA_SPECIES)))
-        return;
-    #endif
-    if (FamilyAlreadyCaught(GetMonData(mon, MON_DATA_SPECIES)))
+    if (EncounterUsesArea(mon))
+        MarkAreaUsed(RandolockeCurrentArea());
+}
+
+#if RANDOLOCKE_FIRST_ENCOUNTER_COUNTS == TRUE
+// Called as every battle finishes. The first encounter in an area is the one chance there,
+// however the battle ends -- run from, knocked out, gone by Teleport, Roar or its own
+// fleeing, or a loss -- not only if it is caught. A catch has already been counted by
+// RandolockeNoteCatch, and by now its family is registered as caught, so it is not counted
+// twice. In a double battle, either wild Pokemon counting is enough.
+void RandolockeNoteWildBattleEnd(void)
+{
+    u32 i, wildMons;
+
+    // No BATTLE_TYPE_RECORDED here: playback only ever replays trainer, link and Frontier
+    // battles, which are out already, and the test runner flags its wild battles as
+    // recorded, so leaving it out is also what lets the rule be tested.
+    if (!RandolockeNuzlockeActive()
+     || (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_LINK | BATTLE_TYPE_FIRST_BATTLE
+                           | BATTLE_TYPE_CATCH_TUTORIAL | BATTLE_TYPE_FRONTIER)))
         return;
 
-    MarkAreaUsed(RandolockeCurrentArea());
+    wildMons = (gBattleTypeFlags & BATTLE_TYPE_DOUBLE) ? 2 : 1;
+    for (i = 0; i < wildMons; i++)
+    {
+        if (EncounterUsesArea(&gParties[B_TRAINER_OPPONENT_A][i]))
+        {
+            MarkAreaUsed(RandolockeCurrentArea());
+            return;
+        }
+    }
 }
+#endif
 
 // --- Player Pokemon IVs ------------------------------------------------------
 

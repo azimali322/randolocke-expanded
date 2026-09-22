@@ -283,21 +283,31 @@
 
 // If TRUE the classic rules are enforced in-game rather than left to the player:
 //
-//   One per area   You may catch one Pokemon per wild-encounter area. After that, balls
-//                  are refused there.
+//   One per area   The first Pokemon you meet in a wild-encounter area is your one chance
+//                  there. Catch it, or the area is used; after that, balls are refused.
+//                  With RANDOLOCKE_FIRST_ENCOUNTER_COUNTS it is used however that battle
+//                  ends -- see there. Without it, only a catch uses the area.
 //   Dupes clause   A species whose evolution family you have already caught cannot be
 //                  caught again -- and meeting one does not use up the area, so you can
 //                  keep looking for something new.
 //   Shiny clause   A shiny is always catchable and never uses up the area.
 //
-// "Area" is one entry in the wild encounter tables, which is one map. Places with no
-// wild table -- the legendary sites, gift Pokemon, scripted battles -- are not areas and
-// are never restricted.
+// An "area" is one region map section: a route, a town, a cave however many floors it has.
+// Land, surfing and fishing there share it. Places with no wild encounter table at all --
+// the legendary sites, gift Pokemon, most scripted battles -- are not areas and are never
+// restricted.
 //
 // Set RANDOLOCKE_FLAG_NUZLOCKE_OFF in the debug menu to switch the rules off for a save.
 // The flag is inverted deliberately: a save made before this existed has it clear, so the
 // rules are on there too, with no new game needed.
 #define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+
+// If TRUE, the first encounter in an area uses it up however the battle ends: caught,
+// knocked out, run from, gone by Teleport, Roar or Whirlwind, fled on its own, or a loss.
+// Only the clauses spare the area -- a shiny, a legendary, or a Pokemon whose evolution
+// family is already caught, which is how running from a dupe leaves you free to keep
+// looking. FALSE counts a catch only, so a knockout or a flee means another try.
+#define RANDOLOCKE_FIRST_ENCOUNTER_COUNTS   TRUE
 
 // The rules do not apply until Birch hands over the five Poke Balls, which is what
 // FLAG_ADVENTURE_STARTED marks: after the Route 103 rival battle and the walk back to the

@@ -27,10 +27,21 @@ def read_pal(p):
     while len(out) < 16: out.append((0,0,0))
     return out
 
+def tiles_4bpp(d):
+    # Older builds wrote tiles.4bpp beside tiles.png; 1.17 builds it under build/assets.
+    # Secondary tilesets carry their tile count in the name: tiles.png_num_tiles_159_...4bpp.
+    p = d/'tiles.4bpp'
+    if p.exists():
+        return p
+    built = sorted((ROOT/'build/assets'/d.relative_to(ROOT)).glob('tiles.png*.4bpp'))
+    if not built:
+        raise SystemExit(f'no built tiles for {d.name}: run make first')
+    return built[0]
+
 def load(sym):
     d = tileset_dir(sym)
     return {
-        'tiles': (d/'tiles.4bpp').read_bytes(),
+        'tiles': tiles_4bpp(d).read_bytes(),
         'metatiles': (d/'metatiles.bin').read_bytes(),
         'pals': {i: read_pal(d/'palettes'/f'{i:02d}.pal') for i in range(16)
                  if (d/'palettes'/f'{i:02d}.pal').exists()},

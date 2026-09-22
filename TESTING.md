@@ -1173,6 +1173,81 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 54 — A 3x3 pond, shinies at 1 in 64, and the first encounter counts
+
+### What changed
+
+- **Littleroot's pond is 3x3**, at x 11-13, y 15-17, built from the same rimmed pieces as
+  before, with its shore at y 18 under it and a tile of ground between it and Birch's lab.
+  The rest of the old 6x4 pond is Littleroot's own ground again. Every pond tile is pond
+  water, so you can fish from the shore below, from either side or from above. The boy
+  with the Porta Heal and Endless Candy still stands on the shore at (11,18), facing it.
+  This replaces the coordinates in T17.1–T17.5.
+- **`SHINY_ODDS` 512 → 1024**: 1 in 64.
+- **`RANDOLOCKE_FIRST_ENCOUNTER_COUNTS`** — the first Pokémon you meet in an area is your
+  one chance there, however that battle ends: caught, knocked out, run from, gone by
+  Teleport, Roar, Whirlwind or its own fleeing, or a loss. Until now only a catch used the
+  area, so running from an unwanted first encounter — or knocking it out — meant another
+  try. The clauses still spare the area: a shiny, a legendary, or a Pokémon whose
+  evolution family you already caught, so running from a dupe, or a dupe teleporting away,
+  leaves you free to keep looking. It is decided once, as the battle finishes.
+- The ball refusal in a used area now reads "You've already had your one encounter in
+  this area!" — "You already caught a Pokémon" is no longer the only way to get there.
+- `docs/NUZLOCKE.md` said a single faint was "just a faint"; with
+  `RANDOLOCKE_FAINT_COSTS_MON` it has not been since Phase 33. Corrected, along with the
+  area definition (a region map section, not a map) and the legendary clause, which it
+  never mentioned.
+
+### Found on the way: shiny wild battles crashed the test ROM
+
+Every test with a shiny wild Pokémon crashed, including expansion's own "Front anims work",
+and the crash reported no result at all, so the suite just came up one test short. The test
+runner's blank save has no name — all zeroes, which to the text engine is spaces, not the
+end — and when a shiny wild battle ends, the TV's breaking-news code copies the player's
+name, looking for its end, over the heap behind it. A real save always has a name, so the
+game itself was never affected. The runner's blank save now ends its name at once.
+Confirmed on the previous commit too: it predates this phase.
+
+### Headless check
+
+A throwaway autopilot build (not committed) fought a wild Zigzagoon on Route 101 with the
+rules running and picked RUN from the battle menu each time:
+
+| Case | Ball at the menu | After running |
+| --- | --- | --- |
+| A new Pokémon | allowed | Route 101 used |
+| The next encounter there | refused: area used | still used |
+| A dupe (Linoone caught) | refused: dupe | still open |
+| A shiny | allowed | still open |
+
+### Shiny odds
+
+| Situation | Odds per Pokémon |
+| --- | --- |
+| Any wild or gift Pokémon | 1 in 64 (1.56%) |
+| With a lure (one reroll) | about 1 in 32 |
+| With the Shiny Charm (two rerolls; debug menu only) | about 1 in 22 |
+
+A 50% chance of seeing one takes about 44 encounters, 90% about 146.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T54.1 | **The pond** | Leave your house, look east of Birch's lab | A 3x3 pond with its stone rim, a tile of grass between it and the lab |
+| T54.2 | **Fishing** | Old Rod from the shore at (12,18), facing up | A bite |
+| T54.3 | Fishing from the side | Stand at (10,16) facing right, or (14,16) facing left | A bite |
+| T54.4 | The boy | Talk to the boy at (11,18) | Porta Heal / Endless Candy as before; he faces the pond |
+| T54.5 | The town | Walk from the lab door east, and north past the pond | Everything reachable |
+| T54.6 | **Running uses the area** | Rules on; run from the first Pokémon on a fresh route, then meet another | A ball is refused: "You've already had your one encounter in this area!" |
+| T54.7 | **Knocking it out** | Knock out the first Pokémon on a fresh route | The area is used |
+| T54.8 | **Teleport** | Let a wild Abra teleport away as the first encounter | The area is used |
+| T54.9 | Dupe clause | Run from a Pokémon whose family you already caught | The area is still open |
+| T54.10 | Shiny clause | Run from a shiny | The area is still open |
+| T54.11 | Before the Poké Balls | Run from something before Birch's five balls | Nothing is used |
+| T54.12 | Shinies | Run through grass | Roughly one in 64 is shiny |
+| T54.13 | Regression tests | `make check TESTS="Randolocke"`, `TESTS="Front anims work"` | PASS — 22, including the eight new first-encounter tests; and 1 |
+
+---
+
 ## Phase 53 — The Regi caves open with the eighth badge
 
 ### What changed

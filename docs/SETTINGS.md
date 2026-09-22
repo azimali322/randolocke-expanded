@@ -139,17 +139,18 @@ duplicates possible, and non-legendaries possible.
 ### Nuzlocke rules
 
 ```c
-#define RANDOLOCKE_NUZLOCKE_RULES       TRUE
-#define RANDOLOCKE_FLAG_NUZLOCKE_OFF    FLAG_UNUSED_0x02D
+#define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+#define RANDOLOCKE_FIRST_ENCOUNTER_COUNTS   TRUE
+#define RANDOLOCKE_FLAG_NUZLOCKE_OFF        FLAG_UNUSED_0x02D
 ```
 
 Enforced in-game rather than left to the player:
 
 | Rule | Behaviour |
 | --- | --- |
-| **One per area** | One catch per wild-encounter area. After that, balls are refused there |
-| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, so you can keep looking |
-| **Shiny clause** | A shiny is always catchable and never uses the area up |
+| **One per area** | The first Pokémon you meet in an area is your one chance there. With `RANDOLOCKE_FIRST_ENCOUNTER_COUNTS` the area is used however that battle ends — caught, knocked out, run from, fled, teleported or Roared away, or lost. `FALSE` counts a catch only. After that, balls are refused there |
+| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, even if you run from it or it teleports away, so you can keep looking |
+| **Shiny clause** | A shiny is always catchable and never uses the area up, whatever happens |
 
 An *area* is one region-map section: a route, a town, or a whole cave however many floors
 it has. Land, surfing and fishing there share it. Places with no wild table — the legendary
@@ -389,6 +390,7 @@ The rules themselves are in section 1.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
+| `RANDOLOCKE_FIRST_ENCOUNTER_COUNTS` | `TRUE` | The first encounter in an area uses it up however the battle ends: caught, knocked out, run from, gone by Teleport, Roar, Whirlwind or its own fleeing, or a loss. The clauses still spare it — a shiny, a legendary, or a Pokémon whose evolution family is already caught — so running from a dupe leaves you free to keep looking. `FALSE` counts a catch only |
 | `RANDOLOCKE_FLAG_RULES_BEGIN` | `FLAG_ADVENTURE_STARTED` | The flag that starts the rules. It is set when you get the five Poké Balls in Birch's lab, after the Route 103 battle. Before that you have one Pokémon and no balls, so there is nothing to rule on |
 | `RANDOLOCKE_FAINT_COSTS_MON` | `TRUE` | A Pokémon that reaches 0 HP is boxed at the end of the battle and locked there until you are Champion. Its held item goes back to the bag first. Skipped where the party is not really yours: Birch's bag on Route 101, Wally's tutorial, Safari, link and recorded battles, an in-game partner, the Frontier. `FALSE` means only a wipe costs anything |
 | `RANDOLOCKE_WIPE_COSTS_PARTY` | `TRUE` | A wipe costs the whole party: boxed and locked the same way, held items back to the bag. You pick a new team from the PC |

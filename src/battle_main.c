@@ -5307,6 +5307,9 @@ static void HandleEndTurn_FinishBattle(void)
             TryPutBreakingNewsOnAir();
         }
 
+        // randolocke: the first encounter in an area counts however the battle ended.
+        RandolockeNoteWildBattleEnd();
+
         BeginFastPaletteFade(3);
         FadeOutMapMusic(5);
         TryRestoreHeldItems();
