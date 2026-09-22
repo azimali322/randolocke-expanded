@@ -1144,7 +1144,13 @@ void SetFlashLevel(s32 flashLevel)
 
 u8 GetFlashLevel(void)
 {
+#if RANDOLOCKE_NO_DARK_AREAS == TRUE
+    // randolocke: everything reads the darkness through here, so a saved level -- a save
+    // made inside a dark cave, or Dewford Gym's per-trainer levels -- never shows.
+    return 0;
+#else
     return gSaveBlock1Ptr->flashLevel;
+#endif
 }
 
 void SetCurrentMapLayout(u16 mapLayoutId)

@@ -777,9 +777,16 @@ bool8 ScrCmd_animateflash(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
 
+#if RANDOLOCKE_NO_DARK_AREAS == TRUE
+    // randolocke: nothing is dark, so there is nothing to animate. The animation is what
+    // would restart the script, so carry on instead of stopping for it.
+    (void)level;
+    return FALSE;
+#else
     AnimateFlash(level);
     ScriptContext_Stop();
     return TRUE;
+#endif
 }
 
 bool8 ScrCmd_setflashlevel(struct ScriptContext *ctx)

@@ -303,7 +303,7 @@ ones are in `include/config/randomizer.h`.
 | `RANDOLOCKE_CATCH_RATE_PERCENT` | `150` | Multiplier on every species' base catch rate |
 | `RANDOLOCKE_RELEARNER_SHOW_EVS` | `TRUE` | The move relearner shows Attack / Sp. Atk EVs where the "BATTLE MOVES" heading was, so you can pick a physical or special move without leaving the screen |
 | `RANDOLOCKE_DUAL_REGISTERED_ITEMS` | `TRUE` | A second key item registered to **held** SELECT; a tap still uses the first. **Changes the save layout** |
-| `RANDOLOCKE_SELECT_HOLD_FRAMES` | `60` | Frames SELECT must be held before the second item fires (60fps) |
+| `RANDOLOCKE_SELECT_HOLD_FRAMES` | `60` | Frames SELECT must be held before the second item fires (60fps). In the debug ROM's battles, the same hold opens the battle debug menu, since a tap now replays the battle log |
 | `RANDOLOCKE_FLASH_OPENS_REGI_CAVES` | `TRUE` | Flash substitutes for the Braille puzzles at the Sealed Chamber, Desert Ruins and Island Cave. The original puzzles still work |
 | `RANDOLOCKE_FORCE_NICKNAME` | `FALSE` | If TRUE, catching goes straight to the naming screen with no prompt. Off, so catching asks as the base game does |
 | `RANDOLOCKE_SUMMARY_STAT_EDITOR` | `TRUE` | The summary's IV and EV pages can be edited in place. SELECT starts, A moves between stats, D-pad changes the one you are on: Up maxes, Down zeroes, Left/Right step by one. Held to 252 per stat, 510 total, 31 for IVs. Party Pokémon only |
@@ -326,6 +326,7 @@ Defined in `include/constants/items.h` (874–877):
 | --- | --- | --- |
 | `RANDOLOCKE_QUICK_START` | `TRUE` | The first morning skips its errands. Mom meets you at the truck, sets the time from the real-time clock (your own, in an emulator), hands over the Running Shoes and sends you to Birch. No bedroom clock, no Dad on TV, no visit next door, but whatever they would have set is set, so the rest of the story finds what it expects. New games only |
 | `RANDOLOCKE_SKIP_WALLY_TUTORIAL` | `TRUE` | No Wally catching tutorial. The first time you enter Petalburg, the state it would leave behind is set instead, so the boy on the west side never walks you back to the gym. The gym is optional until you want the badge. Wally's later scenes are unaffected |
+| `RANDOLOCKE_NO_DARK_AREAS` | `TRUE` | Nowhere is dark. Granite Cave B1F and B2F, Victory Road B1F and B2F and Dewford Gym are fully lit from the moment you walk in, so Flash is never needed to see; Dewford Gym's trainers no longer turn the lights up one by one. Flash no longer offers to light a cave, since there is nothing to light, and still opens the Regi chambers |
 
 ### Conveniences
 
@@ -359,6 +360,7 @@ Defined in `include/constants/items.h` (874–877):
 | `RANDOLOCKE_ROLL_COST` | `0` | Money one roll costs. Free by default: it is meant as a cheat, not an economy |
 | `RANDOLOCKE_MOVE_SCREEN_STATS` | `TRUE` | SELECT on the "which move should be forgotten?" screen swaps the picture for the six stats and the ability, so you can see whether it hits harder with Attack or Sp. Atk |
 | `RANDOLOCKE_TM_MOVE_DESCRIPTIONS` | `TRUE` | A TM's bag description describes the move it actually teaches, not the one it taught in vanilla |
+| `RANDOLOCKE_BATTLE_LOG` | `TRUE` | Tap SELECT at the battle menu to replay the battle's messages in the text box: everything said before the first turn, then everything since the last turn began. An ability pop-up gets a line naming the Pokémon and the ability, since the message after it often does not — Drizzle's is just "It started to rain!". A goes to the next message, B or SELECT closes it. Not in link battles |
 
 ### Player Pokémon IVs
 

@@ -30,6 +30,12 @@
 // earned, not infrastructure the game blocks progress behind.
 #define RANDOLOCKE_FIELD_MOVES_NEED_NO_USER  TRUE
 
+// If TRUE, nowhere is dark: the Flash caves -- Granite Cave B1F and B2F, Victory Road B1F
+// and B2F -- and Dewford Gym, which vanilla lights one trainer at a time, are fully lit
+// from the moment you walk in. Flash no longer lights a cave, because there is nothing
+// left to light; it still opens the Regi chambers (see Regi caves below).
+#define RANDOLOCKE_NO_DARK_AREAS             TRUE
+
 // --- Catching ---------------------------------------------------------------
 
 // Percentage applied to a species' base catch rate. 100 is unchanged; Randolocke
@@ -138,6 +144,16 @@
 // so the gym boy never stops you and the gym is optional until you want the badge.
 // Wally's later appearances do not depend on the tutorial and are unaffected.
 #define RANDOLOCKE_SKIP_WALLY_TUTORIAL      TRUE
+
+// --- Battle log --------------------------------------------------------------
+
+// If TRUE, tapping SELECT at the battle menu (FIGHT / BAG / POKEMON / RUN) replays the
+// battle's messages in the text box: everything said before the first turn -- the send-
+// outs, and the abilities that fired on entry, named, since the pop-up that names them is
+// gone before you can choose -- then everything since the last turn began. A goes to the
+// next message, B or SELECT closes it. The debug ROM's battle debug menu, which was on
+// SELECT, moves to a hold of it (RANDOLOCKE_SELECT_HOLD_FRAMES).
+#define RANDOLOCKE_BATTLE_LOG               TRUE
 
 // --- Registered key items ---------------------------------------------------
 

@@ -1173,6 +1173,77 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 52 — Nowhere dark, and the battle's messages on SELECT
+
+### What changed
+
+- **`RANDOLOCKE_NO_DARK_AREAS`** — Granite Cave B1F and B2F, Victory Road B1F and B2F and
+  Dewford Gym are fully lit from the moment you walk in. The darkness level is still
+  stored — a dark cave's default, and Dewford Gym's step per trainer beaten — but
+  everything reads it as 0, which also lights a save made inside a dark cave the moment it
+  loads. Dewford Gym's lighting animation after each trainer now lets its script carry on
+  at once: the animation is what would have restarted it. The light switch still clicks.
+- Flash no longer offers to light a cave: there is nothing left to light, and using it
+  would have shrunk the light to Flash's own radius. It still opens the Regi chambers.
+- **`RANDOLOCKE_BATTLE_LOG`** — tap SELECT at the battle menu (FIGHT / BAG / POKéMON /
+  RUN) to replay the battle's messages in the text box: "The start of the battle:" and
+  everything said before the first turn, then "The last turn:" and everything since the
+  last turn's moves began, including a send-out after a faint. An ability pop-up gets a
+  line of its own, "The opposing Kyogre's / Drizzle!", because under Gen 5+ text the
+  message after it ("It started to rain!") does not say whose ability it was. A goes to the
+  next message; B or SELECT closes the replay.
+- The debug ROM's battle debug menu was on SELECT; it is now a one-second hold of SELECT
+  (`RANDOLOCKE_SELECT_HOLD_FRAMES`). The release ROM has no debug menu, so a press replays
+  at once there. Link and recorded battles are left alone.
+- The log keeps two turns at most — the start of the battle and the last turn — in 2 KB of
+  EWRAM. If a turn says more than fits, the replay ends with "…and more than the log could
+  hold."
+
+### Headless checks
+
+A throwaway autopilot build (not committed) played New Game through the quick start and on.
+
+Dark areas, warped into each:
+
+| Map | Stored darkness | Read as | Darkness effect |
+| --- | --- | --- | --- |
+| Granite Cave B1F | 7 | 0 | off |
+| Victory Road B1F | 7 | 0 | off |
+| Dewford Gym (no trainer beaten) | 7 | 0 | off |
+| Dewford Gym, after its first trainer's light step | 6 | 0 | off |
+
+The light step itself — the script that runs after beating a Dewford Gym trainer — finished
+in 3 frames with the player's controls free.
+
+The battle log, Mudkip against a wild Politoed with Drizzle:
+
+| Step | Result |
+| --- | --- |
+| SELECT at the first battle menu | Opens in 3 frames: "The start of the battle:", "You encountered a wild Politoed!", "Go! Mudkip!", "The wild Politoed's / Drizzle!", "It started to rain!" |
+| A through it | Five presses, then the battle menu, working: FIGHT opens the moves |
+| SELECT, then B | Closed in 1 frame |
+| Growl, then SELECT at the second menu | The five lines, then "The last turn:", "The wild Politoed used Splash!", "But nothing happened!", "Mudkip used Growl!", "The wild Politoed's Attack fell!", "Rain continues to fall." |
+| Hold SELECT one second (debug ROM) | The battle debug menu opens |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T52.1 | **Granite Cave** | Go down to B1F and B2F | Fully lit, no Flash needed |
+| T52.2 | Victory Road | B1F and B2F | Fully lit |
+| T52.3 | **Dewford Gym** | Walk in; beat a trainer | Lit from the door. After each trainer the switch clicks and the battle hands straight back |
+| T52.4 | Flash in a cave | Use Flash in Granite Cave | "Can't use that here" — nothing to light |
+| T52.5 | Flash at the Regis | Use Flash in the Sealed Chamber | Still opens it, as in Phase 44 |
+| T52.6 | An old save in the dark | Load a save made inside Granite Cave B1F on an older build | Lit on load |
+| T52.7 | **The start of a battle** | Any battle; at the first menu tap SELECT | The send-outs and anything that fired on entry, each in the text box |
+| T52.8 | **An ability named** | Face something with Drizzle, Drought, Intimidate or Sand Stream | Its own line — "The opposing X's / Drizzle!" — before the effect |
+| T52.9 | The last turn | Tap SELECT on turn 2 or later | The start of the battle, then "The last turn:" and that turn's messages |
+| T52.10 | After a faint | Knock out a trainer's Pokémon; tap SELECT at the next menu | The send-out and its entry ability are under "The last turn:" |
+| T52.11 | Closing it | B or SELECT mid-replay | Straight back to the menu, which still works |
+| T52.12 | Debug menu | Debug ROM: hold SELECT at the battle menu for a second | The battle debug menu |
+| T52.13 | Double battles | Tap SELECT for either Pokémon | The same replay |
+| T52.14 | Regression tests | `make check TESTS="Randolocke"`, and `TESTS=` `Intimidate`, `Illusion`, `Drizzle`, `Trace`, `Neutralizing Gas`, `Drought`, `Air Balloon` | PASS — 13, 16, 11, 5, 10, 19, 3, 12 |
+
+---
+
 ## Phase 51 — Straight to Birch, the Running Shoes at the truck, shinies at 1 in 128
 
 ### What changed

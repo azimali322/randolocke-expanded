@@ -9,6 +9,8 @@
 #include "battle_setup.h"
 #include "battle_tv.h"
 #include "battle_z_move.h"
+#include "config/randolocke.h"
+#include "randolocke_battle_log.h"
 #include "battle_gimmick.h"
 #include "bg.h"
 #include "data.h"
@@ -231,6 +233,92 @@ static enum Item GetNextBall(enum Item ballId)
     return ballId;
 }
 
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+static void HandleInputChooseAction(enum BattlerId battler);
+
+static EWRAM_DATA u8 sBattleLogSelectFrames = 0;
+static EWRAM_DATA u8 sBattleLogLine = 0;
+
+static void ShowBattleLogLine(void)
+{
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = 0;
+    BattlePutTextOnWindow(RandolockeBattleLog_ReplayLine(sBattleLogLine), B_WIN_MSG);
+}
+
+static void EndBattleLogReplay(enum BattlerId battler)
+{
+    static const u8 sText_Clear[] = _("");
+
+    // An empty message replaces the printer, so nothing is left waiting on a press.
+    BattlePutTextOnWindow(sText_Clear, B_WIN_MSG);
+    gBattle_BG0_X = 0;
+    gBattle_BG0_Y = DISPLAY_HEIGHT;
+    gBattlerControllerFuncs[battler] = HandleInputChooseAction;
+}
+
+// A goes through the messages a text box at a time -- the text box itself takes the press
+// -- and B or SELECT goes straight back to the battle menu.
+static void HandleInputReplayBattleLog(enum BattlerId battler)
+{
+    if (JOY_NEW(B_BUTTON | SELECT_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        EndBattleLogReplay(battler);
+    }
+    else if (!IsTextPrinterActiveOnWindow(B_WIN_MSG))
+    {
+        if (++sBattleLogLine < RandolockeBattleLog_ReplayLength())
+            ShowBattleLogLine();
+        else
+            EndBattleLogReplay(battler);
+    }
+}
+
+// randolocke: a tap of SELECT at the battle menu replays the battle's messages. The debug
+// battle menu was on SELECT; where it is compiled in, it now takes a hold of the button.
+static bool32 TryStartBattleLogReplay(enum BattlerId battler)
+{
+    if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED))
+        return FALSE;
+
+    if (DEBUG_BATTLE_MENU == TRUE)
+    {
+        if (JOY_NEW(SELECT_BUTTON))
+        {
+            sBattleLogSelectFrames = 1;
+            return TRUE;
+        }
+        if (sBattleLogSelectFrames == 0)
+            return FALSE;
+        if (JOY_HELD(SELECT_BUTTON))
+        {
+            if (++sBattleLogSelectFrames >= RANDOLOCKE_SELECT_HOLD_FRAMES)
+            {
+                sBattleLogSelectFrames = 0;
+                BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_DEBUG, 0);
+                BtlController_Complete(battler);
+            }
+            return TRUE;
+        }
+        sBattleLogSelectFrames = 0; // let go before the hold: a tap
+    }
+    else if (!JOY_NEW(SELECT_BUTTON))
+    {
+        return FALSE;
+    }
+
+    if (RandolockeBattleLog_ReplayLength() == 0)
+        return TRUE;
+
+    PlaySE(SE_SELECT);
+    sBattleLogLine = 0;
+    ShowBattleLogLine();
+    gBattlerControllerFuncs[battler] = HandleInputReplayBattleLog;
+    return TRUE;
+}
+#endif
+
 static void HandleInputChooseAction(enum BattlerId battler)
 {
     enum Item itemId = gBattleResources->bufferA[battler][2] | (gBattleResources->bufferA[battler][3] << 8);
@@ -301,6 +389,11 @@ static void HandleInputChooseAction(enum BattlerId battler)
             return;
         }
     }
+
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+    if (TryStartBattleLogReplay(battler))
+        return;
+#endif
 
     if (JOY_NEW(A_BUTTON))
     {
@@ -395,7 +488,7 @@ static void HandleInputChooseAction(enum BattlerId battler)
     {
         SwapHpBarsWithHpText();
     }
-    else if (DEBUG_BATTLE_MENU == TRUE && JOY_NEW(SELECT_BUTTON))
+    else if (DEBUG_BATTLE_MENU == TRUE && RANDOLOCKE_BATTLE_LOG == FALSE && JOY_NEW(SELECT_BUTTON))
     {
         BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_DEBUG, 0);
         BtlController_Complete(battler);
@@ -2006,6 +2099,9 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
     s32 i;
 
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+    sBattleLogSelectFrames = 0;
+#endif
     BattleTv_ClearExplosionFaintCause();
     BattlePutTextOnWindow(gText_BattleMenu, B_WIN_ACTION_MENU);
 

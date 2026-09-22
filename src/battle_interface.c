@@ -8,6 +8,7 @@
 #include "battle_interface.h"
 #include "battle_z_move.h"
 #include "graphics.h"
+#include "randolocke_battle_log.h"
 #include "sprite.h"
 #include "window.h"
 #include "string_util.h"
@@ -2704,6 +2705,10 @@ void CreateAbilityPopUp(enum BattlerId battler, enum Ability ability, bool32 isD
 
     if (gBattleScripting.abilityPopupOverwrite)
         ability = gBattleScripting.abilityPopupOverwrite;
+
+#if RANDOLOCKE_BATTLE_LOG == TRUE
+    RandolockeBattleLog_AddAbility(battler, ability);
+#endif
 
     if (gTestRunnerEnabled)
     {
