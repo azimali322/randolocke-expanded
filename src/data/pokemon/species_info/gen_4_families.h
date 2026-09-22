@@ -2369,7 +2369,12 @@ const struct SpeciesInfo gSpeciesInfoGen4[] =
         .expYield = (P_UPDATED_EXP_YIELDS >= GEN_5) ? 49 : 63,
         .evYield_Speed = 1,
         .itemCommon = ITEM_HONEY,
-        .genderRatio = PERCENT_FEMALE(12.5),
+        // randolocke: 95% rather than vanilla's 12.5% -- 242 of 256, so 94.5% in practice.
+        // Only a female Combee evolves, and under nuzlocke rules the route's one encounter
+        // is the only Combee the run will ever see: at 12.5% that is seven runs in eight
+        // where Vespiquen cannot exist. Species-wide, so a trainer's Combee and a hatched
+        // one follow the same odds.
+        .genderRatio = PERCENT_FEMALE(95),
         .eggCycles = 15,
         .friendship = STANDARD_FRIENDSHIP,
         .growthRate = GROWTH_MEDIUM_SLOW,

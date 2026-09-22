@@ -55,6 +55,10 @@ MOVES_PUSHDOWN = {
     # a roll worth spending on a 21-move learnset. The community list has them at Niche,
     # which is where they belong for a game that hands them out at level 1 for free.
     "TACKLE", "POUND", "SCRATCH", "EMBER", "BUBBLE", "WATER_GUN",
+    # And the one that does nothing at all. The community has it at Bad, a band that still
+    # takes 0.028% of every roll; a move whose entire effect is the message saying it had
+    # none should not be taking a learnset slot at twice the rate of the bottom band.
+    "SPLASH",
 }
 
 

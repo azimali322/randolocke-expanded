@@ -5,7 +5,7 @@
 // 844 rollable moves tiered; 91 excluded
 // (Z / Max / G-Max moves and Struggle).
 //
-// 17 moves were pushed to the bottom band regardless of where the
+// 18 moves were pushed to the bottom band regardless of where the
 // community list puts them; see MOVES_PUSHDOWN in
 // tools/randolocke/validate_tiers.py for which, and why.
 
@@ -659,7 +659,7 @@ static const u16 sMoveTierNiche[] =
     MOVE_MISTY_TERRAIN,
 };
 
-// Bad -- 186 moves
+// Bad -- 185 moves
 static const u16 sMoveTierBad[] =
 {
     MOVE_FREEZY_FROST,
@@ -774,7 +774,6 @@ static const u16 sMoveTierBad[] =
     MOVE_WING_ATTACK,
     MOVE_ZIPPY_ZAP,
     MOVE_SONIC_BOOM,
-    MOVE_SPLASH,
     MOVE_PRESENT,
     MOVE_SNIPE_SHOT,
     MOVE_TRIPLE_DIVE,
@@ -850,7 +849,7 @@ static const u16 sMoveTierBad[] =
     MOVE_HIGH_JUMP_KICK,
 };
 
-// Pokemon Homeless -- 28 moves
+// Pokemon Homeless -- 29 moves
 static const u16 sMoveTierHomeless[] =
 {
     MOVE_GUILLOTINE,
@@ -868,6 +867,7 @@ static const u16 sMoveTierHomeless[] =
     MOVE_SELF_DESTRUCT,
     MOVE_MEMENTO,
     MOVE_MISTY_EXPLOSION,
+    MOVE_SPLASH,
     MOVE_HEALING_WISH,
     MOVE_LUNAR_DANCE,
     MOVE_DOUBLE_TEAM,

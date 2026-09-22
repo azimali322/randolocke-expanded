@@ -1173,6 +1173,26 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 48 — A Combee worth catching
+
+Combee evolves at level 21 into Vespiquen, but only if it is female, and vanilla makes it
+female 12.5% of the time. Under nuzlocke rules the route's one encounter is the only Combee
+a run will ever see, so seven runs in eight are handed a Pokémon whose evolution does not
+exist for them — 30/30/42/30/42/70 for the rest of the game.
+
+Its gender ratio is now `PERCENT_FEMALE(95)`, which the macro resolves to 242 of 256, so
+**94.5%** in practice. Species-wide rather than wild-only: a trainer's Combee and a hatched
+one follow the same odds, which keeps one number to reason about.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T48.1 | **A wild Combee is female** | Encounter several (debug menu, or the species' routes) | Nearly all female |
+| T48.2 | It evolves | Level a female one to 21 | Becomes Vespiquen |
+| T48.3 | Males still exist | Keep looking | About 1 in 18 |
+| T48.4 | Nothing else moved | Any other species' gender spread | Unchanged |
+
+---
+
 ## Phase 47 — The starter moves drop, and the tutors keep teaching
 
 ### Tackle and its five friends
@@ -1187,9 +1207,13 @@ Tackle, Pound, Scratch, Ember, Bubble and Water Gun are now in Pokémon Homeless
 band: **0.014% each, 7.5 times rarer**. They also stop being TMs — `sTmMoveTiers` draws from
 the top four bands only, by design, because a TM is permanent under I_REUSABLE_TMS.
 
+Splash went down with them, from Bad rather than Niche: a move whose entire effect is the
+message saying it had none should not be taking a learnset slot at twice the rate of the
+bottom band.
+
 Done in MOVES_PUSHDOWN, beside the self-KO and OHKO moves, so the community sheet stays as
-voted and the override is one list. Peck, Vine Whip and Splash sit at Bad and were left
-there. `python3 tools/randolocke/gen_move_tiers.py` regenerates after any edit.
+voted and the override is one list. Peck and Vine Whip sit at Bad and were left there.
+`python3 tools/randolocke/gen_move_tiers.py` regenerates after any edit.
 
 ### The town tutors teach as often as you like
 
@@ -1215,7 +1239,8 @@ Verified in the built ROM rather than by eye: the Slateport tutor's compiled scr
 | T47.3 | Declining still works | Say no | Declined message, nothing taught, offers again later |
 | T47.4 | The Frontier is unchanged | Battle Frontier tutors | Still charge BP, still once per move |
 | T47.5 | **Starter moves are rare** | Roll a few dozen learnsets (new save or the debug menu) | Tackle and friends turn up about a seventh as often |
-| T47.6 | No starter-move TMs | Check the TM list on a new save | None of the six appear as a TM |
+| T47.6 | No starter-move TMs | Check the TM list on a new save | None of the seven appear as a TM |
+| T47.8 | **Splash** | Same | As rare as the rest of the bottom band |
 | T47.7 | Tier data regenerates clean | `python3 tools/randolocke/validate_tiers.py --moves` | All names resolved, 0 unresolved |
 
 ---
