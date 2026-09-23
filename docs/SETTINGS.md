@@ -119,10 +119,16 @@ then gone from every other site.
 `MON_RANDOM_LEGEND_AWARE` keeps a site legendary, but its pool is *every* legendary, which
 in an expansion dex means mostly sub-legendaries and Ultra Beasts: the cave at the end of a
 Braille puzzle could hand you a Cobalion or a Poipole. Worse, a site can roll its own
-species back — about a 1 in 90 chance each, so across twelve sites roughly one run in eight
-has a site that looks like it was never randomized at all. With this on, the twelve draw
-from the box legendaries and the mythicals only. Sub-legendaries and Ultra Beasts are shut
-out of the *sites*; they remain catchable wherever else the species mode puts them.
+species back — an uncommon but real result, and one that looks exactly like a site that was
+never randomized at all. With this on, the twelve draw from the box legendaries and the
+mythicals only. Sub-legendaries and Ultra Beasts are shut out of the *sites*; they remain
+catchable wherever else the species mode puts them.
+
+One wrinkle worth knowing: forms are separate species here. Zygarde alone has six entries,
+all flagged as restricted legendaries and all called "Zygarde", and Deoxys, Kyurem,
+Calyrex, Giratina, Shaymin and Hoopa are the same story. The draw is without replacement by
+species, so two sites never give the same *entry* — but they can give two forms of the same
+Pokémon, and narrowing the pool makes that likelier, not less.
 
 This roughly halves the pool, so a given seed gives a different set of twelve than it did
 without it. Nothing about the mapping is stored in the save — it is recomputed from the

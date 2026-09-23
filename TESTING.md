@@ -1199,7 +1199,7 @@ and end on `return`, so they carry no release of their own and need none.
 **3. The twelve legendary sites draw from the box legendaries and the mythicals only**
 (`RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY`). `MON_RANDOM_LEGEND_AWARE` kept a site legendary
 but pooled every legendary there is, so most sites handed over sub-legendaries or Ultra
-Beasts — and a site could roll its own species back, at roughly 1 in 90 each. The pool is
+Beasts — and a site could roll its own species back, which is what this seed did. The pool is
 narrowed with a filter on the unique-list draw; `GetUniqueMonListFiltered` carries a
 bounded fallback so a filter that rejects everything can never spin the rejection loop
 forever on hardware.
