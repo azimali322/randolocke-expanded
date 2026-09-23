@@ -73,8 +73,16 @@ EverGrandeCity_PokemonLeague_1F_EventScript_DoorGuard::
 
 @ randolocke: the League's one-legendary rule, run from the two tiles in front of the
 @ door every time -- the guards only step aside once, so their script cannot be where it
-@ lives. RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT; the check itself is C. The all-clear path
-@ just ends, which releases the player without a lockall to undo.
+@ lives. RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT; the check itself is C.
+@
+@ Both paths must releaseall, including the one that waves the player through. Ending on
+@ `end` alone froze a player who passed the rule with one legendary, on the doorstep.
+@ Not because of the field controls -- ScriptContext_RunScript unlocks those itself when a
+@ script finishes -- but because the trigger fires mid-step, and the step it interrupts
+@ ends up held: the player object event is left with heldMovementActive and
+@ heldMovementFinished both set, which nothing clears and which blocks every step after
+@ it. releaseall is what calls ObjectEventClearHeldMovementIfFinished on the player.
+@ Measured, on the tile: preventStep 0, frozen 0, heldMovement active 1 finished 1.
 EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryLimit::
 .if RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT == TRUE
 	callnative RandolockeCheckEliteFourLegendaries
@@ -89,6 +97,7 @@ EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryLimit::
 	releaseall
 .endif
 EverGrandeCity_PokemonLeague_1F_EventScript_RandolockeLegendaryOk::
+	releaseall
 	end
 
 EverGrandeCity_PokemonLeague_1F_EventScript_PlayerMoveToFrontFromRight::

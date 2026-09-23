@@ -1173,6 +1173,89 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 56 — Two freezes, and legendary sites worth the walk
+
+### What changed
+
+**1. R on the bike froze the game.** `RANDOLOCKE_DUAL_BIKE`'s swap returned TRUE from
+`ProcessPlayerFieldInput`, and TRUE there means "a script has taken over": `CB1_Overworld`
+answers it with `LockPlayerFieldControls()`. The swap starts no script, so nothing ever
+released those controls and the game stopped dead with the bike swapped under you. It
+returns FALSE now, and the frame walks on like any other.
+
+**2. The League door froze the game for a player who passed the rule.** The
+one-legendary trigger's refusal path ended with `releaseall`; the all-clear path just
+ended. That is not enough, and not for the reason it looks like: `ScriptContext_RunScript`
+unlocks the field controls itself when a script finishes. What is left behind is the
+*step*. The trigger fires mid-stride, and the player's object event keeps
+`heldMovementActive` and `heldMovementFinished` both set, which blocks every step after it
+— `releaseall` is what calls `ObjectEventClearHeldMovementIfFinished` on the player
+(`ScrCmd_releaseall`, src/scrcmd.c). So the player who was *allowed* through froze on the
+doorstep, while the one who was turned away was fine. Both paths release now.
+
+The other scripts this project adds were audited for the same shape: they are all `call`ed
+and end on `return`, so they carry no release of their own and need none.
+
+**3. The twelve legendary sites draw from the box legendaries and the mythicals only**
+(`RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY`). `MON_RANDOM_LEGEND_AWARE` kept a site legendary
+but pooled every legendary there is, so most sites handed over sub-legendaries or Ultra
+Beasts — and a site could roll its own species back, at roughly 1 in 90 each. The pool is
+narrowed with a filter on the unique-list draw; `GetUniqueMonListFiltered` carries a
+bounded fallback so a filter that rejects everything can never spin the rejection loop
+forever on hardware.
+
+**4. The Sky Pillar's legendary is level 63**, the Elite Four's cap, rather than vanilla's
+70. Terra Cave and Marine Cave are untouched at 70.
+
+Changing the pool changes what a seed produces, so an existing game gets a different set of
+twelve — recomputed from the seed at the next encounter, including at a site already
+visited. No save-layout change; no new game needed.
+
+### Headless check
+
+A throwaway autopilot (not committed) with the player's own seed forced, 0x8561D8DD:
+
+| Site | Old pool | New pool |
+| --- | --- | --- |
+| Sky Pillar | Ogerpon (sub-legendary) | Zygarde |
+| Terra Cave | Enamorus (sub-legendary) | Calyrex |
+| Marine Cave | Registeel (sub-legendary) | Ho-Oh |
+| Desert Ruins | **Regirock — its own species back** | Victini |
+| Island Cave | Zygarde | Zeraora |
+| Ancient Tomb | Chi-Yu (sub-legendary) | Solgaleo |
+| Southern Island A | Landorus (sub-legendary) | Arceus |
+| Southern Island B | Cresselia (sub-legendary) | Zygarde |
+| Faraway Island | Calyrex | Kyogre |
+| Birth Island | Ho-Oh | Lugia |
+| Navel Rock top | Glastrier (sub-legendary) | Marshadow |
+| Navel Rock bottom | Kartana (Ultra Beast) | Miraidon |
+
+That Desert Ruins row is the answer to "is the randomizer even working there": it was, and
+it rolled Regirock's own species back onto it.
+
+The two freezes, measured on the spot:
+
+| Case | Before | After |
+| --- | --- | --- |
+| R while on the Mach Bike | controls locked, player cannot move | flags 0x22 → 0x24, controls free, player moves |
+| League door, one legendary | stuck on the trigger tile: `preventStep 0`, `frozen 0`, `heldMovement` active 1 finished 1 | walks through into the League |
+| League door, two legendaries | refused, stepped back, released | unchanged — it always worked |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T56.1 | **The bike swap** | On the bike, press R | It switches between Mach and Acro with its sound, and you keep riding. Press it repeatedly |
+| T56.2 | R elsewhere | Press R on foot, and on the bike indoors | On foot it does nothing (or DexNav, if that is on); nothing freezes |
+| T56.3 | **The League with one legendary** | Walk to the Elite Four door carrying exactly one | You walk straight through |
+| T56.4 | The League with none | Same, with no legendaries | Straight through |
+| T56.5 | The League with two | Same, carrying two | "Only one legendary POKéMON may be in your party", you step back, and you can walk away and use the PC in that room |
+| T56.6 | Walking the tiles sideways | Cross the two tiles in front of the door left-to-right | The rule fires each time, and never holds you |
+| T56.7 | **A Regi cave** | Clear a Regi cave's puzzle | A box legendary or a mythical — never a sub-legendary or an Ultra Beast, and never the cave's own Regi |
+| T56.8 | Two sites | Clear a second legendary site | A different species from the first |
+| T56.9 | The Sky Pillar | Reach the top | The legendary there is level 63 |
+| T56.10 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
+
+---
+
 ## Phase 55 — The Steven double battle: the chosen three, and the heal that never ended
 
 ### What changed

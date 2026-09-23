@@ -110,6 +110,25 @@ unaffected — with `MON_RANDOM`, a legendary can still turn up in the grass.
 pool, so no two ever give the same species. Clear Rayquaza's slot and get Mew, and Mew is
 then gone from every other site.
 
+**They are worth the walk.**
+
+```c
+#define RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY TRUE
+```
+
+`MON_RANDOM_LEGEND_AWARE` keeps a site legendary, but its pool is *every* legendary, which
+in an expansion dex means mostly sub-legendaries and Ultra Beasts: the cave at the end of a
+Braille puzzle could hand you a Cobalion or a Poipole. Worse, a site can roll its own
+species back — about a 1 in 90 chance each, so across twelve sites roughly one run in eight
+has a site that looks like it was never randomized at all. With this on, the twelve draw
+from the box legendaries and the mythicals only. Sub-legendaries and Ultra Beasts are shut
+out of the *sites*; they remain catchable wherever else the species mode puts them.
+
+This roughly halves the pool, so a given seed gives a different set of twelve than it did
+without it. Nothing about the mapping is stored in the save — it is recomputed from the
+seed — so an existing game picks the new set up at its next legendary encounter, including
+at a site it has already visited.
+
 The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
 
 | Site | Vanilla occupant | Reaches the randomizer via |
@@ -129,6 +148,11 @@ The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
 
 Jirachi is absent on purpose: it has no in-game encounter, so a slot for it would consume
 a legendary nobody can reach.
+
+**Levels** stay where the map scripts put them: 40 in the three Regi caves, 70 in Terra
+Cave and Marine Cave, and **63 at the Sky Pillar** — the Elite Four's cap, lowered from
+vanilla's 70 so the last legendary before the League is not above it. The species there is
+randomized; the level is not.
 
 The roaming Lati shares the Southern Island pair's slots, so the roamer and the island
 cannot disagree about who is who.
@@ -383,6 +407,7 @@ mythicals and Ultra Beasts.
 | `RANDOLOCKE_LEGENDARY_CLAUSE` | `TRUE` | A legendary met in the wild is always catchable, like a shiny: in a used-up area, with its family already caught, and without using the area up. The twelve legendary sites have no wild table, so they were never restricted |
 | `RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT` | `TRUE` | The League will not let you through to the Elite Four with more legendaries in the party than the limit below. Eggs do not count. It is checked on the tiles in front of the door, so it catches every attempt, not just the first. The Pokémon Center's PC is in the same room |
 | `RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES` | `1` | How many legendaries the League lets through |
+| `RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY` | `TRUE` | The twelve legendary sites draw from the box legendaries and the mythicals only — no sub-legendaries, no Ultra Beasts. See the Legendaries section above |
 
 ### Nuzlocke details
 

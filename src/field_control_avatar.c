@@ -268,6 +268,11 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     // transition as getting on -- sprite, avatar state and bike momentum all reset -- so this
     // is exactly mounting the other bike, minus the trip to Mauville. Ported from
     // pokeemerald_rando_enh, which swapped the flags by hand; the transition does that part.
+    //
+    // Returns FALSE, not TRUE: TRUE here means "a script has taken over", and the caller
+    // answers it with LockPlayerFieldControls() -- see CB1_Overworld. A swap starts no
+    // script, so nothing ever released those controls and the game froze on the spot with
+    // the bike swapped under you. FALSE lets the same frame walk on as any other.
     if (input->pressedRButton && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE))
     {
         if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE))
@@ -280,7 +285,7 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
             SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_MACH_BIKE);
             PlaySE(SE_BIKE_BELL);
         }
-        return TRUE;
+        return FALSE;
     }
     #endif
 

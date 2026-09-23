@@ -1156,8 +1156,38 @@ static u16 RandomizeMonFromSeed(struct Sfc32State *state, enum RandomizerSpecies
 
 }
 
-// Fills an array with count Pokémon, with no repeats.
-void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies)
+// The floor under the rejection loop below: the first species the list has not handed out
+// yet, preferring one the filter accepts and settling for any permitted leftover.
+// SPECIES_NONE when there is nothing left to take at all.
+static u16 FirstUnseenSpecies(const u32 *seenMonBitVector, bool32 (*allow)(u16))
+{
+    u16 species, fallback = SPECIES_NONE;
+
+    for (species = 1; species <= RANDOMIZER_MAX_MON; species++)
+    {
+        if (!IsSpeciesPermitted(species))
+            continue;
+        if (seenMonBitVector[(species - 1) / 32] & (1 << ((species - 1) & 31)))
+            continue;
+        if (allow == NULL || allow(species))
+            return species;
+        if (fallback == SPECIES_NONE)
+            fallback = species;
+    }
+    return fallback;
+}
+
+// Fills an array with count Pokémon, with no repeats. `allow`, when given, narrows what a
+// roll is permitted to land on: a candidate it turns down is rolled again. Only the
+// caller's pool shrinks -- uniqueness, the seed and the order of the results are the same
+// machinery as before.
+//
+// The rejection loop needs a floor under it. A filter that turns down everything the mode
+// can produce would spin here forever, which on a GBA is a frozen game rather than a
+// failed assertion, so after a fixed number of tries the search gives up on the dice and
+// walks the species list instead. The randomizer's own pools are far too big for that to
+// happen by chance; it is there for a filter that is wrong.
+static void GetUniqueMonListFiltered(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies, bool32 (*allow)(u16))
 {
     u32 i, curMon;
     u32 seenMonBitVector[(RANDOMIZER_SPECIES_COUNT-1)/32+1] = {};
@@ -1167,6 +1197,7 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
     {
         u16 curOriginal = originalSpecies[i];
         bool32 foundNextMon = FALSE;
+        u32 tries = 0;
         if (!IsSpeciesPermitted(curOriginal))
         {
             // If there's non-permitted Pokémon in here, something is wrong.
@@ -1185,7 +1216,18 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
             // Generate a Pokémon. If it has already been generated, keep generating new ones
             // until one that hasn't been seen is picked.
 
-            curMon = RandomizeMonFromSeed(&state, mode, curOriginal);
+            if (++tries > 512)
+            {
+                curMon = FirstUnseenSpecies(seenMonBitVector, allow);
+                if (curMon == SPECIES_NONE)
+                    curMon = curOriginal;
+            }
+            else
+            {
+                curMon = RandomizeMonFromSeed(&state, mode, curOriginal);
+                if (allow != NULL && !allow(curMon))
+                    continue;
+            }
 
             // Compute the bit address of this mon.
             adjustedCurMon = curMon - 1;
@@ -1195,7 +1237,11 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
 
             // If set, this mon has been seen already.
             if (bitVectorWord & (1 << bitIndex))
+            {
+                if (tries > 512)
+                    break;  // the scan already reported there is nothing left to take
                 continue;
+            }
 
             bitVectorWord |= 1 << bitIndex;
             seenMonBitVector[wordIndex] = bitVectorWord;
@@ -1203,6 +1249,11 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
         }
         resultSpecies[i] = curMon;
     }
+}
+
+void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies)
+{
+    GetUniqueMonListFiltered(reason, mode, seed1, seed2, count, originalSpecies, resultSpecies, NULL);
 }
 
 enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species)
@@ -1443,6 +1494,20 @@ enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Spec
 EWRAM_DATA static u32 sLastLegendarySeed = 0;
 EWRAM_DATA static u16 sRandomizedLegendaries[LEGENDARY_MON_COUNT] = {0};
 
+// What a legendary site is allowed to hand over. LEGEND_AWARE keeps the twelve sites
+// legendary, but its pool is every legendary there is, so the cave at the end of a puzzle
+// could hand you a Cobalion or a Poipole -- or, since a site may roll its own species
+// back, the Regirock you walked in expecting. Narrow it to the box legendaries and the
+// mythicals.
+static bool32 LegendarySitePoolAllows(u16 species)
+{
+    #if RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY == TRUE
+    return gSpeciesInfo[species].isRestrictedLegendary || gSpeciesInfo[species].isMythical;
+    #else
+    return TRUE;
+    #endif
+}
+
 // Returns the legendary standing in for `species`, or SPECIES_NONE if `species` is not a
 // legendary encounter. MON_RANDOM_LEGEND_AWARE is forced regardless of the player's
 // species mode: it is what keeps a legendary site legendary. GetUniqueMonList does the
@@ -1461,9 +1526,9 @@ enum Species RandomizeLegendaryMon(enum Species species)
 
     if (sLastLegendarySeed != GetRandomizerSeed() || sRandomizedLegendaries[0] == SPECIES_NONE)
     {
-        GetUniqueMonList(RANDOMIZER_REASON_FIXED_ENCOUNTER, MON_RANDOM_LEGEND_AWARE,
-                         0x1E6E4D, 0, LEGENDARY_MON_COUNT, gLegendaryMonTable,
-                         sRandomizedLegendaries);
+        GetUniqueMonListFiltered(RANDOMIZER_REASON_FIXED_ENCOUNTER, MON_RANDOM_LEGEND_AWARE,
+                                 0x1E6E4D, 0, LEGENDARY_MON_COUNT, gLegendaryMonTable,
+                                 sRandomizedLegendaries, LegendarySitePoolAllows);
         sLastLegendarySeed = GetRandomizerSeed();
     }
     return sRandomizedLegendaries[i];
