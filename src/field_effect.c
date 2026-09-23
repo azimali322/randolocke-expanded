@@ -1270,6 +1270,20 @@ static void SpriteCB_PokeballGlowEffect(struct Sprite *sprite)
 static void PokeballGlowEffect_PlaceBalls(struct Sprite *sprite)
 {
     u8 spriteId;
+
+    // randolocke: with no Pokemon to place there is nothing to do, and the count below only
+    // ends the state *after* a ball has been placed and subtracted -- so zero wrapped round
+    // and it placed a ball every 25 frames until the sprite table ran out ("OUT OF SPRITE
+    // SLOTS", src/sprite.c). A player reaches the healing machine with an empty party under
+    // the nuzlocke wipe rule, which boxes the whole party. The bound on the coordinates is
+    // the same guard from the other end: there are only PARTY_SIZE of them.
+    if (sprite->sNumMons <= 0 || sprite->sCounter >= (s16)ARRAY_COUNT(sPokeballCoordOffsets))
+    {
+        sprite->sTimer = 32;
+        sprite->sState++;
+        return;
+    }
+
     if (sprite->sTimer == 0 || (--sprite->sTimer) == 0)
     {
         sprite->sTimer = 25;

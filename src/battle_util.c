@@ -9953,7 +9953,15 @@ bool32 AreMultiPartiesFullTeams(void)
         return FALSE;
     }
 
-    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+    // randolocke: the multi battle scripts ask this from the overworld, before the battle
+    // starts, where gBattleTypeFlags still describes the *previous* battle. After a wild
+    // encounter it carries no BATTLE_TYPE_TRAINER, so the answer came back "full teams",
+    // the script skipped ReducePlayerPartyToSelectedMons, and the three the player had just
+    // chosen -- and the order they chose them in -- were thrown away for the first three in
+    // the party. Out of battle, ask the battle being set up: a partnered wild battle sets
+    // its opponents to TRAINER_NONE, a partnered trainer battle names them.
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+     && (gMain.inBattle || TRAINER_BATTLE_PARAM.opponentA == TRAINER_NONE))
     {
         gSpecialVar_Result = TRUE;
         return TRUE;

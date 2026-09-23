@@ -1173,6 +1173,71 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 55 — The Steven double battle: the chosen three, and the heal that never ended
+
+### What changed
+
+Two defects behind the Mossdeep Space Center double battle with Steven, both fixed.
+
+**1. The three you pick are the three you send.** `AreMultiPartiesFullTeams()` answers the
+question "does each side field a full six?", and the multi battle scripts ask it *from the
+overworld*, before the battle has been set up — where `gBattleTypeFlags` still describes the
+**previous** battle. Walk into Steven after a wild encounter and those flags carry no
+`BATTLE_TYPE_TRAINER`, so the function fell through to the trainer lookups, read
+`gTrainers[...][TRAINER_NONE]`, found no half-team marking and answered "full teams".
+On that answer the script skips `ReducePlayerPartyToSelectedMons`, and the three Pokemon
+you had just chosen — and the order you chose them in — were thrown away: the battle used
+the first three in party order instead. The fix asks the battle *being set up* rather than
+the one just finished: out of battle, a partnered wild battle leaves its opponents at
+`TRAINER_NONE` and a partnered trainer battle names them, so the trainers are only consulted
+once there is a trainer to consult. In battle, `gBattleTypeFlags` is current and is used as
+before.
+
+**2. The Pokemon Center heal with an empty party.** The healing machine places one Poke Ball
+per party Pokemon, and its state only ended *after* placing a ball and counting one off — so
+with zero to place the count wrapped round and it placed a ball every 25 frames until the
+sprite table was full: `src/sprite.c:453: Out of sprite slots`, the crash in the screenshot.
+It needs an empty party to happen, which the nuzlocke wipe rule provides:
+`RANDOLOCKE_WIPE_COSTS_PARTY` boxes the whole party, and the wipe then walks you into a
+Pokemon Center. `PokeballGlowEffect_PlaceBalls` now ends the state when there is nothing left
+to place, and also when it has used all six coordinates — the same guard from the other end.
+
+**Not a bug — the whiteout.** Losing the double battle is a whiteout even with a full box:
+vanilla counts only the party, and the Randolocke wipe rule then boxes it. Steven's own
+Pokemon cannot save you (`B_MULTI_BATTLE_WHITEOUT` is `GEN_LATEST`, so the partner winning
+alone still ends the battle as your loss). Both are settings, not bugs — see
+`docs/SETTINGS.md`.
+
+No save-layout change; no new game needed.
+
+### Headless check
+
+A throwaway autopilot build (not committed) walked a new save to Littleroot, then:
+
+| Case | Before | After |
+| --- | --- | --- |
+| The script's question after a wild battle | full teams = 1 (wrong — discards your picks) | full teams = 0 |
+| The script's question after a trainer battle | full teams = 0 | full teams = 0 |
+| Six Pokemon, picked 6th, 4th, 5th | sent Bulbasaur, Charmander, Squirtle | sends Totodile, Chikorita, Cyndaquil |
+| The heal with an empty party | never finished; sprite table full | finished in 195 frames, 16 sprites at peak |
+
+`test/randolocke_pokecenter_heal.c` covers the second fix: with the guard removed it
+reproduces `Out of sprite slots` exactly, and with it the effect ends in 186 frames using two
+sprites. The first fix has no test — `AreMultiPartiesFullTeams()` has a separate `#if TESTING`
+body, so the branch that changed is compiled out of the test ROM.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T55.1 | **The chosen three** | With six Pokemon, talk to Steven at the Space Center and pick three that are *not* the first three — in a deliberate order | The battle sends exactly those three, in that order |
+| T55.2 | After a wild battle | Have a wild encounter on the way in, then start the fight | Same as T55.1 — the previous battle no longer decides it |
+| T55.3 | The party after | Win or lose, then check the party | Your full six are back, in their original order |
+| T55.4 | **The heal with an empty party** | Lose the fight (or any fight) so the wipe boxes the party, and let it walk you to the Pokemon Center | The machine's animation runs with no balls and ends; the nurse hands back; no crash |
+| T55.5 | The heal normally | Heal with one, three and six Pokemon | One ball per Pokemon, as before |
+| T55.6 | The whiteout | Lose the double battle with a full box | It is a whiteout: the party is boxed and you wake in a Pokemon Center. By design — Phase 30's wipe rule |
+| T55.7 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
+
+---
+
 ## Phase 54 — A 3x3 pond, shinies at 1 in 64, and the first encounter counts
 
 ### What changed
