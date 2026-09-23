@@ -1202,11 +1202,17 @@ It needs an empty party to happen, which the nuzlocke wipe rule provides:
 Pokemon Center. `PokeballGlowEffect_PlaceBalls` now ends the state when there is nothing left
 to place, and also when it has used all six coordinates — the same guard from the other end.
 
-**Not a bug — the whiteout.** Losing the double battle is a whiteout even with a full box:
-vanilla counts only the party, and the Randolocke wipe rule then boxes it. Steven's own
-Pokemon cannot save you (`B_MULTI_BATTLE_WHITEOUT` is `GEN_LATEST`, so the partner winning
-alone still ends the battle as your loss). Both are settings, not bugs — see
-`docs/SETTINGS.md`.
+**Not a bug — the whiteout.** Losing a trainer battle blacks you out here as in every
+Pokemon game, and Pokemon in the PC have never counted towards that — only the party does.
+In a partner battle Gen 4+ rules (`B_MULTI_BATTLE_WHITEOUT`, `GEN_LATEST`) can spare you
+when Steven wins the fight on his own, but only while one of the three you *left out* of the
+battle is still standing; with all six of yours down it is a loss. The Randolocke wipe rule
+then boxes the party, which is what walked an empty party into the healing machine. Nothing
+here changed, and neither `AreMultiPartiesFullTeams()` answer above affects it: in battle the
+flags are current, both Mossdeep opponents are marked `Multi Party: Half`, and the answer was
+— and stays — "not full teams". Worth knowing that the first bug fed the fight your first
+three instead of the three you picked, so the loss that started all this may simply not
+happen again.
 
 No save-layout change; no new game needed.
 
@@ -1233,8 +1239,9 @@ body, so the branch that changed is compiled out of the test ROM.
 | T55.3 | The party after | Win or lose, then check the party | Your full six are back, in their original order |
 | T55.4 | **The heal with an empty party** | Lose the fight (or any fight) so the wipe boxes the party, and let it walk you to the Pokemon Center | The machine's animation runs with no balls and ends; the nurse hands back; no crash |
 | T55.5 | The heal normally | Heal with one, three and six Pokemon | One ball per Pokemon, as before |
-| T55.6 | The whiteout | Lose the double battle with a full box | It is a whiteout: the party is boxed and you wake in a Pokemon Center. By design — Phase 30's wipe rule |
-| T55.7 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
+| T55.6 | The whiteout | Lose the double battle with a full box | Still a whiteout — the box never counts. The party is boxed and you wake in a Pokemon Center: Phase 30's wipe rule, unchanged |
+| T55.7 | Steven wins it alone | Let your three faint while a Pokemon you left out of the battle is healthy | No whiteout: the fight is his to finish |
+| T55.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
 
 ---
 
