@@ -85,13 +85,16 @@
 #define RZ_MOVE_W_BAD            529
 #define RZ_MOVE_W_HOMELESS       39
 
-// Item weights, x100. Pool of 475. No community list exists for items, so tiers 1-2 are
-// hand-graded from pokeemerald_rando_enh and the rest are placed by heuristic; see
+// Item weights, x100. No community list exists for items, so tiers 1-2 are hand-graded
+// from pokeemerald_rando_enh and the rest are placed by heuristic; see
 // tools/randolocke/gen_item_tiers.py. Pool of 408; berries are excluded because they are
-// randomized separately at berry trees. 2.41x / 2.30x / 2.06x / 0.30x / 0.10x vs uniform.
-// Tier 4 is Poke Balls and evolution items - both sold cheaply in the Phase 11 shop, so
-// finding one is not a reward. Tier 5 is healing, vitamins, X items and the mega/Z/Tera
-// gear Phase 6 disabled; at 0.10x it is effectively off.
+// randomized separately at berry trees. Per item, 2.41x / 2.54x / 2.77x / 0.56x / 0.07x
+// against uniform. Tier 4 is Poke Balls, evolution stones and Exp. Candies - sold cheaply
+// in the Phase 11 shop, so finding one is not a reward. Tier 5 is healing, vitamins, X
+// items, the mega/Z/Tera gear Phase 6 disabled, and every item only one Pokemon can use --
+// memories, drives, Light Ball, Soul Dew, Whipped Dream, Reaper Cloth and the like, 63 of
+// them -- which on a randomized team almost never meet their Pokemon. At 0.07x it is
+// effectively off.
 #define RZ_TIER_WEIGHTED_ITEMS     (RZ_TIER_MODE_ITEMS != RZ_TIER_OFF)
 #define RZ_ITEM_W_T1             118
 #define RZ_ITEM_W_T2             4792
@@ -299,6 +302,13 @@
 // The level each of the 21 slots is learned at. Front-loaded so early Pokemon are
 // not moveless, with the last few above the pre-Elite-Four cap of 63.
 #define RZ_LEARNSET_LEVELS  { 1, 4, 7, 10, 13, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 70, 78, 86 }
+
+// If TRUE, a species that evolves by knowing a move -- Steenee and Stomp, Bonsly and Mimic,
+// Primeape and Rage Fist, Eevee and a Fairy move for Sylveon, seventeen in all -- always
+// has that move in its randomized learnset, replacing whatever the deal put in the slot
+// at the level it would learn it. Read from the evolution table, not a list. Without it,
+// most seeds leave those evolutions unreachable.
+#define RZ_LEARNSET_KEEPS_EVOLUTION_MOVES TRUE
 
 // If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
 // physical attacker gets physical STAB, a special attacker special STAB. Without this a

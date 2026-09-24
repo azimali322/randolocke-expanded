@@ -224,14 +224,14 @@
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
 // With RANDOLOCKE_UNIQUE_LEGENDARIES on, narrows what those twelve sites may hand over to
-// the box legendaries and the mythicals -- the ones a cave at the end of a puzzle ought to
-// be worth. Sub-legendaries and Ultra Beasts are shut out of the sites entirely; they are
-// still perfectly catchable wherever else the species mode puts them.
+// the box legendaries -- Mewtwo, Lugia, Kyogre, Dialga, Zekrom and the rest -- each in its
+// standard form, one entry per Pokemon. Sub-legendaries, mythicals and Ultra Beasts are
+// shut out of the sites entirely; they are still perfectly catchable wherever else the
+// species mode puts them.
 //
-// Note this cuts the pool the twelve draw from roughly in half, so the same seed gives a
-// different set of legendaries than it did before. Nothing is stored in the save: the
-// mapping is recomputed from the seed, so an existing game picks it up at the next
-// encounter, including for a site already visited.
+// Changing the pool changes what a seed gives. Nothing is stored in the save: the mapping
+// is recomputed from the seed, so an existing game picks it up at the next encounter,
+// including for a site already visited.
 #define RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY TRUE
 
 // --- Summary screen stat editor ----------------------------------------------

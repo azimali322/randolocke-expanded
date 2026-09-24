@@ -120,20 +120,26 @@ then gone from every other site.
 in an expansion dex means mostly sub-legendaries and Ultra Beasts: the cave at the end of a
 Braille puzzle could hand you a Cobalion or a Poipole. Worse, a site can roll its own
 species back — an uncommon but real result, and one that looks exactly like a site that was
-never randomized at all. With this on, the twelve draw from the box legendaries and the
-mythicals only. Sub-legendaries and Ultra Beasts are shut out of the *sites*; they remain
-catchable wherever else the species mode puts them.
+never randomized at all. With this on, the twelve draw from the **box legendaries** only —
+Mewtwo, Lugia, Ho-Oh, the weather trio, Dialga and Palkia, the Tao trio, Xerneas and Yveltal,
+Solgaleo and Lunala, Zacian and Zamazenta, Koraidon and Miraidon, and the rest. Sub-legendaries,
+mythicals and Ultra Beasts are shut out of the *sites*; they remain catchable wherever else
+the species mode puts them.
 
-One wrinkle worth knowing: forms are separate species here. Zygarde alone has six entries,
-all flagged as restricted legendaries and all called "Zygarde", and Deoxys, Kyurem,
-Calyrex, Giratina, Shaymin and Hoopa are the same story. The draw is without replacement by
-species, so two sites never give the same *entry* — but they can give two forms of the same
-Pokémon, and narrowing the pool makes that likelier, not less.
+**One of each, in its standard form.** Forms are separate species, and the randomizer
+permits six Zygardes — two of them, Complete and Mega, forms that only exist mid-battle —
+next to one of everything else. Zygarde drew six times in 33 and turned up at two sites of
+one seed. The sites therefore keep only species that are their own base form (form 0 of a
+form table is always the ordinary out-of-battle form: Zygarde 50%, Xerneas Neutral, Giratina
+Altered, Zacian Hero), which leaves 27 legendaries, each equally likely, and no Pokémon can
+appear at two sites.
 
-This roughly halves the pool, so a given seed gives a different set of twelve than it did
-without it. Nothing about the mapping is stored in the save — it is recomputed from the
-seed — so an existing game picks the new set up at its next legendary encounter, including
-at a site it has already visited.
+Cosmog and Cosmoem are box legendaries by the data, so a site can give one. They grow into
+Solgaleo or Lunala.
+
+Changing the pool changes what a seed gives. Nothing about the mapping is stored in the
+save — it is recomputed from the seed — so an existing game picks the new set up at its next
+legendary encounter, including at a site it has already visited.
 
 The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
 
@@ -413,7 +419,7 @@ mythicals and Ultra Beasts.
 | `RANDOLOCKE_LEGENDARY_CLAUSE` | `TRUE` | A legendary met in the wild is always catchable, like a shiny: in a used-up area, with its family already caught, and without using the area up. The twelve legendary sites have no wild table, so they were never restricted |
 | `RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT` | `TRUE` | The League will not let you through to the Elite Four with more legendaries in the party than the limit below. Eggs do not count. It is checked on the tiles in front of the door, so it catches every attempt, not just the first. The Pokémon Center's PC is in the same room |
 | `RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES` | `1` | How many legendaries the League lets through |
-| `RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY` | `TRUE` | The twelve legendary sites draw from the box legendaries and the mythicals only — no sub-legendaries, no Ultra Beasts. See the Legendaries section above |
+| `RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY` | `TRUE` | The twelve legendary sites draw from the box legendaries only, one of each in its standard form — no sub-legendaries, mythicals or Ultra Beasts, and no battle-only forms. See the Legendaries section above |
 
 ### Nuzlocke details
 
@@ -494,6 +500,54 @@ Active only when flag `0x028` is set.
 | `RZ_LEARNSET_SORT_BY_POWER` | `TRUE` | Each group is sorted by Base Power, so stronger moves are learned later. `FALSE` fills the slots in the order they roll |
 | `RZ_STAB_MATCH_CATEGORY` | `TRUE` | A physical attacker draws physical STAB, a special attacker special STAB. Without this a pure physical attacker can roll seven special STAB moves and be unable to use any of them |
 | `RZ_MIXED_ATTACKER_PERCENT` | `85` | How close base Attack and Sp. Atk must be, as a percentage of the higher, to count as **mixed** and draw STAB from both categories |
+| `RZ_LEARNSET_KEEPS_EVOLUTION_MOVES` | `TRUE` | A species that evolves by knowing a move keeps that move in its randomized learnset. See below |
+
+**Filling every group.** Each group is drawn from the move tiers and only then checked
+against its filter (the right type, the right category), so a narrow filter — seven
+physical Fairy moves, say — used to run out of draws and pad the rest with **Tackle**.
+That was where almost every Tackle came from: on two seeds, about a quarter of all species
+carried one, and 911 of the 914 Tackles in their learnsets were padding. Tackle itself is
+in the Homeless tier and hardly ever comes up by right. Now a group that comes up short is
+finished from the moves that actually fit, weighted exactly as the tiers weight them, and
+if not enough such moves exist at all the category is relaxed before the type, so the slot
+still gets a STAB move. Groups that filled on their own are unchanged. Three or four
+Tackles remain across the whole dex, and those are real draws.
+
+**Moves Pokémon need to evolve.** Seventeen species evolve by knowing a move, by using one
+twenty times, or by knowing a move of a type:
+
+| Species | Needs | Evolves into |
+| --- | --- | --- |
+| Steenee | Stomp | Tsareena |
+| Bonsly | Mimic | Sudowoodo |
+| Mime Jr. | Mimic | Mr. Mime (either form) |
+| Aipom | Double Hit | Ambipom |
+| Yanma | Ancient Power | Yanmega |
+| Tangela | Ancient Power | Tangrowth |
+| Piloswine | Ancient Power | Mamoswine |
+| Lickitung | Rollout | Lickilicky |
+| Girafarig | Twin Beam | Farigiraf |
+| Dunsparce | Hyper Drill | Dudunsparce |
+| Hisuian Qwilfish | Barb Barrage | Overqwil |
+| Poipole | Dragon Pulse | Naganadel |
+| Clobbopus | Taunt | Grapploct |
+| Dipplin | Dragon Cheer | Hydrapple |
+| Primeape | Rage Fist, used 20 times | Annihilape |
+| Stantler | Psyshield Bash, used 20 times | Wyrdeer |
+| Eevee | any Fairy move | Sylveon |
+
+A randomized learnset knows nothing of that, so on most seeds these evolutions were out of
+reach. After the deal, each needed move goes back in if the deal did not already include it:
+at the level the species learns it in its own data, or the level it first exists at if that
+is later (Piloswine, reached at 33), in the slot at or after that level. For Eevee it is the
+Fairy move from its own learnset, Baby-Doll Eyes. Stantler and Dipplin, whose own data
+never teaches their move by level, get it as a starting move, as does Poipole, whose data
+teaches Dragon Pulse at 1. Read from the evolution table itself, so nothing here is a
+hand-kept list.
+
+Every move in the level-up list can be relearned from the **summary screen** at any level
+(`P_SUMMARY_SCREEN_MOVE_RELEARNER` and `P_ENABLE_ALL_LEVEL_UP_MOVES`), so a Pokémon caught
+past the level — or one whose move is a starting move — can always be taught it there.
 
 The three counts add up to `RZ_LEARNSET_SLOTS`. If you change them, give
 `RZ_LEARNSET_LEVELS` one level per slot, and check `MAX_RELEARNER_MOVES`: the relearner's
@@ -543,7 +597,7 @@ how to change one safely.
 | --- | --- | --- |
 | `RZ_MOVE_W_META_DEFINING`, `RZ_MOVE_W_STAPLES`, `RZ_MOVE_W_FILLER`, `RZ_MOVE_W_NICHE`, `RZ_MOVE_W_BAD`, `RZ_MOVE_W_HOMELESS` | `107` / `1090` / `4209` / `4026` / `529` / `39` | Move bands, for randomized learnsets |
 | `RZ_ABILITY_W_S`, `RZ_ABILITY_W_A`, `RZ_ABILITY_W_B`, `RZ_ABILITY_W_C`, `RZ_ABILITY_W_D`, `RZ_ABILITY_W_F` | `900` / `2000` / `3200` / `2400` / `1100` / `400` | Ability bands. `RZ_ABILITY_W_NEGATIVE` is `0`, so the Negative band never rolls |
-| `RZ_ITEM_W_T1`, `RZ_ITEM_W_T2`, `RZ_ITEM_W_T3`, `RZ_ITEM_W_T4`, `RZ_ITEM_W_T5` | `118` / `4792` / `4146` / `537` / `407` | Field item tiers. Tier 4 is Poké Balls and evolution items, which the shop sells cheaply. Tier 5 is healing, vitamins and X items, and almost never rolls. Berries are not in this pool |
+| `RZ_ITEM_W_T1`, `RZ_ITEM_W_T2`, `RZ_ITEM_W_T3`, `RZ_ITEM_W_T4`, `RZ_ITEM_W_T5` | `118` / `4792` / `4146` / `537` / `407` | Field item tiers. Tier 4 is Poké Balls, evolution stones and Exp. Candies, which the shop sells cheaply. Tier 5 is healing, vitamins, X items, the switched-off mega/Z/Tera gear, and **every item only one Pokémon can use** — memories, drives, Light Ball, Soul Dew, and evolution items only one species evolves by, such as Whipped Dream, Reaper Cloth or the Milcery sweets (63 in all, found by `tools/randolocke/gen_item_tiers.py` from the item and species data). Tier 5 almost never rolls: per item it is 0.07× uniform. Berries are not in this pool |
 | `RZ_ITEM_W_TM_BAND` | `3000` | Weight of "a TM instead" against the five item tiers, for any randomized item that is not already a TM. 3000 against their 10000 makes about 23% of those items a TM |
 | `RZ_TM_W_META_DEFINING`, `RZ_TM_W_STAPLES`, `RZ_TM_W_FILLER`, `RZ_TM_W_NICHE` | `900` / `5800` / `2500` / `800` | TM bands: the move each randomized TM and tutor teaches or, with TM moves not randomized, which TM a pickup is. They lean harder toward good moves than the move bands, since a TM is permanent. Over the 50 TMs this gives about 3 Meta Defining, 26 Staples, 16 Filler and 5 Niche |
 | `RZ_BERRY_W_T1`, `RZ_BERRY_W_T2`, `RZ_BERRY_W_T3`, `RZ_BERRY_W_T4`, `RZ_BERRY_W_T5` | `1618` / `1676` / `5456` / `441` / `809` | Berry tree tiers. Pinch berries that raise a stat, and status cures, rank above HP restores, since the Porta Heal makes healing cheap. Berries with no hold effect come last |

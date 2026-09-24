@@ -1173,6 +1173,112 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 57 — Box legendaries, no more Tackle, one-Pokémon items down a tier, evolution moves kept
+
+### What changed
+
+**1. The twelve legendary sites give box legendaries only** — no mythicals now, as well as
+no sub-legendaries or Ultra Beasts — and **one of each, in its standard form**. The
+randomizer permits six Zygardes, Complete and Mega among them (forms that exist only
+mid-battle), so Zygarde drew 6 times in 33 and turned up at two sites of one seed. Keeping
+only species that are their own base form leaves 27 legendaries, equally likely, none at
+two sites. Changes what every seed gives; recomputed from the seed, nothing in the save.
+
+**2. Tackle.** Every learnset is 7 STAB, 7 status and 7 non-STAB damaging moves. Each group
+drew blindly from the move tiers and only then checked the filter, with 512 tries; a
+narrow filter (seven physical Fairy moves, seven Bug moves for a special attacker) ran out,
+and every slot left over became Tackle. Measured on two seeds before the fix:
+
+| Seed | Species | With Tackle | Tackles | Of which padding |
+| --- | --- | --- | --- | --- |
+| 0x8561D8DD | 1571 | 381 | 914 | 911 |
+| 0x12345678 | 1571 | 387 | 915 | 914 |
+
+Tackle is in the Homeless tier (weight 39 of 10,000) and hardly ever comes up by right. A
+group that comes up short is now finished from the moves that fit, weighted as the tiers
+weight them; if not enough exist, the category is relaxed before the type. Groups that
+filled on their own are untouched. After: 3, 1 and 5 Tackles across the whole dex on three
+seeds, all real draws.
+
+**3. Items only one Pokémon can use drop a tier.** The 36 already forced to tier 4
+(memories, drives, Light Ball, Thick Club, Leek, Soul Dew, the signature orbs, Booster
+Energy) go to tier 5, and so do 27 evolution items only one species evolves by, which the
+generator now finds from the species data: Whipped Dream, Sachet, Reaper Cloth, Protector,
+Electirizer, Magmarizer, Upgrade, Dubious Disc, Dragon Scale, Prism Scale, Oval Stone, the
+seven Milcery sweets, both apples, both pots, both Galarica items, both armors and the
+Gimmighoul Coin. Those with a real held effect (King's Rock, Metal Coat, Razor Claw/Fang)
+stay put. 63 items move from tier 4 to tier 5; tiers 1–3 are unchanged. Together they were
+3.26% of field items and are now 1.11%. Tier 4, now just Poké Balls, evolution stones,
+Exp. Candies and Metal Coat, is shared by fewer items, so each of those is more common.
+Mega stones were already in tier 5, the bottom; nothing is below it.
+
+**4. Pokémon that evolve by a move can always learn it.** Seventeen species (the table is
+in docs/SETTINGS.md): Steenee/Stomp, Bonsly and Mime Jr./Mimic, Aipom/Double Hit,
+Yanma, Tangela and Piloswine/Ancient Power, Lickitung/Rollout, Girafarig/Twin Beam,
+Dunsparce/Hyper Drill, Hisuian Qwilfish/Barb Barrage, Poipole/Dragon Pulse,
+Clobbopus/Taunt, Dipplin/Dragon Cheer, Primeape/Rage Fist, Stantler/Psyshield Bash, and
+Eevee with a Fairy move for Sylveon. Read at runtime from the evolution table. The move
+goes in at the level the species learns it in its own data, or the level it first exists
+at if later; any level-up move can be relearned from the summary screen.
+
+For the playtest seed 0x8561D8DD:
+
+| Site | Now |
+| --- | --- |
+| Sky Pillar | Zekrom |
+| Terra Cave | Calyrex |
+| Marine Cave | Ho-Oh |
+| Desert Ruins | Koraidon |
+| Island Cave | Solgaleo |
+| Ancient Tomb | Lugia |
+| Southern Island A / B | Xerneas / Palkia |
+| Faraway Island | Lunala |
+| Birth Island | Zacian |
+| Navel Rock top / bottom | Terapagos / Necrozma |
+
+| Species | Move | Level |
+| --- | --- | --- |
+| Steenee | Stomp | 28 |
+| Bonsly | Mimic | 16 |
+| Mime Jr. | Mimic | 32 |
+| Aipom | Double Hit | 32 |
+| Yanma | Ancient Power | 36 |
+| Tangela | Ancient Power | 24 |
+| Piloswine | Ancient Power | 36 |
+| Lickitung | Rollout | 7 |
+| Girafarig | Twin Beam | 32 |
+| Dunsparce | Hyper Drill | 32 |
+| Hisuian Qwilfish | Barb Barrage | 44 |
+| Poipole | Dragon Pulse | 1 |
+| Clobbopus | Taunt | 36 |
+| Dipplin | Dragon Cheer | 1 |
+| Primeape | Rage Fist | 36 |
+| Stantler | Psyshield Bash | 1 |
+| Eevee | Baby-Doll Eyes (Fairy) | 16 |
+
+New tests, each confirmed to fail with its fix reverted (the reverted learnset code
+reproduces exactly 914 Tackles):
+
+- `Randolocke: randomized learnsets fill every group` — every slot keeps to its group's
+  rule and no learnset repeats a move, on three seeds
+- `Randolocke: a Pokemon that evolves by a move can always learn it` — all 17, four seeds
+- `Randolocke: the legendary sites give twelve different box legendaries` — five seeds
+
+No save-layout change; no new game needed. Pokémon already caught keep the moves they know.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T57.1 | **Tackle** | Look through the level-up moves of a few Bug, Fairy and Ghost Pokémon in the Pokédex or relearner | No Tackle padding; every early slot is a real move |
+| T57.2 | **An evolution move** | Get a Steenee (or any species in the table) and open its summary-screen relearner | Stomp is in the list; teach it, level up, and it evolves |
+| T57.3 | Eevee | Check Eevee's relearner list | A Fairy move (Baby-Doll Eyes) is there |
+| T57.4 | Primeape | Teach Rage Fist and use it 20 times, then level up | Evolves into Annihilape |
+| T57.5 | **A legendary site** | Clear any legendary site | A box legendary — never a mythical, sub-legendary or Ultra Beast, never a form like Zygarde Complete |
+| T57.6 | Two sites | Clear a second | A different Pokémon |
+| T57.7 | **Field items** | Pick up items for a while | Species-only items (memories, drives, Light Ball, Whipped Dream…) turn up about a third as often as before |
+| T57.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 26 |
+
+---
+
 ## Phase 56 — Two freezes, and legendary sites worth the walk
 
 ### What changed
