@@ -110,6 +110,37 @@ unaffected — with `MON_RANDOM`, a legendary can still turn up in the grass.
 pool, so no two ever give the same species. Clear Rayquaza's slot and get Mew, and Mew is
 then gone from every other site.
 
+**They are worth the walk.**
+
+```c
+#define RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY TRUE
+```
+
+`MON_RANDOM_LEGEND_AWARE` keeps a site legendary, but its pool is *every* legendary, which
+in an expansion dex means mostly sub-legendaries and Ultra Beasts: the cave at the end of a
+Braille puzzle could hand you a Cobalion or a Poipole. Worse, a site can roll its own
+species back — an uncommon but real result, and one that looks exactly like a site that was
+never randomized at all. With this on, the twelve draw from the **box legendaries** only —
+Mewtwo, Lugia, Ho-Oh, the weather trio, Dialga and Palkia, the Tao trio, Xerneas and Yveltal,
+Solgaleo and Lunala, Zacian and Zamazenta, Koraidon and Miraidon, and the rest. Sub-legendaries,
+mythicals and Ultra Beasts are shut out of the *sites*; they remain catchable wherever else
+the species mode puts them.
+
+**One of each, in its standard form.** Forms are separate species, and the randomizer
+permits six Zygardes — two of them, Complete and Mega, forms that only exist mid-battle —
+next to one of everything else. Zygarde drew six times in 33 and turned up at two sites of
+one seed. The sites therefore keep only species that are their own base form (form 0 of a
+form table is always the ordinary out-of-battle form: Zygarde 50%, Xerneas Neutral, Giratina
+Altered, Zacian Hero), which leaves 27 legendaries, each equally likely, and no Pokémon can
+appear at two sites.
+
+Cosmog and Cosmoem are box legendaries by the data, so a site can give one. They grow into
+Solgaleo or Lunala.
+
+Changing the pool changes what a seed gives. Nothing about the mapping is stored in the
+save — it is recomputed from the seed — so an existing game picks the new set up at its next
+legendary encounter, including at a site it has already visited.
+
 The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
 
 | Site | Vanilla occupant | Reaches the randomizer via |
@@ -130,6 +161,11 @@ The twelve sites, in `gLegendaryMonTable` (`src/randomizer.c`):
 Jirachi is absent on purpose: it has no in-game encounter, so a slot for it would consume
 a legendary nobody can reach.
 
+**Levels** stay where the map scripts put them: 40 in the three Regi caves, 70 in Terra
+Cave and Marine Cave, and **63 at the Sky Pillar** — the Elite Four's cap, lowered from
+vanilla's 70 so the last legendary before the League is not above it. The species there is
+randomized; the level is not.
+
 The roaming Lati shares the Southern Island pair's slots, so the roamer and the island
 cannot disagree about who is who.
 
@@ -139,17 +175,18 @@ duplicates possible, and non-legendaries possible.
 ### Nuzlocke rules
 
 ```c
-#define RANDOLOCKE_NUZLOCKE_RULES       TRUE
-#define RANDOLOCKE_FLAG_NUZLOCKE_OFF    FLAG_UNUSED_0x02D
+#define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+#define RANDOLOCKE_FIRST_ENCOUNTER_COUNTS   TRUE
+#define RANDOLOCKE_FLAG_NUZLOCKE_OFF        FLAG_UNUSED_0x02D
 ```
 
 Enforced in-game rather than left to the player:
 
 | Rule | Behaviour |
 | --- | --- |
-| **One per area** | One catch per wild-encounter area. After that, balls are refused there |
-| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, so you can keep looking |
-| **Shiny clause** | A shiny is always catchable and never uses the area up |
+| **One per area** | The first Pokémon you meet in an area is your one chance there. With `RANDOLOCKE_FIRST_ENCOUNTER_COUNTS` the area is used however that battle ends — caught, knocked out, run from, fled, teleported or Roared away, or lost. `FALSE` counts a catch only. After that, balls are refused there |
+| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, even if you run from it or it teleports away, so you can keep looking |
+| **Shiny clause** | A shiny is always catchable and never uses the area up, whatever happens |
 
 An *area* is one region-map section: a route, a town, or a whole cave however many floors
 it has. Land, surfing and fishing there share it. Places with no wild table — the legendary
@@ -298,6 +335,7 @@ ones are in `include/config/randomizer.h`.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `RANDOLOCKE_FLAG_INFINITE_REPEL` | `FLAG_UNUSED_0x027` | Flag the **Repellant** key item toggles. While set, the repel counter never ticks down |
+| `RANDOLOCKE_FLAG_SHINY_REPEL` | `FLAG_UNUSED_0x02F` | Flag the **Non-Shiny Repel** toggles. While set, only shiny wild Pokémon are met |
 | `RANDOLOCKE_PORTA_HEAL_REVIVES` | `FALSE` | Whether the **Porta Heal** also revives fainted Pokémon. v1.1's default was "no" |
 | `RANDOLOCKE_FIELD_MOVES_NEED_NO_USER` | `TRUE` | Use HM field moves with no party member that knows them. Badges still required. Kills HM slaves |
 | `RANDOLOCKE_CATCH_RATE_PERCENT` | `150` | Multiplier on every species' base catch rate |
@@ -310,13 +348,16 @@ ones are in `include/config/randomizer.h`.
 | `RANDOLOCKE_SUMMARY_STAT_EDITOR` | `TRUE` | The summary's IV and EV pages can be edited in place. SELECT starts, A moves between stats, D-pad changes the one you are on: Up maxes, Down zeroes, Left/Right step by one. Held to 252 per stat, 510 total, 31 for IVs. Party Pokémon only |
 | `RANDOLOCKE_TM_HOVER_INFO` | `TRUE` | The bag's TM move panel follows the cursor instead of waiting for a selection, and shows a physical/special icon |
 
-### The four custom key items
+### The five custom key items
 
-Defined in `include/constants/items.h` (874–877):
+Defined in `include/constants/items.h` (874–878), and all handed out by the boy by the
+Littleroot pond. He gives only what you are missing, so an older save can go back to him
+for anything added since.
 
 | Item | Effect |
 | --- | --- |
 | **Repellant** | Toggleable infinite repel |
+| **Non-Shiny Repel** | Toggle. While on, every wild Pokémon you would meet walking, surfing or smashing rocks is turned away unless it is **shiny** — whatever its level, and over the Repellant's level check. The shiny clause lets a shiny be caught in any area, so this is how to go looking for one. Fishing, Sweet Scent and scripted encounters are untouched, as they are by any repel. Roamers get through only if shiny |
 | **Porta Heal** | Heals the party anywhere. Reviving is off by default — see `RANDOLOCKE_PORTA_HEAL_REVIVES` |
 | **Endless Candy** | A Rare Candy that is never consumed |
 | **Cap Candy** | Levels a Pokémon straight to the current level cap |
@@ -348,6 +389,21 @@ Defined in `include/constants/items.h` (874–877):
 | `RANDOLOCKE_RANDOMIZE_NPC_GIFTS` | `TRUE` | Items NPCs hand over are randomized like item balls, while the field items flag (`0x021`) is set. HMs and key items are never touched, so nothing the story needs can be lost |
 | `RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS` | `FALSE` | Whether Poké Balls from NPCs are randomized too. Off, so the five that start the run stay Poké Balls: under nuzlocke rules, balls are the scarcest thing in the game |
 | `RANDOLOCKE_TM_PICKUPS_NO_DUPES` | `TRUE` | A randomized TM, whether found, hidden or given by an NPC, is drawn from the TMs you do not own yet. TMs are reusable, so a repeat is worth nothing. The PC counts as owned. Once you own them all, any TM can come up |
+
+**Evolution items in every Poké Mart.** The twelve general marts sell Ultra, Fast and Timer
+Balls and **every item any Pokémon evolves by** for ¥200 each: the stones, the trade items,
+the Linking Cord, the Milcery sweets, and the held items that double as evolution items —
+Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep Sea Tooth and Deep Sea Scale. The list
+comes from `tools/randolocke/add_cheap_shop.py`, which reads the item and species data and
+tops up marts already stocked; the Gimmighoul Coin is stocked at its own ¥1.
+
+**Trade evolutions without trading.** Every trade evolution has an item route. One that
+needs a held item during the trade (Onix and a Metal Coat, Seadra and a Dragon Scale,
+Clamperl and a Deep Sea Tooth) evolves when you **use that item on it from the Bag**, like
+a stone — no holding, no level-up. That needs `I_USE_EVO_HELD_ITEMS_FROM_BAG` in
+`include/config/item.h`, which this hack turns on; the engine ships it off, and with it off
+every one of those items is "can't use". One that needs a plain trade, or a trade with a partner
+species (Kadabra, Machoke, Haunter, Karrablast and Shelmet), uses the **Linking Cord**.
 
 ### Screens and menus
 
@@ -382,6 +438,7 @@ mythicals and Ultra Beasts.
 | `RANDOLOCKE_LEGENDARY_CLAUSE` | `TRUE` | A legendary met in the wild is always catchable, like a shiny: in a used-up area, with its family already caught, and without using the area up. The twelve legendary sites have no wild table, so they were never restricted |
 | `RANDOLOCKE_ELITE_FOUR_LEGENDARY_LIMIT` | `TRUE` | The League will not let you through to the Elite Four with more legendaries in the party than the limit below. Eggs do not count. It is checked on the tiles in front of the door, so it catches every attempt, not just the first. The Pokémon Center's PC is in the same room |
 | `RANDOLOCKE_ELITE_FOUR_MAX_LEGENDARIES` | `1` | How many legendaries the League lets through |
+| `RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY` | `TRUE` | The twelve legendary sites draw from the box legendaries only, one of each in its standard form — no sub-legendaries, mythicals or Ultra Beasts, and no battle-only forms. See the Legendaries section above |
 
 ### Nuzlocke details
 
@@ -389,6 +446,7 @@ The rules themselves are in section 1.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
+| `RANDOLOCKE_FIRST_ENCOUNTER_COUNTS` | `TRUE` | The first encounter in an area uses it up however the battle ends: caught, knocked out, run from, gone by Teleport, Roar, Whirlwind or its own fleeing, or a loss. The clauses still spare it — a shiny, a legendary, or a Pokémon whose evolution family is already caught — so running from a dupe leaves you free to keep looking. `FALSE` counts a catch only |
 | `RANDOLOCKE_FLAG_RULES_BEGIN` | `FLAG_ADVENTURE_STARTED` | The flag that starts the rules. It is set when you get the five Poké Balls in Birch's lab, after the Route 103 battle. Before that you have one Pokémon and no balls, so there is nothing to rule on |
 | `RANDOLOCKE_FAINT_COSTS_MON` | `TRUE` | A Pokémon that reaches 0 HP is boxed at the end of the battle and locked there until you are Champion. Its held item goes back to the bag first. Skipped where the party is not really yours: Birch's bag on Route 101, Wally's tutorial, Safari, link and recorded battles, an in-game partner, the Frontier. `FALSE` means only a wipe costs anything |
 | `RANDOLOCKE_WIPE_COSTS_PARTY` | `TRUE` | A wipe costs the whole party: boxed and locked the same way, held items back to the bag. You pick a new team from the PC |
@@ -448,6 +506,16 @@ header**:
 | `RZ_TM_MOVES_TIER_MODE` | `RZ_TIER_MODE_MOVES` | Tier mode for the move each TM teaches, when TM moves are randomized. Draws from the TM bands, never Bad or Pokemon Homeless, with no repeats. HMs are never touched |
 | `RZ_TUTOR_MOVES_TIER_MODE` | `RZ_TM_MOVES_TIER_MODE` | The same for the ten move tutors. Never a move a TM already teaches |
 
+Neither a TM nor a tutor is ever dealt a move one of the HMs teaches — Cut, Fly, Surf,
+Strength, Flash, Rock Smash, Waterfall, Dive. The story hands you those HMs anyway, so a TM
+Fly would only be a copy. Over 64 seeds, 21 HM moves had been dealt to TMs and tutors
+before this rule.
+
+A gym leader's TM explanation and a tutor's offer describe the move actually on offer: the
+gift is randomized, and so is what it teaches, so the leader reads the TM back from what
+you were given and quotes that move's own description, and the tutor's offer does the
+same. The tutors' flavour lines that described their vanilla move were reworded.
+
 ### Randomized learnsets
 
 Active only when flag `0x028` is set.
@@ -461,6 +529,54 @@ Active only when flag `0x028` is set.
 | `RZ_LEARNSET_SORT_BY_POWER` | `TRUE` | Each group is sorted by Base Power, so stronger moves are learned later. `FALSE` fills the slots in the order they roll |
 | `RZ_STAB_MATCH_CATEGORY` | `TRUE` | A physical attacker draws physical STAB, a special attacker special STAB. Without this a pure physical attacker can roll seven special STAB moves and be unable to use any of them |
 | `RZ_MIXED_ATTACKER_PERCENT` | `85` | How close base Attack and Sp. Atk must be, as a percentage of the higher, to count as **mixed** and draw STAB from both categories |
+| `RZ_LEARNSET_KEEPS_EVOLUTION_MOVES` | `TRUE` | A species that evolves by knowing a move keeps that move in its randomized learnset. See below |
+
+**Filling every group.** Each group is drawn from the move tiers and only then checked
+against its filter (the right type, the right category), so a narrow filter — seven
+physical Fairy moves, say — used to run out of draws and pad the rest with **Tackle**.
+That was where almost every Tackle came from: on two seeds, about a quarter of all species
+carried one, and 911 of the 914 Tackles in their learnsets were padding. Tackle itself is
+in the Homeless tier and hardly ever comes up by right. Now a group that comes up short is
+finished from the moves that actually fit, weighted exactly as the tiers weight them, and
+if not enough such moves exist at all the category is relaxed before the type, so the slot
+still gets a STAB move. Groups that filled on their own are unchanged. Three or four
+Tackles remain across the whole dex, and those are real draws.
+
+**Moves Pokémon need to evolve.** Seventeen species evolve by knowing a move, by using one
+twenty times, or by knowing a move of a type:
+
+| Species | Needs | Evolves into |
+| --- | --- | --- |
+| Steenee | Stomp | Tsareena |
+| Bonsly | Mimic | Sudowoodo |
+| Mime Jr. | Mimic | Mr. Mime (either form) |
+| Aipom | Double Hit | Ambipom |
+| Yanma | Ancient Power | Yanmega |
+| Tangela | Ancient Power | Tangrowth |
+| Piloswine | Ancient Power | Mamoswine |
+| Lickitung | Rollout | Lickilicky |
+| Girafarig | Twin Beam | Farigiraf |
+| Dunsparce | Hyper Drill | Dudunsparce |
+| Hisuian Qwilfish | Barb Barrage | Overqwil |
+| Poipole | Dragon Pulse | Naganadel |
+| Clobbopus | Taunt | Grapploct |
+| Dipplin | Dragon Cheer | Hydrapple |
+| Primeape | Rage Fist, used 20 times | Annihilape |
+| Stantler | Psyshield Bash, used 20 times | Wyrdeer |
+| Eevee | any Fairy move | Sylveon |
+
+A randomized learnset knows nothing of that, so on most seeds these evolutions were out of
+reach. After the deal, each needed move goes back in if the deal did not already include it:
+at the level the species learns it in its own data, or the level it first exists at if that
+is later (Piloswine, reached at 33), in the slot at or after that level. For Eevee it is the
+Fairy move from its own learnset, Baby-Doll Eyes. Stantler and Dipplin, whose own data
+never teaches their move by level, get it as a starting move, as does Poipole, whose data
+teaches Dragon Pulse at 1. Read from the evolution table itself, so nothing here is a
+hand-kept list.
+
+Every move in the level-up list can be relearned from the **summary screen** at any level
+(`P_SUMMARY_SCREEN_MOVE_RELEARNER` and `P_ENABLE_ALL_LEVEL_UP_MOVES`), so a Pokémon caught
+past the level — or one whose move is a starting move — can always be taught it there.
 
 The three counts add up to `RZ_LEARNSET_SLOTS`. If you change them, give
 `RZ_LEARNSET_LEVELS` one level per slot, and check `MAX_RELEARNER_MOVES`: the relearner's
@@ -489,7 +605,9 @@ Elite Four, the Champion, and Aqua and Magma's leaders and admins.
 | `RZ_TRAINER_EV_SCALING` | `TRUE` | Trainer Pokémon get EVs that grow with your badges. In vanilla every trainer runs on zero, gym leaders included |
 | `RZ_TRAINER_EVS_BY_BADGE` | `{ 24, 48, 72, 100, 140, 180, 220, 252, 252 }` | EVs per stat for 0 to 8 badges, in two stats: the attacking stat the species uses, and Speed if it is fast or HP if not. At 252 the spare 6 go to the better defence, for the legal 510 |
 | `RZ_TRAINER_EV_SPEED_THRESHOLD` | `67` | Base Speed at which a trainer Pokémon counts as fast, for its EVs and its nature. 67 is the median base Speed in the game |
-| `RZ_TRAINER_IVS` | `TRUE` | A boss's Pokémon get 31 in every stat. Everyone else rolls each stat from 0 to 31, instead of one number six times. The IVs in `trainers.party` are no longer read |
+| `RZ_TRAINER_IVS` | `TRUE` | Every trainer Pokémon rolls each stat from 0 to 31, instead of one number six times, and a boss's best are raised to perfect (below). The IVs in `trainers.party` are no longer read |
+| `RZ_BOSS_IV_RAMP` | `TRUE` | A boss's perfect IVs ramp with your badges instead of covering the whole team from Roxanne on. Ranked by level, ace first: **1** perfect Pokémon at 0 badges, and each badge adds half a step — a Pokémon with three perfect IVs (the attacking stat it uses, HP, and Speed if it is fast or its better defence if not), then another fully perfect one — to **5** perfect at 8 badges. The Elite Four and the Champion are perfect throughout. `FALSE` makes every boss Pokémon perfect |
+| `RZ_BOSS_FULL_PARTY` | `TRUE` | Every boss (gym leaders, Elite Four, Champion, Magma and Aqua leaders and admins) and every rival battle (May or Brendan, Wally) brings **six** Pokémon. The added ones are built from the trainer's own team: a random level between its lowest and highest, a species randomized like any other slot, and a boss's EVs, nature, item and IVs. They go in ahead of the ace, which still comes out last. Not the first rival battle on Route 103 (you have one level-5 Pokémon), and not the Mossdeep double battle with Steven, whose two opponents bring three each by design. Seeded from the trainer and slot, so a boss is the same team every time |
 | `RZ_TRAINER_NATURES` | `TRUE` | Trainer Pokémon get the nature a player would pick, not Hardy. Fast ones trade their unused attacking stat for Speed (Jolly, Timid), slow ones for power (Adamant, Modest) |
 | `RZ_TRAINER_HELD_ITEMS` | `TRUE` | A trainer Pokémon with no item may be given one that suits any species: Leftovers, Sitrus, Lum, Focus Band, Life Orb and so on, or the booster for its attacking category. No Choice items. Items written into `trainers.party` stay |
 | `RZ_TRAINER_ITEM_CHANCE` | `35` | Percent chance an ordinary trainer's Pokémon gets one |
@@ -510,7 +628,7 @@ how to change one safely.
 | --- | --- | --- |
 | `RZ_MOVE_W_META_DEFINING`, `RZ_MOVE_W_STAPLES`, `RZ_MOVE_W_FILLER`, `RZ_MOVE_W_NICHE`, `RZ_MOVE_W_BAD`, `RZ_MOVE_W_HOMELESS` | `107` / `1090` / `4209` / `4026` / `529` / `39` | Move bands, for randomized learnsets |
 | `RZ_ABILITY_W_S`, `RZ_ABILITY_W_A`, `RZ_ABILITY_W_B`, `RZ_ABILITY_W_C`, `RZ_ABILITY_W_D`, `RZ_ABILITY_W_F` | `900` / `2000` / `3200` / `2400` / `1100` / `400` | Ability bands. `RZ_ABILITY_W_NEGATIVE` is `0`, so the Negative band never rolls |
-| `RZ_ITEM_W_T1`, `RZ_ITEM_W_T2`, `RZ_ITEM_W_T3`, `RZ_ITEM_W_T4`, `RZ_ITEM_W_T5` | `118` / `4792` / `4146` / `537` / `407` | Field item tiers. Tier 4 is Poké Balls and evolution items, which the shop sells cheaply. Tier 5 is healing, vitamins and X items, and almost never rolls. Berries are not in this pool |
+| `RZ_ITEM_W_T1`, `RZ_ITEM_W_T2`, `RZ_ITEM_W_T3`, `RZ_ITEM_W_T4`, `RZ_ITEM_W_T5` | `118` / `4792` / `4146` / `537` / `407` | Field item tiers. Tier 4 is Poké Balls, evolution stones and Exp. Candies, which the shop sells cheaply. Tier 5 is healing, vitamins, X items, the switched-off mega/Z/Tera gear, and **every item only one Pokémon can use** — memories, drives, Light Ball, Soul Dew, and evolution items only one species evolves by, such as Whipped Dream, Reaper Cloth or the Milcery sweets (63 in all, found by `tools/randolocke/gen_item_tiers.py` from the item and species data). Tier 5 almost never rolls: per item it is 0.07× uniform. Berries are not in this pool |
 | `RZ_ITEM_W_TM_BAND` | `3000` | Weight of "a TM instead" against the five item tiers, for any randomized item that is not already a TM. 3000 against their 10000 makes about 23% of those items a TM |
 | `RZ_TM_W_META_DEFINING`, `RZ_TM_W_STAPLES`, `RZ_TM_W_FILLER`, `RZ_TM_W_NICHE` | `900` / `5800` / `2500` / `800` | TM bands: the move each randomized TM and tutor teaches or, with TM moves not randomized, which TM a pickup is. They lean harder toward good moves than the move bands, since a TM is permanent. Over the 50 TMs this gives about 3 Meta Defining, 26 Staples, 16 Filler and 5 Niche |
 | `RZ_BERRY_W_T1`, `RZ_BERRY_W_T2`, `RZ_BERRY_W_T3`, `RZ_BERRY_W_T4`, `RZ_BERRY_W_T5` | `1618` / `1676` / `5456` / `441` / `809` | Berry tree tiers. Pinch berries that raise a stat, and status cures, rank above HP restores, since the Porta Heal makes healing cheap. Berries with no hold effect come last |

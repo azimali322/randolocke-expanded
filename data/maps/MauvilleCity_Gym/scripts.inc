@@ -114,6 +114,7 @@ MauvilleCity_Gym_EventScript_WattsonDefeated::
 MauvilleCity_Gym_EventScript_GiveShockWave2::
 	giveitem ITEM_TM_SHOCK_WAVE
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox MauvilleCity_Gym_Text_ExplainShockWave, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_SHOCK_WAVE
 	release
@@ -122,6 +123,7 @@ MauvilleCity_Gym_EventScript_GiveShockWave2::
 MauvilleCity_Gym_EventScript_GiveShockWave::
 	giveitem ITEM_TM_SHOCK_WAVE
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox MauvilleCity_Gym_Text_ExplainShockWave, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_SHOCK_WAVE
 	return
@@ -363,10 +365,13 @@ MauvilleCity_Gym_Text_ExplainDynamoBadgeTakeThis:
 	.string "Hmm…\n"
 	.string "You should take this, too!$"
 
+@ randolocke: names and describes the TM actually handed over -- the gift and its move are
+@ both randomized. RandolockeBufferGiftTM fills STR_VAR_1 to 3 just before this is shown.
 MauvilleCity_Gym_Text_ExplainShockWave:
-	.string "That TM34 there contains SHOCK WAVE.\p"
-	.string "It's a trustworthy move that never\n"
-	.string "misses! You can count on it!\p"
+	.string "That {STR_VAR_1} there contains\n"
+	.string "{STR_VAR_2}.\p"
+	.string "{STR_VAR_3}\p"
+	.string "Wahahah! You can count on it!\p"
 	.string "… … … … … …$"
 
 MauvilleCity_Gym_Text_RegisteredWattson:

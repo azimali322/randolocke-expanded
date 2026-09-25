@@ -1173,6 +1173,454 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 58 — Six-Pokémon bosses, an IV ramp, the Non-Shiny Repel, and TMs that say what they teach
+
+### What changed
+
+**1. Bosses and rivals bring six** (`RZ_BOSS_FULL_PARTY`). Gym leaders, the Elite Four, the
+Champion, Magma and Aqua leaders and admins, and every rival battle (May or Brendan, Wally).
+The added Pokémon are built from the trainer's own team: a random level between its lowest
+and highest, a species randomized like any other slot, and a boss's EVs, nature, item and
+IVs. They go in ahead of the ace, which moves to the last slot — where `IsAceMon` looks for
+it — so it still comes out last. The data file's own Pokémon keep the seeds they always had,
+so their species are unchanged. Not padded: the Route 103 rival battle, and the Mossdeep
+double battle with Steven (two opponents at three each by design).
+
+**2. A boss's perfect IVs ramp with the badges** (`RZ_BOSS_IV_RAMP`). Until now every boss
+Pokémon had 31 everywhere. Now all roll like anyone's, and the best are raised, by level with
+the ace first: 1 perfect at 0 badges, half a step per badge (a three-of-six Pokémon, then
+another perfect one), 5 perfect at 8. The Elite Four and the Champion stay perfect throughout.
+
+**3. No TM or tutor teaches an HM's move.** Over 64 seeds, 21 HM moves had been dealt to TMs
+and tutors. The rule re-rolls those slots, so a seed that dealt one gets a different table
+from that point on. **The playtest seed 0x8561D8DD never dealt one: its 50 TMs and 10 tutors
+are identical before and after** (compared directly). Its only Flying-type TM is TM35
+Bounce, a different move from Fly.
+
+**4. The Non-Shiny Repel**, a toggled key item from the Littleroot boy. While on, a wild
+Pokémon met walking, surfing, smashing rocks or in a mass outbreak is only met if shiny —
+at any level, over the Repellant's level check and Keen Eye's. Roamers get through only if
+shiny. Fishing, Sweet Scent and scripted encounters are untouched. Flag `0x02F`.
+
+**5. Gym leaders describe the TM actually given**, and **tutors describe the move actually
+taught.** A leader's explanation names the TM received, the move it teaches, and that move's
+own description, laid out for the message box. It reads the item from `VAR_0x8006` — the
+headless run below first showed "That TECHNICAL MACHINE, Great Ball, contains Great Ball":
+the obtain script's `switch VAR_RESULT` copies the pocket number into `VAR_0x8000`, and
+pocket 3 is the Great Ball's item ID. Roxanne's line that a TM is used up once is gone too;
+TMs are reusable here. The tutors' offer adds the description, and their flavour lines that
+described the vanilla move (Fury Cutter's whole introduction, Metronome's finger-waggling,
+Substitute's copy of itself) were reworded.
+
+**6. Every evolution item is sold.** Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep
+Sea Tooth and Deep Sea Scale join the twelve marts at ¥200. `add_cheap_shop.py` now reads
+which items species evolve by from the species data and tops up marts it stocked before; the
+Gimmighoul Coin keeps its hand-set ¥1.
+
+**7. Held-item trade evolutions work from the Bag** (`I_USE_EVO_HELD_ITEMS_FROM_BAG`, now
+TRUE). The species data gives every held-item trade evolution an item route — Onix + Metal
+Coat, Seadra + Dragon Scale, Porygon + Up-Grade — and the marts sell those items, but with
+the engine setting off every one of them was "can't use" in the Bag. Without a link cable,
+Onix, Scyther, Seadra, Porygon, Porygon2, Rhydon, Electabuzz, Magmar, Dusclops, Clamperl,
+Feebas, Poliwhirl, Slowpoke, Spritzee and Swirlix could never evolve. Only the Linking Cord
+had been usable. A new test checks that every item any species evolves by with `EVO_ITEM` is
+usable from the Bag; with the setting off it names the King's Rock and the Metal Coat.
+
+The TM and tutor tables now also rebuild if the seed changes, as the legendary table did.
+A soft reset already clears them, so this changes nothing in play; it lets tests look at
+more than one seed.
+
+No save-layout change. The new item is appended after the last ID, the flag was unused,
+and nothing in the save structures changed. An existing save keeps working: the boy gives
+the Non-Shiny Repel to anyone who does not have it.
+
+### Headless check (real trainer data, a new game)
+
+| Trainer | Badges | Result |
+| --- | --- | --- |
+| Roxanne (3 in data) | 0 | 6 Pokémon at 11–14, the level-14 ace last; 1 perfect (the ace) |
+| Roxanne | 1 | + one Pokémon with 3/6 perfect |
+| Wally, Mauville (1 in data) | 3 | 6 at level 16, IVs rolled (a rival, not a boss) |
+| May, Route 103 | 0 | 1 — not padded |
+| Brendan, Route 110 | 3 | 6 at 19–22 |
+| Archie | 7 | 4 perfect + one 3/6, ranked by level |
+| Tate & Liza (double) | 7 | 6; 4 perfect + one 3/6 |
+| Sidney, Wallace | 8 | 6, all perfect |
+
+Roxanne's gift, played through the real script: "Obtained the TM10!" … "That TECHNICAL
+MACHINE, TM10, contains Dragon Breath. Strikes the foe with a blast of breath. May
+paralyze." The Fury Cutter tutor: "There's a move I think is wickedly cool, and I love
+teaching it." … "I can teach Lick to one of your POKéMON. Licks with a long tongue to
+injure. May also paralyze. Would you like me to?" The Littleroot boy: hands over all five
+key items to a new game, the Non-Shiny Repel included.
+
+New and rewritten tests, each confirmed to fail with its fix reverted:
+
+- `Randolocke: bosses and rivals bring six Pokemon, the ace still last`
+- `Randolocke: the first rival battle, ordinary trainers and half teams keep their size`
+- `Randolocke: a boss's perfect IVs ramp with the badges`, `… the Elite Four are perfect throughout`
+- `Randolocke: no TM or tutor teaches an HM's move` (64 seeds; 21 hits with the rule removed)
+- `Randolocke: the Non-Shiny Repel lets only shiny Pokemon through` (1,500 rolls: 27 met, all shiny)
+- `Randolocke: every move description fits the message box`, `… a gym leader describes the TM actually handed over`
+- `Randolocke: every evolution item can be used from the Bag`, `… a held-item trade evolution happens from the Bag`
+
+The trainer tests now build their own trainers. The test build swaps `gTrainers` for the
+test framework's fixtures, where `TRAINER_ROXANNE_1` has no party at all — so the old
+version of the EV and item test was looping over an empty party and checking nothing.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T58.1 | **A gym leader's team** | Challenge any gym leader | Six Pokémon; the last one out is the strongest |
+| T58.2 | Route 103 | (New game) the first rival battle | One Pokémon, as before |
+| T58.3 | A rival | Brendan/May on Route 110 or Wally | Six Pokémon |
+| T58.4 | Steven's double battle | Mossdeep Space Center | Three each for Maxie and Tabitha, as before |
+| T58.5 | **The Non-Shiny Repel** | Talk to the boy by the Littleroot pond; use it from Key Items; walk in grass | "Only shiny POKéMON will appear." Nothing appears until a shiny does |
+| T58.6 | Off again | Use it again | "switched off"; encounters return |
+| T58.7 | **A gym TM** | Beat a gym leader | The explanation names the TM you received and describes its move |
+| T58.8 | **A tutor** | Talk to any move tutor | The offer names and describes the randomized move |
+| T58.9 | **A TM** | Look through your TMs | None teaches Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall or Dive |
+| T58.10 | **Evolution items** | Visit any Poké Mart | Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep Sea Tooth and Scale at ¥200 |
+| T58.11 | A trade evolution | Buy a Metal Coat, use it on an Onix from the Bag | It evolves into Steelix |
+| T58.12 | Regression tests | `make check TESTS="Randolocke"` | PASS — 37 |
+
+---
+
+## Phase 57 — Box legendaries, no more Tackle, one-Pokémon items down a tier, evolution moves kept
+
+### What changed
+
+**1. The twelve legendary sites give box legendaries only** — no mythicals now, as well as
+no sub-legendaries or Ultra Beasts — and **one of each, in its standard form**. The
+randomizer permits six Zygardes, Complete and Mega among them (forms that exist only
+mid-battle), so Zygarde drew 6 times in 33 and turned up at two sites of one seed. Keeping
+only species that are their own base form leaves 27 legendaries, equally likely, none at
+two sites. Changes what every seed gives; recomputed from the seed, nothing in the save.
+
+**2. Tackle.** Every learnset is 7 STAB, 7 status and 7 non-STAB damaging moves. Each group
+drew blindly from the move tiers and only then checked the filter, with 512 tries; a
+narrow filter (seven physical Fairy moves, seven Bug moves for a special attacker) ran out,
+and every slot left over became Tackle. Measured on two seeds before the fix:
+
+| Seed | Species | With Tackle | Tackles | Of which padding |
+| --- | --- | --- | --- | --- |
+| 0x8561D8DD | 1571 | 381 | 914 | 911 |
+| 0x12345678 | 1571 | 387 | 915 | 914 |
+
+Tackle is in the Homeless tier (weight 39 of 10,000) and hardly ever comes up by right. A
+group that comes up short is now finished from the moves that fit, weighted as the tiers
+weight them; if not enough exist, the category is relaxed before the type. Groups that
+filled on their own are untouched. After: 3, 1 and 5 Tackles across the whole dex on three
+seeds, all real draws.
+
+**3. Items only one Pokémon can use drop a tier.** The 36 already forced to tier 4
+(memories, drives, Light Ball, Thick Club, Leek, Soul Dew, the signature orbs, Booster
+Energy) go to tier 5, and so do 27 evolution items only one species evolves by, which the
+generator now finds from the species data: Whipped Dream, Sachet, Reaper Cloth, Protector,
+Electirizer, Magmarizer, Upgrade, Dubious Disc, Dragon Scale, Prism Scale, Oval Stone, the
+seven Milcery sweets, both apples, both pots, both Galarica items, both armors and the
+Gimmighoul Coin. Those with a real held effect (King's Rock, Metal Coat, Razor Claw/Fang)
+stay put. 63 items move from tier 4 to tier 5; tiers 1–3 are unchanged. Together they were
+3.26% of field items and are now 1.11%. Tier 4, now just Poké Balls, evolution stones,
+Exp. Candies and Metal Coat, is shared by fewer items, so each of those is more common.
+Mega stones were already in tier 5, the bottom; nothing is below it.
+
+**4. Pokémon that evolve by a move can always learn it.** Seventeen species (the table is
+in docs/SETTINGS.md): Steenee/Stomp, Bonsly and Mime Jr./Mimic, Aipom/Double Hit,
+Yanma, Tangela and Piloswine/Ancient Power, Lickitung/Rollout, Girafarig/Twin Beam,
+Dunsparce/Hyper Drill, Hisuian Qwilfish/Barb Barrage, Poipole/Dragon Pulse,
+Clobbopus/Taunt, Dipplin/Dragon Cheer, Primeape/Rage Fist, Stantler/Psyshield Bash, and
+Eevee with a Fairy move for Sylveon. Read at runtime from the evolution table. The move
+goes in at the level the species learns it in its own data, or the level it first exists
+at if later; any level-up move can be relearned from the summary screen.
+
+For the playtest seed 0x8561D8DD:
+
+| Site | Now |
+| --- | --- |
+| Sky Pillar | Zekrom |
+| Terra Cave | Calyrex |
+| Marine Cave | Ho-Oh |
+| Desert Ruins | Koraidon |
+| Island Cave | Solgaleo |
+| Ancient Tomb | Lugia |
+| Southern Island A / B | Xerneas / Palkia |
+| Faraway Island | Lunala |
+| Birth Island | Zacian |
+| Navel Rock top / bottom | Terapagos / Necrozma |
+
+| Species | Move | Level |
+| --- | --- | --- |
+| Steenee | Stomp | 28 |
+| Bonsly | Mimic | 16 |
+| Mime Jr. | Mimic | 32 |
+| Aipom | Double Hit | 32 |
+| Yanma | Ancient Power | 36 |
+| Tangela | Ancient Power | 24 |
+| Piloswine | Ancient Power | 36 |
+| Lickitung | Rollout | 7 |
+| Girafarig | Twin Beam | 32 |
+| Dunsparce | Hyper Drill | 32 |
+| Hisuian Qwilfish | Barb Barrage | 44 |
+| Poipole | Dragon Pulse | 1 |
+| Clobbopus | Taunt | 36 |
+| Dipplin | Dragon Cheer | 1 |
+| Primeape | Rage Fist | 36 |
+| Stantler | Psyshield Bash | 1 |
+| Eevee | Baby-Doll Eyes (Fairy) | 16 |
+
+New tests, each confirmed to fail with its fix reverted (the reverted learnset code
+reproduces exactly 914 Tackles):
+
+- `Randolocke: randomized learnsets fill every group` — every slot keeps to its group's
+  rule and no learnset repeats a move, on three seeds
+- `Randolocke: a Pokemon that evolves by a move can always learn it` — all 17, four seeds
+- `Randolocke: the legendary sites give twelve different box legendaries` — five seeds
+
+No save-layout change; no new game needed. Pokémon already caught keep the moves they know.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T57.1 | **Tackle** | Look through the level-up moves of a few Bug, Fairy and Ghost Pokémon in the Pokédex or relearner | No Tackle padding; every early slot is a real move |
+| T57.2 | **An evolution move** | Get a Steenee (or any species in the table) and open its summary-screen relearner | Stomp is in the list; teach it, level up, and it evolves |
+| T57.3 | Eevee | Check Eevee's relearner list | A Fairy move (Baby-Doll Eyes) is there |
+| T57.4 | Primeape | Teach Rage Fist and use it 20 times, then level up | Evolves into Annihilape |
+| T57.5 | **A legendary site** | Clear any legendary site | A box legendary — never a mythical, sub-legendary or Ultra Beast, never a form like Zygarde Complete |
+| T57.6 | Two sites | Clear a second | A different Pokémon |
+| T57.7 | **Field items** | Pick up items for a while | Species-only items (memories, drives, Light Ball, Whipped Dream…) turn up about a third as often as before |
+| T57.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 26 |
+
+---
+
+## Phase 56 — Two freezes, and legendary sites worth the walk
+
+### What changed
+
+**1. R on the bike froze the game.** `RANDOLOCKE_DUAL_BIKE`'s swap returned TRUE from
+`ProcessPlayerFieldInput`, and TRUE there means "a script has taken over": `CB1_Overworld`
+answers it with `LockPlayerFieldControls()`. The swap starts no script, so nothing ever
+released those controls and the game stopped dead with the bike swapped under you. It
+returns FALSE now, and the frame walks on like any other.
+
+**2. The League door froze the game for a player who passed the rule.** The
+one-legendary trigger's refusal path ended with `releaseall`; the all-clear path just
+ended. That is not enough, and not for the reason it looks like: `ScriptContext_RunScript`
+unlocks the field controls itself when a script finishes. What is left behind is the
+*step*. The trigger fires mid-stride, and the player's object event keeps
+`heldMovementActive` and `heldMovementFinished` both set, which blocks every step after it
+— `releaseall` is what calls `ObjectEventClearHeldMovementIfFinished` on the player
+(`ScrCmd_releaseall`, src/scrcmd.c). So the player who was *allowed* through froze on the
+doorstep, while the one who was turned away was fine. Both paths release now.
+
+The other scripts this project adds were audited for the same shape: they are all `call`ed
+and end on `return`, so they carry no release of their own and need none.
+
+**3. The twelve legendary sites draw from the box legendaries and the mythicals only**
+(`RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY`). `MON_RANDOM_LEGEND_AWARE` kept a site legendary
+but pooled every legendary there is, so most sites handed over sub-legendaries or Ultra
+Beasts — and a site could roll its own species back, which is what this seed did. The pool is
+narrowed with a filter on the unique-list draw; `GetUniqueMonListFiltered` carries a
+bounded fallback so a filter that rejects everything can never spin the rejection loop
+forever on hardware.
+
+**4. The Sky Pillar's legendary is level 63**, the Elite Four's cap, rather than vanilla's
+70. Terra Cave and Marine Cave are untouched at 70.
+
+Changing the pool changes what a seed produces, so an existing game gets a different set of
+twelve — recomputed from the seed at the next encounter, including at a site already
+visited. No save-layout change; no new game needed.
+
+### Headless check
+
+A throwaway autopilot (not committed) with the player's own seed forced, 0x8561D8DD:
+
+| Site | Old pool | New pool |
+| --- | --- | --- |
+| Sky Pillar | Ogerpon (sub-legendary) | Zygarde |
+| Terra Cave | Enamorus (sub-legendary) | Calyrex |
+| Marine Cave | Registeel (sub-legendary) | Ho-Oh |
+| Desert Ruins | **Regirock — its own species back** | Victini |
+| Island Cave | Zygarde | Zeraora |
+| Ancient Tomb | Chi-Yu (sub-legendary) | Solgaleo |
+| Southern Island A | Landorus (sub-legendary) | Arceus |
+| Southern Island B | Cresselia (sub-legendary) | Zygarde |
+| Faraway Island | Calyrex | Kyogre |
+| Birth Island | Ho-Oh | Lugia |
+| Navel Rock top | Glastrier (sub-legendary) | Marshadow |
+| Navel Rock bottom | Kartana (Ultra Beast) | Miraidon |
+
+That Desert Ruins row is the answer to "is the randomizer even working there": it was, and
+it rolled Regirock's own species back onto it.
+
+The two freezes, measured on the spot:
+
+| Case | Before | After |
+| --- | --- | --- |
+| R while on the Mach Bike | controls locked, player cannot move | flags 0x22 → 0x24, controls free, player moves |
+| League door, one legendary | stuck on the trigger tile: `preventStep 0`, `frozen 0`, `heldMovement` active 1 finished 1 | walks through into the League |
+| League door, two legendaries | refused, stepped back, released | unchanged — it always worked |
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T56.1 | **The bike swap** | On the bike, press R | It switches between Mach and Acro with its sound, and you keep riding. Press it repeatedly |
+| T56.2 | R elsewhere | Press R on foot, and on the bike indoors | On foot it does nothing (or DexNav, if that is on); nothing freezes |
+| T56.3 | **The League with one legendary** | Walk to the Elite Four door carrying exactly one | You walk straight through |
+| T56.4 | The League with none | Same, with no legendaries | Straight through |
+| T56.5 | The League with two | Same, carrying two | "Only one legendary POKéMON may be in your party", you step back, and you can walk away and use the PC in that room |
+| T56.6 | Walking the tiles sideways | Cross the two tiles in front of the door left-to-right | The rule fires each time, and never holds you |
+| T56.7 | **A Regi cave** | Clear a Regi cave's puzzle | A box legendary or a mythical — never a sub-legendary or an Ultra Beast, and never the cave's own Regi |
+| T56.8 | Two sites | Clear a second legendary site | A different species from the first |
+| T56.9 | The Sky Pillar | Reach the top | The legendary there is level 63 |
+| T56.10 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
+
+---
+
+## Phase 55 — The Steven double battle: the chosen three, and the heal that never ended
+
+### What changed
+
+Two defects behind the Mossdeep Space Center double battle with Steven, both fixed.
+
+**1. The three you pick are the three you send.** `AreMultiPartiesFullTeams()` answers the
+question "does each side field a full six?", and the multi battle scripts ask it *from the
+overworld*, before the battle has been set up — where `gBattleTypeFlags` still describes the
+**previous** battle. Walk into Steven after a wild encounter and those flags carry no
+`BATTLE_TYPE_TRAINER`, so the function fell through to the trainer lookups, read
+`gTrainers[...][TRAINER_NONE]`, found no half-team marking and answered "full teams".
+On that answer the script skips `ReducePlayerPartyToSelectedMons`, and the three Pokemon
+you had just chosen — and the order you chose them in — were thrown away: the battle used
+the first three in party order instead. The fix asks the battle *being set up* rather than
+the one just finished: out of battle, a partnered wild battle leaves its opponents at
+`TRAINER_NONE` and a partnered trainer battle names them, so the trainers are only consulted
+once there is a trainer to consult. In battle, `gBattleTypeFlags` is current and is used as
+before.
+
+**2. The Pokemon Center heal with an empty party.** The healing machine places one Poke Ball
+per party Pokemon, and its state only ended *after* placing a ball and counting one off — so
+with zero to place the count wrapped round and it placed a ball every 25 frames until the
+sprite table was full: `src/sprite.c:453: Out of sprite slots`, the crash in the screenshot.
+It needs an empty party to happen, which the nuzlocke wipe rule provides:
+`RANDOLOCKE_WIPE_COSTS_PARTY` boxes the whole party, and the wipe then walks you into a
+Pokemon Center. `PokeballGlowEffect_PlaceBalls` now ends the state when there is nothing left
+to place, and also when it has used all six coordinates — the same guard from the other end.
+
+**Not a bug — the whiteout.** Losing a trainer battle blacks you out here as in every
+Pokemon game, and Pokemon in the PC have never counted towards that — only the party does.
+In a partner battle Gen 4+ rules (`B_MULTI_BATTLE_WHITEOUT`, `GEN_LATEST`) can spare you
+when Steven wins the fight on his own, but only while one of the three you *left out* of the
+battle is still standing; with all six of yours down it is a loss. The Randolocke wipe rule
+then boxes the party, which is what walked an empty party into the healing machine. Nothing
+here changed, and neither `AreMultiPartiesFullTeams()` answer above affects it: in battle the
+flags are current, both Mossdeep opponents are marked `Multi Party: Half`, and the answer was
+— and stays — "not full teams". Worth knowing that the first bug fed the fight your first
+three instead of the three you picked, so the loss that started all this may simply not
+happen again.
+
+No save-layout change; no new game needed.
+
+### Headless check
+
+A throwaway autopilot build (not committed) walked a new save to Littleroot, then:
+
+| Case | Before | After |
+| --- | --- | --- |
+| The script's question after a wild battle | full teams = 1 (wrong — discards your picks) | full teams = 0 |
+| The script's question after a trainer battle | full teams = 0 | full teams = 0 |
+| Six Pokemon, picked 6th, 4th, 5th | sent Bulbasaur, Charmander, Squirtle | sends Totodile, Chikorita, Cyndaquil |
+| The heal with an empty party | never finished; sprite table full | finished in 195 frames, 16 sprites at peak |
+
+`test/randolocke_pokecenter_heal.c` covers the second fix: with the guard removed it
+reproduces `Out of sprite slots` exactly, and with it the effect ends in 186 frames using two
+sprites. The first fix has no test — `AreMultiPartiesFullTeams()` has a separate `#if TESTING`
+body, so the branch that changed is compiled out of the test ROM.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T55.1 | **The chosen three** | With six Pokemon, talk to Steven at the Space Center and pick three that are *not* the first three — in a deliberate order | The battle sends exactly those three, in that order |
+| T55.2 | After a wild battle | Have a wild encounter on the way in, then start the fight | Same as T55.1 — the previous battle no longer decides it |
+| T55.3 | The party after | Win or lose, then check the party | Your full six are back, in their original order |
+| T55.4 | **The heal with an empty party** | Lose the fight (or any fight) so the wipe boxes the party, and let it walk you to the Pokemon Center | The machine's animation runs with no balls and ends; the nurse hands back; no crash |
+| T55.5 | The heal normally | Heal with one, three and six Pokemon | One ball per Pokemon, as before |
+| T55.6 | The whiteout | Lose the double battle with a full box | Still a whiteout — the box never counts. The party is boxed and you wake in a Pokemon Center: Phase 30's wipe rule, unchanged |
+| T55.7 | Steven wins it alone | Let your three faint while a Pokemon you left out of the battle is healthy | No whiteout: the fight is his to finish |
+| T55.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 23 |
+
+---
+
+## Phase 54 — A 3x3 pond, shinies at 1 in 64, and the first encounter counts
+
+### What changed
+
+- **Littleroot's pond is 3x3**, at x 11-13, y 15-17, built from the same rimmed pieces as
+  before, with its shore at y 18 under it and a tile of ground between it and Birch's lab.
+  The rest of the old 6x4 pond is Littleroot's own ground again. Every pond tile is pond
+  water, so you can fish from the shore below, from either side or from above. The boy
+  with the Porta Heal and Endless Candy still stands on the shore at (11,18), facing it.
+  This replaces the coordinates in T17.1–T17.5.
+- **`SHINY_ODDS` 512 → 1024**: 1 in 64.
+- **`RANDOLOCKE_FIRST_ENCOUNTER_COUNTS`** — the first Pokémon you meet in an area is your
+  one chance there, however that battle ends: caught, knocked out, run from, gone by
+  Teleport, Roar, Whirlwind or its own fleeing, or a loss. Until now only a catch used the
+  area, so running from an unwanted first encounter — or knocking it out — meant another
+  try. The clauses still spare the area: a shiny, a legendary, or a Pokémon whose
+  evolution family you already caught, so running from a dupe, or a dupe teleporting away,
+  leaves you free to keep looking. It is decided once, as the battle finishes.
+- The ball refusal in a used area now reads "You've already had your one encounter in
+  this area!" — "You already caught a Pokémon" is no longer the only way to get there.
+- `docs/NUZLOCKE.md` said a single faint was "just a faint"; with
+  `RANDOLOCKE_FAINT_COSTS_MON` it has not been since Phase 33. Corrected, along with the
+  area definition (a region map section, not a map) and the legendary clause, which it
+  never mentioned.
+
+### Found on the way: shiny wild battles crashed the test ROM
+
+Every test with a shiny wild Pokémon crashed, including expansion's own "Front anims work",
+and the crash reported no result at all, so the suite just came up one test short. The test
+runner's blank save has no name — all zeroes, which to the text engine is spaces, not the
+end — and when a shiny wild battle ends, the TV's breaking-news code copies the player's
+name, looking for its end, over the heap behind it. A real save always has a name, so the
+game itself was never affected. The runner's blank save now ends its name at once.
+Confirmed on the previous commit too: it predates this phase.
+
+### Headless check
+
+A throwaway autopilot build (not committed) fought a wild Zigzagoon on Route 101 with the
+rules running and picked RUN from the battle menu each time:
+
+| Case | Ball at the menu | After running |
+| --- | --- | --- |
+| A new Pokémon | allowed | Route 101 used |
+| The next encounter there | refused: area used | still used |
+| A dupe (Linoone caught) | refused: dupe | still open |
+| A shiny | allowed | still open |
+
+### Shiny odds
+
+| Situation | Odds per Pokémon |
+| --- | --- |
+| Any wild or gift Pokémon | 1 in 64 (1.56%) |
+| With a lure (one reroll) | about 1 in 32 |
+| With the Shiny Charm (two rerolls; debug menu only) | about 1 in 22 |
+
+A 50% chance of seeing one takes about 44 encounters, 90% about 146.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T54.1 | **The pond** | Leave your house, look east of Birch's lab | A 3x3 pond with its stone rim, a tile of grass between it and the lab |
+| T54.2 | **Fishing** | Old Rod from the shore at (12,18), facing up | A bite |
+| T54.3 | Fishing from the side | Stand at (10,16) facing right, or (14,16) facing left | A bite |
+| T54.4 | The boy | Talk to the boy at (11,18) | Porta Heal / Endless Candy as before; he faces the pond |
+| T54.5 | The town | Walk from the lab door east, and north past the pond | Everything reachable |
+| T54.6 | **Running uses the area** | Rules on; run from the first Pokémon on a fresh route, then meet another | A ball is refused: "You've already had your one encounter in this area!" |
+| T54.7 | **Knocking it out** | Knock out the first Pokémon on a fresh route | The area is used |
+| T54.8 | **Teleport** | Let a wild Abra teleport away as the first encounter | The area is used |
+| T54.9 | Dupe clause | Run from a Pokémon whose family you already caught | The area is still open |
+| T54.10 | Shiny clause | Run from a shiny | The area is still open |
+| T54.11 | Before the Poké Balls | Run from something before Birch's five balls | Nothing is used |
+| T54.12 | Shinies | Run through grass | Roughly one in 64 is shiny |
+| T54.13 | Regression tests | `make check TESTS="Randolocke"`, `TESTS="Front anims work"` | PASS — 22, including the eight new first-encounter tests; and 1 |
+
+---
+
 ## Phase 53 — The Regi caves open with the eighth badge
 
 ### What changed

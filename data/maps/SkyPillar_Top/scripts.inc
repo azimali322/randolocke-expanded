@@ -46,7 +46,9 @@ SkyPillar_Top_EventScript_Rayquaza::
 	playmoncry SPECIES_RAYQUAZA, CRY_MODE_ENCOUNTER
 	delay 40
 	waitmoncry
-	setwildbattle SPECIES_RAYQUAZA, 70
+@ randolocke: 63, the Elite Four's cap, rather than vanilla's 70. The species here is
+@ randomized, so this is whatever legendary the seed put at the top of the Sky Pillar.
+	setwildbattle SPECIES_RAYQUAZA, 63
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE

@@ -90,10 +90,12 @@ DEAD_SORT_TYPES = {
 # Items only one Pokemon can use. A Fire Memory is worthless on anything but a Silvally
 # and a Shock Drive on anything but a Genesect, so against a randomized dex they are dead
 # weight however strong they look on paper -- the odds of the one species that wants them
-# being on the team are negligible. They are forced to tier 4, the floor for things that
-# at least do *something*, above tier 5 where the consumables and switched-off gimmicks
-# sit. Keyed off hold effect and sort type rather than a name list, so new items of the
-# same kind land in the right place without anyone remembering to add them.
+# being on the team are negligible. They used to be forced to tier 4; they are now forced
+# one tier lower, to tier 5, with the consumables and switched-off gimmicks, and the same
+# goes for evolution items only one species evolves by (see is_one_species). Tier 5's
+# weight is shared by more items that way, so each is rarer than it was in tier 4. Keyed
+# off hold effect, sort type and the species data rather than a name list, so new items of
+# the same kind land in the right place without anyone remembering to add them.
 #
 # Plates are deliberately NOT here: since Gen 4 a plate boosts its type for any holder,
 # so they are ordinary type-boost items.
@@ -125,8 +127,46 @@ ONE_SPECIES_HOLD_EFFECTS = {
 }
 
 
-def is_one_species(d: dict) -> bool:
-    return d.get("sort") in ONE_SPECIES_SORT_TYPES or d.get("hold") in ONE_SPECIES_HOLD_EFFECTS
+def form_roots() -> dict[str, str]:
+    """Species -> form 0 of its form table, so two forms of one Pokemon count once:
+    Gimmighoul's Chest and Roaming forms both evolve by its coins."""
+    s = (ROOT / "src/data/pokemon/form_species_tables.h").read_text()
+    roots = {}
+    for body in re.findall(r"FormSpeciesIdTable\[\]\s*=\s*\{(.*?)\};", s, re.S):
+        forms = re.findall(r"SPECIES_[A-Z0-9_]+", body)
+        for form in forms:
+            roots.setdefault(form, forms[0])
+    return roots
+
+
+def evolution_item_users() -> dict[str, set[str]]:
+    """Item -> the Pokemon that evolve by it: used on them, held by them, or (Gimmighoul's
+    coins) counted in the bag. Read from the species data, like everything else here, and
+    counted by base form."""
+    roots = form_roots()
+    users: dict[str, set[str]] = {}
+    for path in sorted((ROOT / "src/data/pokemon/species_info").glob("gen_*_families.h")):
+        species = None
+        for line in path.read_text().splitlines():
+            m = re.match(r"\s*\[(SPECIES_[A-Z0-9_]+)\]\s*=", line)
+            if m:
+                species = m.group(1)
+            for item in re.findall(r"(?:EVO_ITEM|IF_HOLD_ITEM|IF_BAG_ITEM_COUNT),\s*(ITEM_[A-Z0-9_]+)", line):
+                users.setdefault(item, set()).add(roots.get(species, species))
+    return users
+
+
+def is_one_species(name: str, d: dict, users: dict[str, set[str]]) -> bool:
+    if d.get("sort") in ONE_SPECIES_SORT_TYPES or d.get("hold") in ONE_SPECIES_HOLD_EFFECTS:
+        return True
+    # An evolution item with no battle use of its own that only one species evolves by:
+    # a Whipped Dream is a Swirlix's and nothing else's, a Reaper Cloth a Dusclops'. The
+    # ones that double as real held items -- King's Rock, Metal Coat, the Razor Claw and
+    # Fang -- have a hold effect and so stay where their worth as held items puts them.
+    # Stones are ITEM_TYPE_EVOLUTION_STONE and are left alone: several species use each.
+    return (d.get("sort") == "ITEM_TYPE_EVOLUTION_ITEM"
+            and d.get("hold") in (None, "HOLD_EFFECT_NONE")
+            and len(users.get(name, ())) <= 1)
 
 
 def heuristic(name: str, d: dict) -> int:
@@ -156,6 +196,7 @@ def main() -> int:
     wl = whitelist()
     data = item_data()
     hand = hand_tiers()
+    users = evolution_item_users()
 
     tiers: list[list[str]] = [[] for _ in range(TIERS)]
     by_hand = by_heur = unknown = berries = by_species = 0
@@ -167,8 +208,8 @@ def main() -> int:
             continue
         # Overrides both the hand grades and the heuristic: the fork graded several of
         # these on their ceiling with the right holder, which is not the question here.
-        if name in data and is_one_species(data[name]):
-            tiers[3].append(name); by_species += 1
+        if name in data and is_one_species(name, data[name], users):
+            tiers[4].append(name); by_species += 1
         elif name in hand:
             tiers[hand[name]].append(name); by_hand += 1
         elif name in data:
@@ -188,8 +229,9 @@ def main() -> int:
          "// nuzlocke assumption.",
          "//",
          "// Items only one Pokemon can use -- memories, drives, the signature orbs and",
-         "// powders -- are forced to tier 4 whatever else says, since on a randomized team",
-         "// the holder that wants them is almost never there.",
+         "// powders, and evolution items only one species evolves by -- are forced to",
+         "// tier 5 whatever else says, since on a randomized team the holder that wants",
+         "// them is almost never there.",
          "//",
          f"// {by_hand} hand-graded, {by_heur} by heuristic, {by_species} one-species, "
          f"{unknown} unrecognised.",

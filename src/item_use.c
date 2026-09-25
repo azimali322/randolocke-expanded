@@ -85,6 +85,8 @@ static bool32 IsValidLocationForVsSeeker(void);
 
 static const u8 sText_RepellantOn[] = _("The Repellant is now active!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_RepellantOff[] = _("The Repellant was switched off.{PAUSE_UNTIL_PRESS}");
+static const u8 sText_NonShinyRepelOn[] = _("The Non-Shiny Repel is now active!\nOnly shiny POKéMON will appear.{PAUSE_UNTIL_PRESS}");
+static const u8 sText_NonShinyRepelOff[] = _("The Non-Shiny Repel was switched off.{PAUSE_UNTIL_PRESS}");
 // Two lines: one run of "Your Pokemon were restored to full health!" overflows the
 // field message box, which has no room for a 41-character line.
 static const u8 sText_PortaHealUsed[] = _("Your Pokémon were restored\nto full health!{PAUSE_UNTIL_PRESS}");
@@ -998,6 +1000,30 @@ void ItemUseOutOfBattle_Repellant(u8 taskId)
         DisplayItemMessageOnField(taskId, msg, Task_CloseCantUseKeyItemMessage);
 }
 
+// Toggles the shiny-only repel. While RANDOLOCKE_FLAG_SHINY_REPEL is set, TryGenerateWildMon
+// turns away every wild Pokemon that is not shiny; see wild_encounter.c.
+void ItemUseOutOfBattle_NonShinyRepel(u8 taskId)
+{
+    const u8 *msg;
+
+    PlaySE(SE_REPEL);
+    if (FlagGet(RANDOLOCKE_FLAG_SHINY_REPEL))
+    {
+        FlagClear(RANDOLOCKE_FLAG_SHINY_REPEL);
+        msg = sText_NonShinyRepelOff;
+    }
+    else
+    {
+        FlagSet(RANDOLOCKE_FLAG_SHINY_REPEL);
+        msg = sText_NonShinyRepelOn;
+    }
+
+    if (!gTasks[taskId].tUsingRegisteredKeyItem)
+        DisplayItemMessage(taskId, FONT_NORMAL, msg, CloseItemMessage);
+    else
+        DisplayItemMessageOnField(taskId, msg, Task_CloseCantUseKeyItemMessage);
+}
+
 // A portable Pokémon Center. Whether it revives fainted Pokémon is configurable;
 // Randolocke v1.1 made "does not revive" the default.
 void ItemUseOutOfBattle_PortaHeal(u8 taskId)
@@ -1224,7 +1250,7 @@ bool32 CanThrowBall(void)
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
 static const u8 sText_CantThrowPokeBall_SemiInvulnerable[] = _("Cannot throw a ball!\nThere's no Pokémon in sight!\p");
 static const u8 sText_CantThrowPokeBall_Disabled[] = _("POKé BALLS cannot be used\nright now!\p");
-static const u8 sText_CantThrowPokeBall_NuzlockeArea[] = _("You already caught a Pokémon\nin this area!\p");
+static const u8 sText_CantThrowPokeBall_NuzlockeArea[] = _("You've already had your one\nencounter in this area!\p");
 static const u8 sText_CantThrowPokeBall_NuzlockeDupe[] = _("You've already caught this\nPokémon's family!\p");
 
 static void ItemUseInBattle_ShowPartyMenu(u8 taskId)

@@ -19,24 +19,31 @@ first battle costs you nothing.
 
 | Rule | Behaviour |
 | --- | --- |
-| **One per area** | One catch per wild-encounter area. After that, Poké Balls are refused there |
-| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, so you can keep looking |
-| **Shiny clause** | A shiny is always catchable and never uses the area up |
+| **One per area** | The first Pokémon you meet in an area is your one chance there. Catch it, or the area is used up anyway: running from it, knocking it out, it fleeing or using Teleport, a Roar or Whirlwind, or losing to it all count. After that, Poké Balls are refused there |
+| **Dupes clause** | A species whose evolution family you already own cannot be caught — and meeting one does **not** use the area up, even if you run from it or it teleports away, so you can keep looking |
+| **Shiny clause** | A shiny is always catchable, and meeting one never uses the area up, whatever happens |
+| **Legendary clause** | The same for a legendary, mythical or Ultra Beast, which species randomization can put on any route |
 
-An *area* is one entry in the wild encounter tables, which is one map. Land, surfing and
-fishing on the same map share an area. Anywhere with no wild table — the legendary sites,
-gift Pokémon, scripted battles, Wally's tutorial — is not an area and is never restricted.
+`RANDOLOCKE_FIRST_ENCOUNTER_COUNTS FALSE` goes back to counting a catch only, so a
+knockout or a flee means another try.
+
+An *area* is one region map section: a route, a town, or a cave however many floors it
+has. Land, surfing and fishing there share it. Anywhere with no wild encounter table — the
+legendary sites, gift Pokémon, most scripted battles, Wally's tutorial — is not an area and
+is never restricted.
 
 The dupes check walks the whole evolution family, in both directions: catch a Zigzagoon
 and a later Linoone is refused; catch the Linoone first and the Zigzagoon is refused.
 
 ## 2. Death
 
-**An individual faint is just a faint.** Heal at a Pokémon Center and carry on — no
-permadeath per Pokémon.
+**A Pokémon that faints is gone** (`RANDOLOCKE_FAINT_COSTS_MON`). At the end of the
+battle its held item goes back to your bag and it is marked and moved into a PC box, where
+it stays. Skipped where the party is not really yours: Birch's bag on Route 101, Wally's
+tutorial, Safari, link and recorded battles, an in-game partner's team, and the Frontier.
 
-What costs you is a **wipe**: every Pokémon in your party down at once. Then the whole
-party is
+A **wipe** — every Pokémon in your party down at once — costs the whole party the same way.
+It is
 
 1. stripped of held items, which go back to your bag
 2. marked

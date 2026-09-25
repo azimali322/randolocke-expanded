@@ -472,6 +472,30 @@ static bool32 IsMoveIllegalForLearnset(enum Move move);
 
 static EWRAM_DATA u16 sRzTmMoves[NUM_TECHNICAL_MACHINES] = {0};
 static EWRAM_DATA bool8 sRzTmMovesBuilt = FALSE;
+// The seed the tables below were built from. A soft reset clears EWRAM, so in play this
+// never goes stale; checking it anyway is what the legendary table does, and it lets a
+// test look at more than one seed.
+static EWRAM_DATA u32 sRzTmMovesSeed = 0;
+static EWRAM_DATA u32 sRzTutorMovesSeed = 0;
+
+// The moves this game's HMs teach. A TM or a tutor that rolls one only duplicates an HM
+// the story hands you anyway -- a TM Fly next to HM02 is a wasted find -- so neither may.
+// Straight from FOREACH_HM, so the list is whatever the HMs are.
+#define RZ_HM_MOVE(id) MOVE_##id,
+static const u16 sRzHmMoves[] = { FOREACH_HM(RZ_HM_MOVE) };
+#undef RZ_HM_MOVE
+
+static bool32 RzIsHmMove(enum Move move)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sRzHmMoves); i++)
+    {
+        if (sRzHmMoves[i] == move)
+            return TRUE;
+    }
+    return FALSE;
+}
 
 static void RzBuildTmMoveTable(void)
 {
@@ -491,7 +515,7 @@ static void RzBuildTmMoveTable(void)
                                           NULL, 0, RZ_TM_MOVES_TIER_MODE);
             bool32 dupe = FALSE;
 
-            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move) || RzIsHmMove(move))
                 continue;
             for (j = 0; j < i; j++)
             {
@@ -505,6 +529,7 @@ static void RzBuildTmMoveTable(void)
         // falls back to the vanilla mapping for that slot.
     }
     sRzTmMovesBuilt = TRUE;
+    sRzTmMovesSeed = GetRandomizerSeed();
 }
 
 enum Move RandomizeTMMove(u16 tmIndex)
@@ -514,7 +539,7 @@ enum Move RandomizeTMMove(u16 tmIndex)
     if (!RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return MOVE_NONE;
 
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     return sRzTmMoves[tmIndex - 1];
@@ -537,7 +562,7 @@ static void RzBuildTutorMoveTable(void)
     u32 i, j;
 
     // The TM table has to exist first, so tutors can avoid what it already covers.
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, 0x7C7002, GetRandomizerSeed());
@@ -553,7 +578,7 @@ static void RzBuildTutorMoveTable(void)
                                           NULL, 0, RZ_TUTOR_MOVES_TIER_MODE);
             bool32 dupe = FALSE;
 
-            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move) || RzIsHmMove(move))
                 continue;
             for (j = 0; j < i; j++)
             {
@@ -572,6 +597,7 @@ static void RzBuildTutorMoveTable(void)
         // A slot the pool could not fill stays MOVE_NONE and keeps its vanilla move.
     }
     sRzTutorMovesBuilt = TRUE;
+    sRzTutorMovesSeed = GetRandomizerSeed();
 }
 
 enum Move RandomizeTutorMove(enum Move move)
@@ -581,7 +607,7 @@ enum Move RandomizeTutorMove(enum Move move)
     if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TUTOR_MOVES))
         return move;
 
-    if (!sRzTutorMovesBuilt)
+    if (!sRzTutorMovesBuilt || sRzTutorMovesSeed != GetRandomizerSeed())
         RzBuildTutorMoveTable();
 
     for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
@@ -599,7 +625,7 @@ u16 RandomizeTMMoveReverse(enum Move move)
     if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return ITEM_NONE;
 
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     for (i = 0; i < NUM_TECHNICAL_MACHINES; i++)
@@ -1156,8 +1182,38 @@ static u16 RandomizeMonFromSeed(struct Sfc32State *state, enum RandomizerSpecies
 
 }
 
-// Fills an array with count Pokémon, with no repeats.
-void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies)
+// The floor under the rejection loop below: the first species the list has not handed out
+// yet, preferring one the filter accepts and settling for any permitted leftover.
+// SPECIES_NONE when there is nothing left to take at all.
+static u16 FirstUnseenSpecies(const u32 *seenMonBitVector, bool32 (*allow)(u16))
+{
+    u16 species, fallback = SPECIES_NONE;
+
+    for (species = 1; species <= RANDOMIZER_MAX_MON; species++)
+    {
+        if (!IsSpeciesPermitted(species))
+            continue;
+        if (seenMonBitVector[(species - 1) / 32] & (1 << ((species - 1) & 31)))
+            continue;
+        if (allow == NULL || allow(species))
+            return species;
+        if (fallback == SPECIES_NONE)
+            fallback = species;
+    }
+    return fallback;
+}
+
+// Fills an array with count Pokémon, with no repeats. `allow`, when given, narrows what a
+// roll is permitted to land on: a candidate it turns down is rolled again. Only the
+// caller's pool shrinks -- uniqueness, the seed and the order of the results are the same
+// machinery as before.
+//
+// The rejection loop needs a floor under it. A filter that turns down everything the mode
+// can produce would spin here forever, which on a GBA is a frozen game rather than a
+// failed assertion, so after a fixed number of tries the search gives up on the dice and
+// walks the species list instead. The randomizer's own pools are far too big for that to
+// happen by chance; it is there for a filter that is wrong.
+static void GetUniqueMonListFiltered(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies, bool32 (*allow)(u16))
 {
     u32 i, curMon;
     u32 seenMonBitVector[(RANDOMIZER_SPECIES_COUNT-1)/32+1] = {};
@@ -1167,6 +1223,7 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
     {
         u16 curOriginal = originalSpecies[i];
         bool32 foundNextMon = FALSE;
+        u32 tries = 0;
         if (!IsSpeciesPermitted(curOriginal))
         {
             // If there's non-permitted Pokémon in here, something is wrong.
@@ -1185,7 +1242,18 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
             // Generate a Pokémon. If it has already been generated, keep generating new ones
             // until one that hasn't been seen is picked.
 
-            curMon = RandomizeMonFromSeed(&state, mode, curOriginal);
+            if (++tries > 512)
+            {
+                curMon = FirstUnseenSpecies(seenMonBitVector, allow);
+                if (curMon == SPECIES_NONE)
+                    curMon = curOriginal;
+            }
+            else
+            {
+                curMon = RandomizeMonFromSeed(&state, mode, curOriginal);
+                if (allow != NULL && !allow(curMon))
+                    continue;
+            }
 
             // Compute the bit address of this mon.
             adjustedCurMon = curMon - 1;
@@ -1195,7 +1263,11 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
 
             // If set, this mon has been seen already.
             if (bitVectorWord & (1 << bitIndex))
+            {
+                if (tries > 512)
+                    break;  // the scan already reported there is nothing left to take
                 continue;
+            }
 
             bitVectorWord |= 1 << bitIndex;
             seenMonBitVector[wordIndex] = bitVectorWord;
@@ -1203,6 +1275,11 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
         }
         resultSpecies[i] = curMon;
     }
+}
+
+void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies)
+{
+    GetUniqueMonListFiltered(reason, mode, seed1, seed2, count, originalSpecies, resultSpecies, NULL);
 }
 
 enum Species RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, enum Species species)
@@ -1443,6 +1520,27 @@ enum Species RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, enum Spec
 EWRAM_DATA static u32 sLastLegendarySeed = 0;
 EWRAM_DATA static u16 sRandomizedLegendaries[LEGENDARY_MON_COUNT] = {0};
 
+// What a legendary site is allowed to hand over. LEGEND_AWARE keeps the twelve sites
+// legendary, but its pool is every legendary there is, so the cave at the end of a puzzle
+// could hand you a Cobalion or a Poipole -- or, since a site may roll its own species
+// back, the Regirock you walked in expecting. Narrow it to the box legendaries.
+//
+// And to each one in its standard form. Forms are separate species, and the randomizer
+// permits six Zygardes -- Complete and Mega among them, forms that only exist mid-battle
+// -- next to one of everything else, so Zygarde drew 6 times in 33 and turned up at two
+// sites of one seed. Form 0 of every form table is the ordinary out-of-battle form
+// (Zygarde 50%, Xerneas Neutral, Giratina Altered, Zacian Hero, ...), so keeping only
+// species that are their own base form leaves one entry per legendary: each is equally
+// likely, and uniqueness by species is uniqueness by Pokemon.
+static bool32 LegendarySitePoolAllows(u16 species)
+{
+    #if RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY == TRUE
+    return gSpeciesInfo[species].isRestrictedLegendary && species == GET_BASE_SPECIES_ID(species);
+    #else
+    return TRUE;
+    #endif
+}
+
 // Returns the legendary standing in for `species`, or SPECIES_NONE if `species` is not a
 // legendary encounter. MON_RANDOM_LEGEND_AWARE is forced regardless of the player's
 // species mode: it is what keeps a legendary site legendary. GetUniqueMonList does the
@@ -1461,9 +1559,9 @@ enum Species RandomizeLegendaryMon(enum Species species)
 
     if (sLastLegendarySeed != GetRandomizerSeed() || sRandomizedLegendaries[0] == SPECIES_NONE)
     {
-        GetUniqueMonList(RANDOMIZER_REASON_FIXED_ENCOUNTER, MON_RANDOM_LEGEND_AWARE,
-                         0x1E6E4D, 0, LEGENDARY_MON_COUNT, gLegendaryMonTable,
-                         sRandomizedLegendaries);
+        GetUniqueMonListFiltered(RANDOMIZER_REASON_FIXED_ENCOUNTER, MON_RANDOM_LEGEND_AWARE,
+                                 0x1E6E4D, 0, LEGENDARY_MON_COUNT, gLegendaryMonTable,
+                                 sRandomizedLegendaries, LegendarySitePoolAllows);
         sLastLegendarySeed = GetRandomizerSeed();
     }
     return sRandomizedLegendaries[i];
@@ -1674,6 +1772,98 @@ static bool32 IsMoveIllegalForLearnset(enum Move move)
     return FALSE;
 }
 
+static bool32 RzAlreadyDealt(const enum Move *dest, u32 filled, enum Move move)
+{
+    u32 i;
+
+    for (i = 0; i < filled; i++)
+    {
+        if (dest[i] == move)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+#define RZ_MOVE_TIER_TOTAL (ARRAY_COUNT(sMoveTierMetaDefining) + ARRAY_COUNT(sMoveTierStaples) \
+                          + ARRAY_COUNT(sMoveTierFiller) + ARRAY_COUNT(sMoveTierNiche)        \
+                          + ARRAY_COUNT(sMoveTierBad) + ARRAY_COUNT(sMoveTierHomeless))
+
+static EWRAM_DATA u16 sRzMoveCandidates[RZ_MOVE_TIER_TOTAL] = {0};
+
+// The rest of a group, dealt from the moves that can actually fill it.
+//
+// RzPickMoves' draws are blind: they come from the whole tier table and only then meet
+// the filter. A narrow filter -- seven physical Fairy moves, or seven Bug moves for a
+// special attacker -- could spend all 512 of them and still come up short, and every
+// slot left over became Tackle. Measured over two seeds, about a quarter of all species
+// carried one, and 911 of 914 Tackles in randomized learnsets were that padding rather
+// than a draw: Tackle itself sits in the Homeless tier and almost never comes up.
+//
+// So collect every tiered move the filter accepts, weight each as its tier weights it --
+// the tier's weight shared across its members, exactly as in the blind draw -- and deal
+// from that. The odds between any two moves that fit are unchanged; only the ones that
+// could never have been used are gone. One pass over the tier table collects them, and
+// each pick is then a walk over six tiers.
+//
+// Returns how many slots are filled: `count`, unless fewer such moves exist.
+static u32 RzFillFromTiers(struct Sfc32State *state, enum Move *dest, u32 filled, u32 count,
+                           bool32 (*accept)(enum Move, enum Type, enum Type, u32),
+                           enum Type t1, enum Type t2, u32 category)
+{
+    u32 start[ARRAY_COUNT(sMoveTiers)], left[ARRAY_COUNT(sMoveTiers)], share[ARRAY_COUNT(sMoveTiers)];
+    u32 total = 0, used = 0, t, i;
+
+    for (t = 0; t < ARRAY_COUNT(sMoveTiers); t++)
+    {
+        const struct RzTier *tier = &sMoveTiers[t];
+
+        start[t] = used;
+        left[t] = 0;
+        // Per-member weight, in 256ths so a small tier's share survives the division.
+        share[t] = (tier->count == 0) ? 0 : RzTierWeight(tier, RZ_TIER_MODE_MOVES) * 256 / tier->count;
+        for (i = 0; i < tier->count; i++)
+        {
+            enum Move move = tier->entries[i];
+
+            if (IsMoveIllegalForLearnset(move) || !accept(move, t1, t2, category)
+             || RzAlreadyDealt(dest, filled, move))
+                continue;
+            sRzMoveCandidates[used++] = move;
+            left[t]++;
+        }
+        total += share[t] * left[t];
+    }
+
+    while (filled < count && total != 0)
+    {
+        u32 roll = RandomizerNextRange(state, total);
+
+        for (t = 0; t < ARRAY_COUNT(sMoveTiers); t++)
+        {
+            u32 weight = share[t] * left[t];
+            u32 pick, last;
+            enum Move move;
+
+            if (roll >= weight)
+            {
+                roll -= weight;
+                continue;
+            }
+            pick = start[t] + RandomizerNextRange(state, left[t]);
+            last = start[t] + left[t] - 1;
+            move = sRzMoveCandidates[pick];
+            sRzMoveCandidates[pick] = sRzMoveCandidates[last];
+            left[t]--;
+            total -= share[t];
+            // A move listed in two tiers is a candidate twice; deal it once.
+            if (!RzAlreadyDealt(dest, filled, move))
+                dest[filled++] = move;
+            break;
+        }
+    }
+    return filled;
+}
+
 // Picks `count` moves into dest, choosing only moves accepted by `accept`.
 // Damaging groups are then sorted by Base Power so stronger moves come later.
 static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
@@ -1713,7 +1903,18 @@ static void RzPickMoves(struct Sfc32State *state, enum Move *dest, u32 count,
         dest[filled++] = move;
     }
 
-    // Pad if the pool was too small to fill every slot.
+    // The blind draws came up short: deal the rest from the moves that fit. Groups that
+    // filled above are untouched, so their learnsets are the same as before for the same
+    // seed. If the moves that fit run out too -- there are not seven physical Fairy moves
+    // to be had -- let go of the category before the type: a special STAB move is still
+    // STAB, where the old pad was neither.
+    if (filled < count)
+        filled = RzFillFromTiers(state, dest, filled, count, accept, t1, t2, category);
+    if (filled < count && category != DAMAGE_CATEGORY_NONE)
+        filled = RzFillFromTiers(state, dest, filled, count, accept, t1, t2, DAMAGE_CATEGORY_NONE);
+
+    // Unreachable with the shipped tiers (Randolocke: "randomized learnsets fill every
+    // group" checks it); kept so a filter that matches nothing leaves a legal learnset.
     while (filled < count)
         dest[filled++] = MOVE_TACKLE;
 
@@ -1787,6 +1988,148 @@ static bool32 RzAcceptDamaging(enum Move move, enum Type t1, enum Type t2, u32 c
     return GetMoveType(move) != t1 && GetMoveType(move) != t2;
 }
 
+#if RZ_LEARNSET_KEEPS_EVOLUTION_MOVES == TRUE
+// --- Moves a Pokemon needs to evolve -----------------------------------------
+// Seventeen species evolve by knowing a move (Steenee needs Stomp, Bonsly and Mime Jr.
+// Mimic, Piloswine Ancient Power, ...), by using one twenty times (Primeape's Rage Fist,
+// Stantler's Psyshield Bash), or by knowing a move of a type (Eevee, a Fairy move, for
+// Sylveon). A randomized learnset knows nothing of that, so on most seeds those
+// evolutions were simply unreachable. After the learnset is dealt, each such move is put
+// back if the deal did not already include it. Read from the evolution table itself, so
+// it covers whatever the data says rather than a list someone has to keep.
+//
+// With P_SUMMARY_SCREEN_MOVE_RELEARNER and P_ENABLE_ALL_LEVEL_UP_MOVES, any move in this
+// list can be relearned from the summary screen at any level, so being in the list is
+// what makes the evolution reachable; the level only decides when it arrives on its own.
+
+STATIC_ASSERT(RZ_LEARNSET_SLOTS <= 32, RzLearnsetSlotsFitThePlacedMask);
+
+// The level `species` learns `move` at in its own, unrandomized learnset, or 0.
+static u32 RzVanillaLearnLevel(enum Species species, enum Move move)
+{
+    const struct LevelUpMove *learnset = gSpeciesInfo[species].levelUpLearnset;
+    u32 i;
+
+    for (i = 0; learnset != NULL && learnset[i].move != LEVEL_UP_MOVE_END; i++)
+    {
+        if (learnset[i].move == move)
+            return learnset[i].level;
+    }
+    return 0;
+}
+
+// The level a species first exists at: its pre-evolution's threshold when it is reached
+// by levelling (Piloswine, 33), and 1 otherwise. A move placed below that would never be
+// learned on the way up -- Piloswine learns Ancient Power at 1 in its own data.
+static u32 RzFirstLevel(enum Species species)
+{
+    enum Species parent = GetSpeciesPreEvolution(species);
+    const struct Evolution *evos = (parent == SPECIES_NONE) ? NULL : GetSpeciesEvolutions(parent);
+    u32 i;
+
+    for (i = 0; evos != NULL && evos[i].method != EVOLUTIONS_END; i++)
+    {
+        if (evos[i].targetSpecies == species && evos[i].method == EVO_LEVEL && evos[i].param > 1)
+            return evos[i].param;
+    }
+    return 1;
+}
+
+// Puts `move` in the learnset unless it is there already: in the first slot at or after
+// the later of its vanilla level and the level the species first exists at, skipping any
+// slot an earlier requirement took. `placed` is a bitmask of those slots.
+static void RzEnsureLearnsetMove(enum Species species, struct LevelUpMove *learnset,
+                                 enum Move move, u32 *placed)
+{
+    u32 i, level;
+
+    if (move == MOVE_NONE || move >= MOVES_COUNT)
+        return;
+    for (i = 0; i < RZ_LEARNSET_SLOTS; i++)
+    {
+        if (learnset[i].move == move)
+            return;
+    }
+
+    level = RzVanillaLearnLevel(species, move);
+    if (level < RzFirstLevel(species))
+        level = RzFirstLevel(species);
+
+    for (i = 0; i < RZ_LEARNSET_SLOTS; i++)
+    {
+        if (learnset[i].level >= level && !(*placed & (1u << i)))
+            break;
+    }
+    // Every slot from there on is taken: use the last free one before it instead.
+    while (i == RZ_LEARNSET_SLOTS || (*placed & (1u << i)))
+    {
+        if (i == 0)
+            return;
+        i--;
+    }
+    learnset[i].move = move;
+    *placed |= 1u << i;
+}
+
+// A move of `type`, the way IF_KNOWS_MOVE_TYPE reads it. If the deal holds one already,
+// nothing to do; otherwise the first move of that type in the species' own learnset
+// (Eevee's Baby-Doll Eyes), and failing that the first legal one in the move table.
+static void RzEnsureLearnsetMoveType(enum Species species, struct LevelUpMove *learnset,
+                                     enum Type type, u32 *placed)
+{
+    const struct LevelUpMove *vanilla = gSpeciesInfo[species].levelUpLearnset;
+    enum Move move = MOVE_NONE;
+    u32 i;
+
+    for (i = 0; i < RZ_LEARNSET_SLOTS; i++)
+    {
+        if (GetMoveType(learnset[i].move) == type)
+            return;
+    }
+    for (i = 0; vanilla != NULL && vanilla[i].move != LEVEL_UP_MOVE_END; i++)
+    {
+        if (GetMoveType(vanilla[i].move) == type && !IsMoveIllegalForLearnset(vanilla[i].move))
+        {
+            move = vanilla[i].move;
+            break;
+        }
+    }
+    for (i = 1; move == MOVE_NONE && i < MOVES_COUNT; i++)
+    {
+        if (GetMoveType(i) == type && !IsMoveIllegalForLearnset(i))
+            move = i;
+    }
+    RzEnsureLearnsetMove(species, learnset, move, placed);
+}
+
+static void RzKeepEvolutionMoves(enum Species species, struct LevelUpMove *learnset)
+{
+    const struct Evolution *evos = GetSpeciesEvolutions(species);
+    u32 placed = 0, i, j;
+
+    for (i = 0; evos != NULL && evos[i].method != EVOLUTIONS_END; i++)
+    {
+        const struct EvolutionParam *params = evos[i].params;
+
+        for (j = 0; params != NULL && params[j].condition != CONDITIONS_END; j++)
+        {
+            switch (params[j].condition)
+            {
+            case IF_KNOWS_MOVE:
+            case IF_USED_MOVE_X_TIMES:  // it has to know the move to use it
+                RzEnsureLearnsetMove(species, learnset, params[j].arg1, &placed);
+                break;
+            case IF_KNOWS_MOVE_TYPE:
+                RzEnsureLearnsetMoveType(species, learnset, params[j].arg1, &placed);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+#endif // RZ_LEARNSET_KEEPS_EVOLUTION_MOVES
+
 // Returns the randomized 21-move level-up learnset for a species, or NULL when
 // learnset randomization is switched off.
 const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
@@ -1844,6 +2187,10 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
     }
     sRzLearnsetBuf[RZ_LEARNSET_SLOTS].move = LEVEL_UP_MOVE_END;
     sRzLearnsetBuf[RZ_LEARNSET_SLOTS].level = 0;
+
+    #if RZ_LEARNSET_KEEPS_EVOLUTION_MOVES == TRUE
+    RzKeepEvolutionMoves(species, sRzLearnsetBuf);
+    #endif
 
     sRzLearnsetSpecies = species;
     return sRzLearnsetBuf;

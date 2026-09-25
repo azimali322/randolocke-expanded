@@ -170,6 +170,7 @@ DewfordTown_Gym_EventScript_BrawlyDefeated::
 DewfordTown_Gym_EventScript_GiveBulkUp::
 	giveitem ITEM_TM_BULK_UP
 	goto_if_eq VAR_RESULT, 0, Common_EventScript_BagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox DewfordTown_Gym_Text_ExplainBulkUp, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_BULK_UP
 	return
@@ -177,6 +178,7 @@ DewfordTown_Gym_EventScript_GiveBulkUp::
 DewfordTown_Gym_EventScript_GiveBulkUp2:
 	giveitem ITEM_TM_BULK_UP
 	goto_if_eq VAR_RESULT, 0, Common_EventScript_ShowBagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox DewfordTown_Gym_Text_ExplainBulkUp, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_BULK_UP
 	release
@@ -408,10 +410,11 @@ DewfordTown_Gym_Text_KnuckleBadgeInfoTakeThis:
 	.string "If you'd like, use this TECHNICAL\n"
 	.string "MACHINE, too.$"
 
+@ randolocke: names and describes the TM actually handed over -- the gift and its move are
+@ both randomized. RandolockeBufferGiftTM fills STR_VAR_1 to 3 just before this is shown.
 DewfordTown_Gym_Text_ExplainBulkUp:
-	.string "That TM08 contains BULK UP.\p"
-	.string "It's a move that raises both ATTACK\n"
-	.string "and DEFENSE stats.\p"
+	.string "That {STR_VAR_1} contains {STR_VAR_2}.\p"
+	.string "{STR_VAR_3}\p"
 	.string "… … … … … …$"
 
 DewfordTown_Gym_Text_RegisteredBrawly:

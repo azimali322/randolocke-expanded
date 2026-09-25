@@ -29,6 +29,7 @@ RustboroCity_Gym_EventScript_GiveRockTomb::
 	giveitem ITEM_TM_ROCK_TOMB
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
 	setflag FLAG_RECEIVED_TM_ROCK_TOMB
+	callnative RandolockeBufferGiftTM
 	msgbox RustboroCity_Gym_Text_ExplainRockTomb, MSGBOX_DEFAULT
 	release
 	end
@@ -207,15 +208,16 @@ RustboroCity_Gym_Text_StoneBadgeInfoTakeThis:
 	.string "CUT outside of battle.\p"
 	.string "Please take this with you, too.$"
 
+@ randolocke: names and describes the TM actually handed over -- the gift and its move are
+@ both randomized. RandolockeBufferGiftTM fills STR_VAR_1 to 3 just before this is shown.
 RustboroCity_Gym_Text_ExplainRockTomb:
-	.string "That TECHNICAL MACHINE, TM39,\n"
-	.string "contains ROCK TOMB.\p"
-	.string "It not only inflicts damage by dropping\n"
-	.string "rocks, it also lowers SPEED.\p"
+	.string "That TECHNICAL MACHINE, {STR_VAR_1},\n"
+	.string "contains {STR_VAR_2}.\p"
+	.string "{STR_VAR_3}\p"
 	.string "If you use a TM, it instantly teaches\n"
 	.string "the move to a POKéMON.\p"
-	.string "Remember, a TM can be used only once,\n"
-	.string "so think before you use it.$"
+	.string "And a TM is never used up, so teach\n"
+	.string "it to as many as you like.$"
 
 RustboroCity_Gym_Text_RoxannePostBattle:
 	.string "Since you are so strong, you should\n"

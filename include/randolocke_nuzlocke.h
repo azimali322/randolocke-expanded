@@ -20,7 +20,7 @@ void RandolockeAutoSetClock(void);
 enum RandolockeCatchRule
 {
     RANDOLOCKE_CATCH_OK,
-    RANDOLOCKE_CATCH_AREA_USED,   // something was already caught here
+    RANDOLOCKE_CATCH_AREA_USED,   // this area's first encounter has been had
     RANDOLOCKE_CATCH_DUPE,        // this evolution family is already registered as caught
 };
 
@@ -38,11 +38,17 @@ enum RandolockeCatchRule RandolockeCatchRuleForBattle(void);
 enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler);
 bool32 RandolockeEncounterIsFirst(enum BattlerId battler);
 void RandolockeNoteCatch(struct Pokemon *mon);
+#if RANDOLOCKE_FIRST_ENCOUNTER_COUNTS == TRUE
+void RandolockeNoteWildBattleEnd(void);
+#else
+static inline void RandolockeNoteWildBattleEnd(void) {}
+#endif
 #else
 static inline enum RandolockeCatchRule RandolockeCatchRuleForBattle(void) { return RANDOLOCKE_CATCH_OK; }
 static inline enum RandolockeCatchRule RandolockeCatchRuleForBattler(enum BattlerId battler) { (void)battler; return RANDOLOCKE_CATCH_OK; }
 static inline bool32 RandolockeEncounterIsFirst(enum BattlerId battler) { (void)battler; return FALSE; }
 static inline void RandolockeNoteCatch(struct Pokemon *mon) { (void)mon; }
+static inline void RandolockeNoteWildBattleEnd(void) {}
 static inline bool32 RandolockeMonIsDead(struct BoxPokemon *boxMon) { (void)boxMon; return FALSE; }
 static inline bool32 RandolockeDeadMonsAreLocked(void) { return FALSE; }
 static inline void RandolockeBoxWipedParty(void) {}

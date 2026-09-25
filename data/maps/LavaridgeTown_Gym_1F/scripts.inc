@@ -81,6 +81,7 @@ LavaridgeTown_Gym_1F_EventScript_FlanneryDefeated::
 LavaridgeTown_Gym_1F_EventScript_GiveOverheat2::
 	giveitem ITEM_TM_OVERHEAT
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox LavaridgeTown_Gym_1F_Text_ExplainOverheat, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_OVERHEAT
 	release
@@ -89,6 +90,7 @@ LavaridgeTown_Gym_1F_EventScript_GiveOverheat2::
 LavaridgeTown_Gym_1F_EventScript_GiveOverheat::
 	giveitem ITEM_TM_OVERHEAT
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox LavaridgeTown_Gym_1F_Text_ExplainOverheat, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_OVERHEAT
 	return
@@ -338,13 +340,13 @@ LavaridgeTown_Gym_1F_Text_ExplainHeatBadgeTakeThis:
 	.string "This is a token of my appreciation.\n"
 	.string "Don't be shy about taking it!$"
 
+@ randolocke: names and describes the TM actually handed over -- the gift and its move are
+@ both randomized. RandolockeBufferGiftTM fills STR_VAR_1 to 3 just before this is shown.
 LavaridgeTown_Gym_1F_Text_ExplainOverheat:
-	.string "That TM50 contains OVERHEAT.\p"
-	.string "That move inflicts serious damage on\n"
-	.string "the opponent.\p"
-	.string "But it also sharply cuts the SP. ATK\n"
-	.string "of the POKéMON using it. It might not\l"
-	.string "be suitable for longer battles.$"
+	.string "That {STR_VAR_1} contains {STR_VAR_2}.\p"
+	.string "{STR_VAR_3}\p"
+	.string "Use it well, and your battles will\n"
+	.string "run as hot as mine!$"
 
 LavaridgeTown_Gym_1F_Text_RegisteredFlannery:
 	.string "Registered GYM LEADER FLANNERY\n"

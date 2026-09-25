@@ -46,6 +46,7 @@
 #include "trainer_pools.h"
 #include "trainer_see.h"
 #include "trainer_util.h"
+#include "config/randomizer.h"
 #include "tv.h"
 #include "overworld.h"
 #include "vs_seeker.h"
@@ -2246,13 +2247,15 @@ void SetMultiTrainerBattle(struct ScriptContext *ctx)
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, u16 trainerId)
 {
     s32 i;
-    u8 monsCount;
+    u8 monsCount, fullCount;
+    bool32 halfTeam = FALSE;
 
     ZeroPartyMons(party);
 
     monsCount = trainer->partySize;
     if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && (B_MULTI_HALF_TEAMS || trainer->multiTeamSize == MULTI_TEAM_SIZE_HALF))
     {
+        halfTeam = TRUE;
         if (monsCount > PARTY_SIZE / 2)
             monsCount = PARTY_SIZE / 2;
     }
@@ -2262,13 +2265,42 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     MakeTrainerGenerator(trainerGen, trainer, trainerId);
     DoTrainerPartyPool(trainer, monIndices, monsCount, gBattleTypeFlags);
 
+    // randolocke: a boss or rival brings six (RZ_BOSS_FULL_PARTY). The added Pokemon go in
+    // ahead of the ace, which moves to the last slot: that is where AI_FLAG_ACE_POKEMON
+    // looks for it (IsAceMon: the last slot of the party), so it still comes out last. A
+    // half team in a two-opponent battle is three by design and is left as it is. Each
+    // Pokemon keeps the slot number its seeds were always made from -- the ones in the data
+    // file 0 upward, the added ones after them -- and the party size in those seeds stays
+    // the data file's, so a boss's own Pokemon are the same species they were before.
+    fullCount = monsCount;
+    #if RZ_BOSS_FULL_PARTY == TRUE
+    if (!halfTeam && monsCount > 0 && RandolockeTrainerGetsFullParty(trainer, trainerId))
+        fullCount = PARTY_SIZE;
+    #endif
+
     for (i = 0; i < monsCount; i++)
     {
         u32 monIndex = monIndices[i];
+        u32 dest = (i == monsCount - 1) ? fullCount - 1 : i;
         trainerGen->rzSlot = i;
         trainerGen->rzTotalMons = monsCount;
-        GenerateMonFromTrainerMon(&party[i], &trainer->party[monIndex], trainerGen);
+        GenerateMonFromTrainerMon(&party[dest], &trainer->party[monIndex], trainerGen);
     }
+    #if RZ_BOSS_FULL_PARTY == TRUE
+    for (i = monsCount; i < fullCount; i++)
+    {
+        struct TrainerMon filler = RandolockeFillerTrainerMon(trainer, monIndices, monsCount, trainerId, i);
+
+        trainerGen->rzSlot = i;
+        trainerGen->rzTotalMons = monsCount;
+        GenerateMonFromTrainerMon(&party[i - 1], &filler, trainerGen);
+    }
+    #endif
+    #if RZ_TRAINER_IVS == TRUE && RZ_BOSS_IV_RAMP == TRUE
+    if (trainerId != TRAINER_NONE)
+        RandolockeApplyBossIVRamp(party, fullCount, trainer);
+    #endif
+    (void)halfTeam;
     Free(trainerGen);
 }
 

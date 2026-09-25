@@ -24,6 +24,7 @@ void ItemUseOutOfBattle_DynamaxCandy(u8 taskId);
 void ItemUseOutOfBattle_TMHM(u8 taskId);
 void ItemUseOutOfBattle_Repel(u8 taskId);
 void ItemUseOutOfBattle_Repellant(u8 taskId);
+void ItemUseOutOfBattle_NonShinyRepel(u8 taskId);
 void ItemUseOutOfBattle_PortaHeal(u8 taskId);
 void ItemUseOutOfBattle_EndlessCandy(u8 taskId);
 void ItemUseOutOfBattle_CapCandy(u8 taskId);

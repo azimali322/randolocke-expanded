@@ -10,6 +10,14 @@
 // step counter never ticks down, giving a permanent repel that can be toggled off.
 #define RANDOLOCKE_FLAG_INFINITE_REPEL      FLAG_UNUSED_0x027
 
+// Flag set while the Non-Shiny Repel key item is on. While set, a wild Pokemon that would
+// be met walking, surfing or smashing rocks is only met if it is shiny -- every other one
+// is turned away, whatever its level. The shiny clause lets a shiny be caught in any area,
+// so this is how a run goes looking for one. It overrides the Repellant's level check
+// while it is on; fishing, Sweet Scent and scripted encounters are untouched, as they are
+// by any repel.
+#define RANDOLOCKE_FLAG_SHINY_REPEL         FLAG_UNUSED_0x02F
+
 // If TRUE, the Porta Heal also revives fainted Pokémon. Randolocke v1.1 made
 // "does not revive" the default, with reviving as the optional behaviour.
 #define RANDOLOCKE_PORTA_HEAL_REVIVES       FALSE
@@ -223,6 +231,17 @@
 // travelling to.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 
+// With RANDOLOCKE_UNIQUE_LEGENDARIES on, narrows what those twelve sites may hand over to
+// the box legendaries -- Mewtwo, Lugia, Kyogre, Dialga, Zekrom and the rest -- each in its
+// standard form, one entry per Pokemon. Sub-legendaries, mythicals and Ultra Beasts are
+// shut out of the sites entirely; they are still perfectly catchable wherever else the
+// species mode puts them.
+//
+// Changing the pool changes what a seed gives. Nothing is stored in the save: the mapping
+// is recomputed from the seed, so an existing game picks it up at the next encounter,
+// including for a site already visited.
+#define RANDOLOCKE_LEGENDARY_SITES_BOX_ONLY TRUE
+
 // --- Summary screen stat editor ----------------------------------------------
 
 // If TRUE, the summary screen's IV and EV pages can be edited in place: press SELECT to
@@ -283,21 +302,31 @@
 
 // If TRUE the classic rules are enforced in-game rather than left to the player:
 //
-//   One per area   You may catch one Pokemon per wild-encounter area. After that, balls
-//                  are refused there.
+//   One per area   The first Pokemon you meet in a wild-encounter area is your one chance
+//                  there. Catch it, or the area is used; after that, balls are refused.
+//                  With RANDOLOCKE_FIRST_ENCOUNTER_COUNTS it is used however that battle
+//                  ends -- see there. Without it, only a catch uses the area.
 //   Dupes clause   A species whose evolution family you have already caught cannot be
 //                  caught again -- and meeting one does not use up the area, so you can
 //                  keep looking for something new.
 //   Shiny clause   A shiny is always catchable and never uses up the area.
 //
-// "Area" is one entry in the wild encounter tables, which is one map. Places with no
-// wild table -- the legendary sites, gift Pokemon, scripted battles -- are not areas and
-// are never restricted.
+// An "area" is one region map section: a route, a town, a cave however many floors it has.
+// Land, surfing and fishing there share it. Places with no wild encounter table at all --
+// the legendary sites, gift Pokemon, most scripted battles -- are not areas and are never
+// restricted.
 //
 // Set RANDOLOCKE_FLAG_NUZLOCKE_OFF in the debug menu to switch the rules off for a save.
 // The flag is inverted deliberately: a save made before this existed has it clear, so the
 // rules are on there too, with no new game needed.
 #define RANDOLOCKE_NUZLOCKE_RULES           TRUE
+
+// If TRUE, the first encounter in an area uses it up however the battle ends: caught,
+// knocked out, run from, gone by Teleport, Roar or Whirlwind, fled on its own, or a loss.
+// Only the clauses spare the area -- a shiny, a legendary, or a Pokemon whose evolution
+// family is already caught, which is how running from a dupe leaves you free to keep
+// looking. FALSE counts a catch only, so a knockout or a flee means another try.
+#define RANDOLOCKE_FIRST_ENCOUNTER_COUNTS   TRUE
 
 // The rules do not apply until Birch hands over the five Poke Balls, which is what
 // FLAG_ADVENTURE_STARTED marks: after the Route 103 rival battle and the walk back to the
@@ -334,10 +363,10 @@
 
 // --- Key item delivery -------------------------------------------------------
 
-// The four key items are fully implemented but nothing in the game ever handed them out.
-// Each now has exactly one source, and both work on a save that already exists:
-//   Cap Candy, Repellant       the old man in Oldale Town, once the adventure has started
-//   Porta Heal, Endless Candy  the boy by the Littleroot pond
+// The custom key items all come from one place: the boy by the Littleroot pond hands over
+// the Porta Heal, the Endless Candy, the Cap Candy, the Repellant and the Non-Shiny Repel.
+// He gives only what the player is missing, so a save from before an item existed can go
+// back for it.
 
 // --- Terrain -----------------------------------------------------------------
 

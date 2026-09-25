@@ -67,6 +67,7 @@ enum RandomizerReason
     RANDOMIZER_REASON_TRAINER_ITEM,
     RANDOMIZER_REASON_TRAINER_IV,
     RANDOMIZER_REASON_WILD_LOTTERY,
+    RANDOMIZER_REASON_TRAINER_PAD,  // the Pokemon RZ_BOSS_FULL_PARTY adds to a team
 };
 
 enum RandomizerOption {

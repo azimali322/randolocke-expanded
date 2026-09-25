@@ -1057,6 +1057,7 @@ enum __attribute__((packed)) Item
     ITEM_PORTA_HEAL = 875,
     ITEM_ENDLESS_CANDY = 876,
     ITEM_CAP_CANDY = 877,
+    ITEM_NON_SHINY_REPEL = 878,
 
     ITEMS_COUNT,
     ITEM_FIELD_ARROW = ITEMS_COUNT,

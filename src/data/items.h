@@ -8415,7 +8415,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_DEEP_SEA_SCALE] =
     {
         .name = ITEM_NAME("Deep Sea Scale"),
-        .price = (I_PRICE >= GEN_7) ? 2000 : 200,
+        .price = 200,
         .holdEffect = HOLD_EFFECT_DEEP_SEA_SCALE,
         .description = COMPOUND_STRING(
             "A held item that\n"
@@ -8435,7 +8435,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Deep Sea Tooth"),
         .pluralName = ITEM_PLURAL_NAME("Deep Sea Teeth"),
-        .price = (I_PRICE >= GEN_7) ? 2000 : 200,
+        .price = 200,
         .holdEffect = HOLD_EFFECT_DEEP_SEA_TOOTH,
         .description = COMPOUND_STRING(
             "A held item that\n"
@@ -9299,7 +9299,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Metal Coat"),
     #if I_PRICE >= GEN_9
-        .price = 3000,
+        .price = 200,
     #elif I_PRICE >= GEN_7
         .price = 2000,
     #else
@@ -9902,7 +9902,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("King's Rock"),
     #if I_PRICE >= GEN_9
-        .price = 10000,
+        .price = 200,
     #elif I_PRICE >= GEN_7
         .price = 5000,
     #else
@@ -10556,7 +10556,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Razor Claw"),
     #if I_PRICE >= GEN_9
-        .price = 15000,
+        .price = 200,
     #elif I_PRICE >= GEN_7
         .price = 5000,
     #else
@@ -10581,7 +10581,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Razor Fang"),
     #if I_PRICE >= GEN_9
-        .price = 15000,
+        .price = 200,
     #elif I_PRICE >= GEN_7
         .price = 5000,
     #else
@@ -14175,6 +14175,22 @@ const struct ItemInfo gItemsInfo[] =
         .fieldUseFunc = ItemUseOutOfBattle_CapCandy,
         .iconPic = gItemIcon_RareCandy,
         .iconPalette = gItemIconPalette_RareCandy,
+    },
+
+    [ITEM_NON_SHINY_REPEL] =
+    {
+        .name = ITEM_NAME("Non-Shiny Repel"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Only shiny wild\n"
+            "Pokémon appear.\n"
+            "Use to toggle."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_NonShinyRepel,
+        .iconPic = gItemIcon_Repel,
+        .iconPalette = gItemIconPalette_SuperRepel,
     },
 
     [ITEM_DOWSING_MACHINE] =

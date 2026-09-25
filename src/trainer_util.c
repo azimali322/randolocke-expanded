@@ -21,6 +21,23 @@ rng_value_t GeneratePartySeed(const struct Trainer *trainer)
     return LocalRandomSeed(seed);
 }
 
+// Badges earned, 0 to 8: what the trainer EVs and a boss's IV ramp both scale with.
+static u32 UNUSED RandolockeBadgeCount(void)
+{
+    static const u16 sBadgeFlags[] = {
+        FLAG_BADGE01_GET, FLAG_BADGE02_GET, FLAG_BADGE03_GET, FLAG_BADGE04_GET,
+        FLAG_BADGE05_GET, FLAG_BADGE06_GET, FLAG_BADGE07_GET, FLAG_BADGE08_GET,
+    };
+    u32 badges = 0, i;
+
+    for (i = 0; i < ARRAY_COUNT(sBadgeFlags); i++)
+    {
+        if (FlagGet(sBadgeFlags[i]))
+            badges++;
+    }
+    return badges;
+}
+
 #if RZ_TRAINER_EV_SCALING == TRUE
 // Trainer Pokemon get an EV spread that grows with the player's badge count. Which stats
 // it lands on is decided from the Pokemon's own base stats rather than fixed, because the
@@ -30,20 +47,10 @@ rng_value_t GeneratePartySeed(const struct Trainer *trainer)
 static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
 {
     static const u8 sEvsByBadge[] = RZ_TRAINER_EVS_BY_BADGE;
-    static const u16 sBadgeFlags[] = {
-        FLAG_BADGE01_GET, FLAG_BADGE02_GET, FLAG_BADGE03_GET, FLAG_BADGE04_GET,
-        FLAG_BADGE05_GET, FLAG_BADGE06_GET, FLAG_BADGE07_GET, FLAG_BADGE08_GET,
-    };
     enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
-    u32 badges = 0, i;
     u8 ev;
 
-    for (i = 0; i < ARRAY_COUNT(sBadgeFlags); i++)
-    {
-        if (FlagGet(sBadgeFlags[i]))
-            badges++;
-    }
-    ev = sEvsByBadge[badges];
+    ev = sEvsByBadge[RandolockeBadgeCount()];
     if (ev == 0)
         return;
 
@@ -74,20 +81,22 @@ static void RandolockeGiveTrainerEVs(struct Pokemon *mon)
 #endif
 
 #if RZ_TRAINER_IVS == TRUE
-// Perfect for a boss, rolled per stat for everyone else. See the config for what the data
-// file hands out instead.
+static const u32 sIvFields[NUM_STATS] =
+{
+    MON_DATA_HP_IV, MON_DATA_ATK_IV, MON_DATA_DEF_IV,
+    MON_DATA_SPEED_IV, MON_DATA_SPATK_IV, MON_DATA_SPDEF_IV,
+};
+
+// Rolled per stat. A boss's are perfect instead -- all of them, or with RZ_BOSS_IV_RAMP the
+// strongest few, which RandolockeApplyBossIVRamp raises once the whole team exists. See the
+// config for what the data file hands out instead.
 static void RandolockeGiveTrainerIVs(struct Pokemon *mon, u32 trainerId, u32 slot, bool32 isBoss)
 {
-    static const u32 sIvFields[NUM_STATS] =
-    {
-        MON_DATA_HP_IV, MON_DATA_ATK_IV, MON_DATA_DEF_IV,
-        MON_DATA_SPEED_IV, MON_DATA_SPATK_IV, MON_DATA_SPDEF_IV,
-    };
     struct Sfc32State state;
     u32 i;
     u8 iv;
 
-    if (isBoss)
+    if (isBoss && !RZ_BOSS_IV_RAMP)
     {
         iv = MAX_PER_STAT_IVS;
         for (i = 0; i < NUM_STATS; i++)
@@ -101,6 +110,148 @@ static void RandolockeGiveTrainerIVs(struct Pokemon *mon, u32 trainerId, u32 slo
         iv = RandomizerNextRange(&state, MAX_PER_STAT_IVS + 1);
         SetMonData(mon, sIvFields[i], &iv);
     }
+}
+
+#if RZ_BOSS_IV_RAMP == TRUE
+// Three of six: the attacking stat the species uses, HP, and Speed if it is fast enough to
+// use it, its better defence if not -- the same reading of base stats the EVs make.
+static void SetKeyIVsPerfect(struct Pokemon *mon)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    const struct SpeciesInfo *info = &gSpeciesInfo[species];
+    u8 iv = MAX_PER_STAT_IVS;
+
+    SetMonData(mon, info->baseAttack >= info->baseSpAttack ? MON_DATA_ATK_IV : MON_DATA_SPATK_IV, &iv);
+    SetMonData(mon, MON_DATA_HP_IV, &iv);
+    if (info->baseSpeed >= RZ_TRAINER_EV_SPEED_THRESHOLD)
+        SetMonData(mon, MON_DATA_SPEED_IV, &iv);
+    else
+        SetMonData(mon, info->baseDefense >= info->baseSpDefense ? MON_DATA_DEF_IV : MON_DATA_SPDEF_IV, &iv);
+}
+
+// A boss's perfect IVs, rationed by badges: one perfect Pokemon at none, and each badge
+// adds half a step -- a three-of-six Pokemon, then a second perfect one, and so on, to five
+// perfect at eight badges. The Elite Four and the Champion are the end of the ramp, perfect
+// throughout. Handed out by level, highest first, so the ace is always the first to get
+// them; a tie goes to the later slot, which is where the ace sits.
+void RandolockeApplyBossIVRamp(struct Pokemon *party, u32 count, const struct Trainer *trainer)
+{
+    u8 order[PARTY_SIZE];
+    u32 perfect, keyed, n = 0, i, j;
+
+    if (!trainer->isBossTrainer)
+        return;
+
+    if (trainer->trainerClass == TRAINER_CLASS_ELITE_FOUR || trainer->trainerClass == TRAINER_CLASS_CHAMPION)
+    {
+        perfect = PARTY_SIZE;
+        keyed = 0;
+    }
+    else
+    {
+        u32 badges = RandolockeBadgeCount();
+
+        perfect = 1 + badges / 2;
+        keyed = badges % 2;
+    }
+
+    for (i = 0; i < count && i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&party[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+            order[n++] = i;
+    }
+    // Insertion sort, highest level first; on a tie the later slot goes first.
+    for (i = 1; i < n; i++)
+    {
+        u8 key = order[i];
+        u32 level = GetMonData(&party[key], MON_DATA_LEVEL, NULL);
+
+        for (j = i; j > 0; j--)
+        {
+            u32 prev = GetMonData(&party[order[j - 1]], MON_DATA_LEVEL, NULL);
+
+            if (prev > level || (prev == level && order[j - 1] > key))
+                break;
+            order[j] = order[j - 1];
+        }
+        order[j] = key;
+    }
+
+    for (i = 0; i < n && i < perfect + keyed; i++)
+    {
+        struct Pokemon *mon = &party[order[i]];
+
+        if (i < perfect)
+        {
+            u8 iv = MAX_PER_STAT_IVS;
+
+            for (j = 0; j < NUM_STATS; j++)
+                SetMonData(mon, sIvFields[j], &iv);
+        }
+        else
+        {
+            SetKeyIVsPerfect(mon);
+        }
+        CalculateMonStats(mon);
+    }
+}
+#endif
+#endif
+
+#if RZ_BOSS_FULL_PARTY == TRUE
+// Whether this trainer's team is brought up to six: a boss, or a rival -- except the
+// first rival battle on Route 103, fought with a lone level 5 starter and no Poke Balls.
+bool32 RandolockeTrainerGetsFullParty(const struct Trainer *trainer, u16 trainerId)
+{
+    switch (trainerId)
+    {
+    case TRAINER_NONE:
+    case TRAINER_BRENDAN_ROUTE_103_MUDKIP:
+    case TRAINER_BRENDAN_ROUTE_103_TREECKO:
+    case TRAINER_BRENDAN_ROUTE_103_TORCHIC:
+    case TRAINER_MAY_ROUTE_103_MUDKIP:
+    case TRAINER_MAY_ROUTE_103_TREECKO:
+    case TRAINER_MAY_ROUTE_103_TORCHIC:
+        return FALSE;
+    default:
+        return trainer->isBossTrainer || trainer->trainerClass == TRAINER_CLASS_RIVAL;
+    }
+}
+
+// An entry for one of the Pokemon added to a team: a copy of one of the trainer's own,
+// cycling through the ones ahead of the ace, so its species is randomized from something
+// in the same league as the rest. It takes a random level between the team's lowest and
+// highest, and none of the template's particulars -- no nickname, item, ability, moves,
+// EVs or shininess, all of which the randomizer's trainer handling fills in afresh.
+struct TrainerMon RandolockeFillerTrainerMon(const struct Trainer *trainer, const u32 *monIndices,
+                                             u32 monsCount, u16 trainerId, u32 slot)
+{
+    struct Sfc32State state = RandomizerRandSeed(RANDOMIZER_REASON_TRAINER_PAD, trainerId, slot);
+    u32 templates = (monsCount > 1) ? monsCount - 1 : 1;
+    struct TrainerMon filler = trainer->party[monIndices[slot % templates]];
+    u32 lowest = 255, highest = 0, i;
+
+    for (i = 0; i < monsCount; i++)
+    {
+        u32 level = trainer->party[monIndices[i]].lvl;
+
+        if (level < lowest)
+            lowest = level;
+        if (level > highest)
+            highest = level;
+    }
+
+    filler.lvl = lowest + RandomizerNextRange(&state, highest - lowest + 1);
+    filler.nickname = NULL;
+    filler.ev = NULL;
+    filler.heldItem = ITEM_NONE;
+    filler.ability = ABILITY_NONE;
+    filler.isShiny = FALSE;
+    filler.gigantamaxFactor = FALSE;
+    filler.shouldUseDynamax = FALSE;
+    for (i = 0; i < MAX_MON_MOVES; i++)
+        filler.moves[i] = MOVE_NONE;
+    return filler;
 }
 #endif
 

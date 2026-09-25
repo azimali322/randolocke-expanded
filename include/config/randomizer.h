@@ -85,13 +85,16 @@
 #define RZ_MOVE_W_BAD            529
 #define RZ_MOVE_W_HOMELESS       39
 
-// Item weights, x100. Pool of 475. No community list exists for items, so tiers 1-2 are
-// hand-graded from pokeemerald_rando_enh and the rest are placed by heuristic; see
+// Item weights, x100. No community list exists for items, so tiers 1-2 are hand-graded
+// from pokeemerald_rando_enh and the rest are placed by heuristic; see
 // tools/randolocke/gen_item_tiers.py. Pool of 408; berries are excluded because they are
-// randomized separately at berry trees. 2.41x / 2.30x / 2.06x / 0.30x / 0.10x vs uniform.
-// Tier 4 is Poke Balls and evolution items - both sold cheaply in the Phase 11 shop, so
-// finding one is not a reward. Tier 5 is healing, vitamins, X items and the mega/Z/Tera
-// gear Phase 6 disabled; at 0.10x it is effectively off.
+// randomized separately at berry trees. Per item, 2.41x / 2.54x / 2.77x / 0.56x / 0.07x
+// against uniform. Tier 4 is Poke Balls, evolution stones and Exp. Candies - sold cheaply
+// in the Phase 11 shop, so finding one is not a reward. Tier 5 is healing, vitamins, X
+// items, the mega/Z/Tera gear Phase 6 disabled, and every item only one Pokemon can use --
+// memories, drives, Light Ball, Soul Dew, Whipped Dream, Reaper Cloth and the like, 63 of
+// them -- which on a randomized team almost never meet their Pokemon. At 0.07x it is
+// effectively off.
 #define RZ_TIER_WEIGHTED_ITEMS     (RZ_TIER_MODE_ITEMS != RZ_TIER_OFF)
 #define RZ_ITEM_W_T1             118
 #define RZ_ITEM_W_T2             4792
@@ -163,6 +166,39 @@
 // time you meet them. The IVs line in trainers.party is left in place but no longer read
 // for anyone this touches.
 #define RZ_TRAINER_IVS              TRUE
+
+// If TRUE (with RZ_TRAINER_IVS), a boss's perfect IVs ramp with your badges instead of
+// covering the whole team from the first gym. Every boss Pokemon rolls like anyone
+// else's, then the strongest are raised, ranked by level with the ace first:
+//
+//   badges   perfect    three of six perfect
+//     0         1              --
+//     1         1               1
+//     2         2              --
+//     3         2               1
+//     ...      ...             ...
+//     8         5              --
+//
+// "Three of six" is the three that matter to that species: the attacking stat it uses,
+// HP, and Speed if it is fast enough to use it or its better defence if not. The Elite
+// Four and the Champion are the end of the ramp, perfect across the board. FALSE puts
+// every boss Pokemon at 31 everywhere, from Roxanne on.
+#define RZ_BOSS_IV_RAMP             TRUE
+
+// --- Boss parties -------------------------------------------------------------
+
+// If TRUE, every boss -- the `Boss: Yes` trainers: gym leaders, the Elite Four, the
+// Champion, and Team Magma's and Team Aqua's leaders and admins -- and every rival battle
+// (May or Brendan, and Wally) brings six Pokemon. The ones added are built from the
+// trainer's own team: each takes a random level between the team's lowest and highest,
+// its species is randomized like any other slot's, and it gets the same EVs, nature, item
+// and IVs a boss's Pokemon get. They go in ahead of the ace, so the ace still comes out
+// last. All of it is seeded from the trainer and the slot, so a boss is the same team
+// every time you face them.
+//
+// Left alone: the first rival battle on Route 103, fought with a lone level 5 starter, and
+// the Mossdeep double battle with Steven, whose two opponents bring three each by design.
+#define RZ_BOSS_FULL_PARTY          TRUE
 
 // --- Trainer natures ----------------------------------------------------------
 
@@ -299,6 +335,13 @@
 // The level each of the 21 slots is learned at. Front-loaded so early Pokemon are
 // not moveless, with the last few above the pre-Elite-Four cap of 63.
 #define RZ_LEARNSET_LEVELS  { 1, 4, 7, 10, 13, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 70, 78, 86 }
+
+// If TRUE, a species that evolves by knowing a move -- Steenee and Stomp, Bonsly and Mimic,
+// Primeape and Rage Fist, Eevee and a Fairy move for Sylveon, seventeen in all -- always
+// has that move in its randomized learnset, replacing whatever the deal put in the slot
+// at the level it would learn it. Read from the evolution table, not a list. Without it,
+// most seeds leave those evolutions unreachable.
+#define RZ_LEARNSET_KEEPS_EVOLUTION_MOVES TRUE
 
 // If TRUE, a species' STAB moves are drawn in the damage category it can actually use: a
 // physical attacker gets physical STAB, a special attacker special STAB. Without this a
