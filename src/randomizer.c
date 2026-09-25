@@ -2196,6 +2196,26 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
     return sRzLearnsetBuf;
 }
 
+// Where the move tier list puts `move`: 0 for Meta Defining, down to Pokemon Homeless,
+// or RANDOMIZER_MOVE_TIER_UNRATED for a move it does not list. A boss choosing a status
+// move reads this, as the best judgement to hand of which status moves are worth a slot.
+STATIC_ASSERT(ARRAY_COUNT(sMoveTiers) == RANDOMIZER_MOVE_TIER_UNRATED, RandomizerMoveTierCountMatches);
+
+u32 RandomizerGetMoveTier(enum Move move)
+{
+    u32 t, i;
+
+    for (t = 0; t < ARRAY_COUNT(sMoveTiers); t++)
+    {
+        for (i = 0; i < sMoveTiers[t].count; i++)
+        {
+            if (sMoveTiers[t].entries[i] == move)
+                return t;
+        }
+    }
+    return RANDOMIZER_MOVE_TIER_UNRATED;
+}
+
 static inline bool32 IsAbilityIllegal(enum Ability ability)
 {
     if (ability == ABILITY_NONE || ability == ABILITY_WONDER_GUARD)
