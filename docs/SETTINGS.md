@@ -613,7 +613,7 @@ Elite Four, the Champion, and Aqua and Magma's leaders and admins.
 | `RZ_TRAINER_ITEM_CHANCE` | `35` | Percent chance an ordinary trainer's Pokémon gets one |
 | `RZ_TRAINER_ITEM_CHANCE_BOSS` | `100` | The same for a boss's Pokémon |
 | `RZ_TRAINER_REGENERATE_MOVES` | `TRUE` | A trainer Pokémon whose species was randomized gets moves from its own level-up learnset, not the moves written for the one it replaced. Without it, a gym leader's team keeps the old team's moves, with no same-type attacks |
-| `RZ_TRAINER_AI_TIERS` | `TRUE` | Raises each trainer's AI flags at battle start by how important the trainer is, on top of its own. The tiers are the next four rows |
+| `RZ_TRAINER_AI_TIERS` | `TRUE` | Raises each trainer's AI flags at battle start by how important the trainer is, on top of its own. Only in the story's own trainer battles: not the Frontier, the Trainer Hill, secret bases or recorded battles. The tiers are the next four rows |
 | `RZ_AI_BASE` | Check Bad Move, Try To Faint, Check Viability | Every trainer |
 | `RZ_AI_NOTABLE` | Base + HP Aware, Smart Mon Choices, Try To 2HKO | Rivals: May or Brendan, and Wally |
 | `RZ_AI_BOSS` | Notable + Smart Switching, Ace Pokémon, Omniscient | Bosses. Omniscient means the AI knows your moves, abilities and held items without having seen them |

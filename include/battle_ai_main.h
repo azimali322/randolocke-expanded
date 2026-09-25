@@ -115,4 +115,11 @@ void CalcBattlerAiMovesData(struct AiLogicData *aiData, enum BattlerId battlerAt
 void AIDebugTimerStart(void);
 void AIDebugTimerEnd(void);
 
+// randolocke: the AI tier a story trainer fights at (RZ_TRAINER_AI_TIERS).
+u64 RandolockeAiTierFlags(enum TrainerClassID class, bool32 isBoss);
+
+#if TESTING
+u64 RandolockeTestGetAiFlags(u16 trainerId, enum BattlerId battler);
+#endif
+
 #endif // GUARD_BATTLE_AI_MAIN_H
