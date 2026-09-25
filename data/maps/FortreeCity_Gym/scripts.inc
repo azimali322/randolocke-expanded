@@ -52,6 +52,7 @@ FortreeCity_Gym_EventScript_WinonaDefeated::
 FortreeCity_Gym_EventScript_GiveAerialAce2::
 	giveitem ITEM_TM_AERIAL_ACE
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox FortreeCity_Gym_Text_ExplainAerialAce, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_AERIAL_ACE
 	release
@@ -60,6 +61,7 @@ FortreeCity_Gym_EventScript_GiveAerialAce2::
 FortreeCity_Gym_EventScript_GiveAerialAce::
 	giveitem ITEM_TM_AERIAL_ACE
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
+	callnative RandolockeBufferGiftTM
 	msgbox FortreeCity_Gym_Text_ExplainAerialAce, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_AERIAL_ACE
 	return
@@ -262,10 +264,11 @@ FortreeCity_Gym_Text_ExplainFeatherBadgeTakeThis:
 	.string "And this…\n"
 	.string "This is a gift from me.$"
 
+@ randolocke: names and describes the TM actually handed over -- the gift and its move are
+@ both randomized. RandolockeBufferGiftTM fills STR_VAR_1 to 3 just before this is shown.
 FortreeCity_Gym_Text_ExplainAerialAce:
-	.string "TM40 contains AERIAL ACE.\p"
-	.string "Its speed…\n"
-	.string "No POKéMON should be able to avoid it.\p"
+	.string "{STR_VAR_1} contains {STR_VAR_2}.\p"
+	.string "{STR_VAR_3}\p"
 	.string "… … … … … …$"
 
 FortreeCity_Gym_Text_RegisteredWinona:

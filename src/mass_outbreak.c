@@ -3,6 +3,8 @@
 #include "main.h"
 #include "mass_outbreak.h"
 #include "overworld.h"
+#include "pokemon.h"
+#include "config/randolocke.h"
 #include "random.h"
 #include "region_map.h"
 #include "script.h"
@@ -125,10 +127,15 @@ bool32 IsMassOutbreakActive(void)
 
 bool8 SetUpMassOutbreakEncounter(u8 flags)
 {
-    if (flags & WILD_CHECK_REPEL && !IsWildLevelAllowedByRepel(gSaveBlock1Ptr->outbreakPokemonLevel))
+    // randolocke: the Non-Shiny Repel turns away anything that is not shiny, at any level.
+    bool32 shinyOnly = (flags & WILD_CHECK_REPEL) && FlagGet(RANDOLOCKE_FLAG_SHINY_REPEL);
+
+    if (flags & WILD_CHECK_REPEL && !shinyOnly && !IsWildLevelAllowedByRepel(gSaveBlock1Ptr->outbreakPokemonLevel))
         return FALSE;
 
     CreateWildMon(gSaveBlock1Ptr->outbreakPokemonSpecies, gSaveBlock1Ptr->outbreakPokemonLevel);
+    if (shinyOnly && !IsMonShiny(&gParties[B_TRAINER_OPPONENT_A][0]))
+        return FALSE;
     for (u32 i = 0; i < MAX_MON_MOVES; i++)
         SetMonMoveSlot(&gParties[B_TRAINER_OPPONENT_A][0], gSaveBlock1Ptr->outbreakPokemonMoves[i], i);
 

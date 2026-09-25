@@ -1173,6 +1173,118 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 58 — Six-Pokémon bosses, an IV ramp, the Non-Shiny Repel, and TMs that say what they teach
+
+### What changed
+
+**1. Bosses and rivals bring six** (`RZ_BOSS_FULL_PARTY`). Gym leaders, the Elite Four, the
+Champion, Magma and Aqua leaders and admins, and every rival battle (May or Brendan, Wally).
+The added Pokémon are built from the trainer's own team: a random level between its lowest
+and highest, a species randomized like any other slot, and a boss's EVs, nature, item and
+IVs. They go in ahead of the ace, which moves to the last slot — where `IsAceMon` looks for
+it — so it still comes out last. The data file's own Pokémon keep the seeds they always had,
+so their species are unchanged. Not padded: the Route 103 rival battle, and the Mossdeep
+double battle with Steven (two opponents at three each by design).
+
+**2. A boss's perfect IVs ramp with the badges** (`RZ_BOSS_IV_RAMP`). Until now every boss
+Pokémon had 31 everywhere. Now all roll like anyone's, and the best are raised, by level with
+the ace first: 1 perfect at 0 badges, half a step per badge (a three-of-six Pokémon, then
+another perfect one), 5 perfect at 8. The Elite Four and the Champion stay perfect throughout.
+
+**3. No TM or tutor teaches an HM's move.** Over 64 seeds, 21 HM moves had been dealt to TMs
+and tutors. The rule re-rolls those slots, so a seed that dealt one gets a different table
+from that point on. **The playtest seed 0x8561D8DD never dealt one: its 50 TMs and 10 tutors
+are identical before and after** (compared directly). Its only Flying-type TM is TM35
+Bounce, a different move from Fly.
+
+**4. The Non-Shiny Repel**, a toggled key item from the Littleroot boy. While on, a wild
+Pokémon met walking, surfing, smashing rocks or in a mass outbreak is only met if shiny —
+at any level, over the Repellant's level check and Keen Eye's. Roamers get through only if
+shiny. Fishing, Sweet Scent and scripted encounters are untouched. Flag `0x02F`.
+
+**5. Gym leaders describe the TM actually given**, and **tutors describe the move actually
+taught.** A leader's explanation names the TM received, the move it teaches, and that move's
+own description, laid out for the message box. It reads the item from `VAR_0x8006` — the
+headless run below first showed "That TECHNICAL MACHINE, Great Ball, contains Great Ball":
+the obtain script's `switch VAR_RESULT` copies the pocket number into `VAR_0x8000`, and
+pocket 3 is the Great Ball's item ID. Roxanne's line that a TM is used up once is gone too;
+TMs are reusable here. The tutors' offer adds the description, and their flavour lines that
+described the vanilla move (Fury Cutter's whole introduction, Metronome's finger-waggling,
+Substitute's copy of itself) were reworded.
+
+**6. Every evolution item is sold.** Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep
+Sea Tooth and Deep Sea Scale join the twelve marts at ¥200. `add_cheap_shop.py` now reads
+which items species evolve by from the species data and tops up marts it stocked before; the
+Gimmighoul Coin keeps its hand-set ¥1.
+
+**7. Held-item trade evolutions work from the Bag** (`I_USE_EVO_HELD_ITEMS_FROM_BAG`, now
+TRUE). The species data gives every held-item trade evolution an item route — Onix + Metal
+Coat, Seadra + Dragon Scale, Porygon + Up-Grade — and the marts sell those items, but with
+the engine setting off every one of them was "can't use" in the Bag. Without a link cable,
+Onix, Scyther, Seadra, Porygon, Porygon2, Rhydon, Electabuzz, Magmar, Dusclops, Clamperl,
+Feebas, Poliwhirl, Slowpoke, Spritzee and Swirlix could never evolve. Only the Linking Cord
+had been usable. A new test checks that every item any species evolves by with `EVO_ITEM` is
+usable from the Bag; with the setting off it names the King's Rock and the Metal Coat.
+
+The TM and tutor tables now also rebuild if the seed changes, as the legendary table did.
+A soft reset already clears them, so this changes nothing in play; it lets tests look at
+more than one seed.
+
+No save-layout change. The new item is appended after the last ID, the flag was unused,
+and nothing in the save structures changed. An existing save keeps working: the boy gives
+the Non-Shiny Repel to anyone who does not have it.
+
+### Headless check (real trainer data, a new game)
+
+| Trainer | Badges | Result |
+| --- | --- | --- |
+| Roxanne (3 in data) | 0 | 6 Pokémon at 11–14, the level-14 ace last; 1 perfect (the ace) |
+| Roxanne | 1 | + one Pokémon with 3/6 perfect |
+| Wally, Mauville (1 in data) | 3 | 6 at level 16, IVs rolled (a rival, not a boss) |
+| May, Route 103 | 0 | 1 — not padded |
+| Brendan, Route 110 | 3 | 6 at 19–22 |
+| Archie | 7 | 4 perfect + one 3/6, ranked by level |
+| Tate & Liza (double) | 7 | 6; 4 perfect + one 3/6 |
+| Sidney, Wallace | 8 | 6, all perfect |
+
+Roxanne's gift, played through the real script: "Obtained the TM10!" … "That TECHNICAL
+MACHINE, TM10, contains Dragon Breath. Strikes the foe with a blast of breath. May
+paralyze." The Fury Cutter tutor: "There's a move I think is wickedly cool, and I love
+teaching it." … "I can teach Lick to one of your POKéMON. Licks with a long tongue to
+injure. May also paralyze. Would you like me to?" The Littleroot boy: hands over all five
+key items to a new game, the Non-Shiny Repel included.
+
+New and rewritten tests, each confirmed to fail with its fix reverted:
+
+- `Randolocke: bosses and rivals bring six Pokemon, the ace still last`
+- `Randolocke: the first rival battle, ordinary trainers and half teams keep their size`
+- `Randolocke: a boss's perfect IVs ramp with the badges`, `… the Elite Four are perfect throughout`
+- `Randolocke: no TM or tutor teaches an HM's move` (64 seeds; 21 hits with the rule removed)
+- `Randolocke: the Non-Shiny Repel lets only shiny Pokemon through` (1,500 rolls: 27 met, all shiny)
+- `Randolocke: every move description fits the message box`, `… a gym leader describes the TM actually handed over`
+- `Randolocke: every evolution item can be used from the Bag`, `… a held-item trade evolution happens from the Bag`
+
+The trainer tests now build their own trainers. The test build swaps `gTrainers` for the
+test framework's fixtures, where `TRAINER_ROXANNE_1` has no party at all — so the old
+version of the EV and item test was looping over an empty party and checking nothing.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T58.1 | **A gym leader's team** | Challenge any gym leader | Six Pokémon; the last one out is the strongest |
+| T58.2 | Route 103 | (New game) the first rival battle | One Pokémon, as before |
+| T58.3 | A rival | Brendan/May on Route 110 or Wally | Six Pokémon |
+| T58.4 | Steven's double battle | Mossdeep Space Center | Three each for Maxie and Tabitha, as before |
+| T58.5 | **The Non-Shiny Repel** | Talk to the boy by the Littleroot pond; use it from Key Items; walk in grass | "Only shiny POKéMON will appear." Nothing appears until a shiny does |
+| T58.6 | Off again | Use it again | "switched off"; encounters return |
+| T58.7 | **A gym TM** | Beat a gym leader | The explanation names the TM you received and describes its move |
+| T58.8 | **A tutor** | Talk to any move tutor | The offer names and describes the randomized move |
+| T58.9 | **A TM** | Look through your TMs | None teaches Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall or Dive |
+| T58.10 | **Evolution items** | Visit any Poké Mart | Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep Sea Tooth and Scale at ¥200 |
+| T58.11 | A trade evolution | Buy a Metal Coat, use it on an Onix from the Bag | It evolves into Steelix |
+| T58.12 | Regression tests | `make check TESTS="Randolocke"` | PASS — 37 |
+
+---
+
 ## Phase 57 — Box legendaries, no more Tackle, one-Pokémon items down a tier, evolution moves kept
 
 ### What changed

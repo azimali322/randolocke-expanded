@@ -472,6 +472,30 @@ static bool32 IsMoveIllegalForLearnset(enum Move move);
 
 static EWRAM_DATA u16 sRzTmMoves[NUM_TECHNICAL_MACHINES] = {0};
 static EWRAM_DATA bool8 sRzTmMovesBuilt = FALSE;
+// The seed the tables below were built from. A soft reset clears EWRAM, so in play this
+// never goes stale; checking it anyway is what the legendary table does, and it lets a
+// test look at more than one seed.
+static EWRAM_DATA u32 sRzTmMovesSeed = 0;
+static EWRAM_DATA u32 sRzTutorMovesSeed = 0;
+
+// The moves this game's HMs teach. A TM or a tutor that rolls one only duplicates an HM
+// the story hands you anyway -- a TM Fly next to HM02 is a wasted find -- so neither may.
+// Straight from FOREACH_HM, so the list is whatever the HMs are.
+#define RZ_HM_MOVE(id) MOVE_##id,
+static const u16 sRzHmMoves[] = { FOREACH_HM(RZ_HM_MOVE) };
+#undef RZ_HM_MOVE
+
+static bool32 RzIsHmMove(enum Move move)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sRzHmMoves); i++)
+    {
+        if (sRzHmMoves[i] == move)
+            return TRUE;
+    }
+    return FALSE;
+}
 
 static void RzBuildTmMoveTable(void)
 {
@@ -491,7 +515,7 @@ static void RzBuildTmMoveTable(void)
                                           NULL, 0, RZ_TM_MOVES_TIER_MODE);
             bool32 dupe = FALSE;
 
-            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move) || RzIsHmMove(move))
                 continue;
             for (j = 0; j < i; j++)
             {
@@ -505,6 +529,7 @@ static void RzBuildTmMoveTable(void)
         // falls back to the vanilla mapping for that slot.
     }
     sRzTmMovesBuilt = TRUE;
+    sRzTmMovesSeed = GetRandomizerSeed();
 }
 
 enum Move RandomizeTMMove(u16 tmIndex)
@@ -514,7 +539,7 @@ enum Move RandomizeTMMove(u16 tmIndex)
     if (!RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return MOVE_NONE;
 
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     return sRzTmMoves[tmIndex - 1];
@@ -537,7 +562,7 @@ static void RzBuildTutorMoveTable(void)
     u32 i, j;
 
     // The TM table has to exist first, so tutors can avoid what it already covers.
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     state = RandomizerRandSeed(RANDOMIZER_REASON_LEARNSET, 0x7C7002, GetRandomizerSeed());
@@ -553,7 +578,7 @@ static void RzBuildTutorMoveTable(void)
                                           NULL, 0, RZ_TUTOR_MOVES_TIER_MODE);
             bool32 dupe = FALSE;
 
-            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move))
+            if (move == MOVE_NONE || IsMoveIllegalForLearnset(move) || RzIsHmMove(move))
                 continue;
             for (j = 0; j < i; j++)
             {
@@ -572,6 +597,7 @@ static void RzBuildTutorMoveTable(void)
         // A slot the pool could not fill stays MOVE_NONE and keeps its vanilla move.
     }
     sRzTutorMovesBuilt = TRUE;
+    sRzTutorMovesSeed = GetRandomizerSeed();
 }
 
 enum Move RandomizeTutorMove(enum Move move)
@@ -581,7 +607,7 @@ enum Move RandomizeTutorMove(enum Move move)
     if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TUTOR_MOVES))
         return move;
 
-    if (!sRzTutorMovesBuilt)
+    if (!sRzTutorMovesBuilt || sRzTutorMovesSeed != GetRandomizerSeed())
         RzBuildTutorMoveTable();
 
     for (i = 0; i < RANDOLOCKE_TUTOR_COUNT; i++)
@@ -599,7 +625,7 @@ u16 RandomizeTMMoveReverse(enum Move move)
     if (move == MOVE_NONE || !RandomizerFeatureEnabled(RANDOMIZE_TM_MOVES))
         return ITEM_NONE;
 
-    if (!sRzTmMovesBuilt)
+    if (!sRzTmMovesBuilt || sRzTmMovesSeed != GetRandomizerSeed())
         RzBuildTmMoveTable();
 
     for (i = 0; i < NUM_TECHNICAL_MACHINES; i++)

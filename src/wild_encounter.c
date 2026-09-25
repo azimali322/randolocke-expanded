@@ -531,6 +531,23 @@ void CreateWildMon(enum Species species, u8 level)
 #define TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildPokemon, type, ability, ptr, count) TryGetAbilityInfluencedWildMonIndex(wildPokemon, type, ability, ptr)
 #endif
 
+// randolocke: the Non-Shiny Repel (RANDOLOCKE_FLAG_SHINY_REPEL) lets only shiny Pokemon
+// through wherever a repel applies. It stands in for the level check rather than adding to
+// it -- a shiny is let through whatever its level -- and for Keen Eye's, which would
+// otherwise turn a weak shiny away half the time.
+static bool32 ShinyRepelActive(u8 flags)
+{
+    return (flags & WILD_CHECK_REPEL) && FlagGet(RANDOLOCKE_FLAG_SHINY_REPEL);
+}
+
+// A roamer's shininess is fixed when it starts roaming, so it can be read before the battle.
+static bool32 IsRoamerAllowedByRepels(const struct Roamer *roamer)
+{
+    if (FlagGet(RANDOLOCKE_FLAG_SHINY_REPEL))
+        return roamer->shiny;
+    return IsWildLevelAllowedByRepel(roamer->level);
+}
+
 bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPokemonArea area, u8 flags)
 {
     u8 wildMonIndex = 0;
@@ -581,9 +598,10 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
     }
 
     level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, area);
-    if (flags & WILD_CHECK_REPEL && !IsWildLevelAllowedByRepel(level))
+    if (flags & WILD_CHECK_REPEL && !ShinyRepelActive(flags) && !IsWildLevelAllowedByRepel(level))
         return FALSE;
-    if (gMapHeader.mapLayoutId != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS && flags & WILD_CHECK_KEEN_EYE && !IsAbilityAllowingEncounter(level))
+    if (gMapHeader.mapLayoutId != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS && flags & WILD_CHECK_KEEN_EYE
+     && !ShinyRepelActive(flags) && !IsAbilityAllowingEncounter(level))
         return FALSE;
 
     species = wildMonInfo->wildPokemon[wildMonIndex].species;
@@ -596,6 +614,9 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
     #endif
 
     CreateWildMon(species, level);
+    // Shininess is only decided as the Pokemon is made, so it has to be made first.
+    if (ShinyRepelActive(flags) && !IsMonShiny(&gParties[B_TRAINER_OPPONENT_A][0]))
+        return FALSE;
     return TRUE;
 }
 
@@ -754,7 +775,7 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
             if (TryStartRoamerEncounter())
             {
                 roamer = &gSaveBlock1Ptr->roamer[gEncounteredRoamerIndex];
-                if (!IsWildLevelAllowedByRepel(roamer->level))
+                if (!IsRoamerAllowedByRepels(roamer))
                     return FALSE;
 
                 BattleSetup_StartRoamerBattle();
@@ -805,7 +826,7 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
             if (TryStartRoamerEncounter())
             {
                 roamer = &gSaveBlock1Ptr->roamer[gEncounteredRoamerIndex];
-                if (!IsWildLevelAllowedByRepel(roamer->level))
+                if (!IsRoamerAllowedByRepels(roamer))
                     return FALSE;
 
                 BattleSetup_StartRoamerBattle();

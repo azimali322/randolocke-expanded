@@ -25,4 +25,10 @@ u32 GeneratePersonalityForGender(u32 gender, u32 species);
 void MakeTrainerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *trainer, u16 trainerId);
 void MakePartnerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *partner);
 
+// randolocke: boss parties (RZ_BOSS_FULL_PARTY) and the boss IV ramp (RZ_BOSS_IV_RAMP).
+bool32 RandolockeTrainerGetsFullParty(const struct Trainer *trainer, u16 trainerId);
+struct TrainerMon RandolockeFillerTrainerMon(const struct Trainer *trainer, const u32 *monIndices,
+                                             u32 monsCount, u16 trainerId, u32 slot);
+void RandolockeApplyBossIVRamp(struct Pokemon *party, u32 count, const struct Trainer *trainer);
+
 #endif // GUARD_TRAINER_UTIL_H

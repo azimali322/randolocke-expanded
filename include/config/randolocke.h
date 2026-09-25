@@ -10,6 +10,14 @@
 // step counter never ticks down, giving a permanent repel that can be toggled off.
 #define RANDOLOCKE_FLAG_INFINITE_REPEL      FLAG_UNUSED_0x027
 
+// Flag set while the Non-Shiny Repel key item is on. While set, a wild Pokemon that would
+// be met walking, surfing or smashing rocks is only met if it is shiny -- every other one
+// is turned away, whatever its level. The shiny clause lets a shiny be caught in any area,
+// so this is how a run goes looking for one. It overrides the Repellant's level check
+// while it is on; fishing, Sweet Scent and scripted encounters are untouched, as they are
+// by any repel.
+#define RANDOLOCKE_FLAG_SHINY_REPEL         FLAG_UNUSED_0x02F
+
 // If TRUE, the Porta Heal also revives fainted Pokémon. Randolocke v1.1 made
 // "does not revive" the default, with reviving as the optional behaviour.
 #define RANDOLOCKE_PORTA_HEAL_REVIVES       FALSE
@@ -355,10 +363,10 @@
 
 // --- Key item delivery -------------------------------------------------------
 
-// The four key items are fully implemented but nothing in the game ever handed them out.
-// Each now has exactly one source, and both work on a save that already exists:
-//   Cap Candy, Repellant       the old man in Oldale Town, once the adventure has started
-//   Porta Heal, Endless Candy  the boy by the Littleroot pond
+// The custom key items all come from one place: the boy by the Littleroot pond hands over
+// the Porta Heal, the Endless Candy, the Cap Candy, the Repellant and the Non-Shiny Repel.
+// He gives only what the player is missing, so a save from before an item existed can go
+// back for it.
 
 // --- Terrain -----------------------------------------------------------------
 

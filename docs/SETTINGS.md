@@ -335,6 +335,7 @@ ones are in `include/config/randomizer.h`.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `RANDOLOCKE_FLAG_INFINITE_REPEL` | `FLAG_UNUSED_0x027` | Flag the **Repellant** key item toggles. While set, the repel counter never ticks down |
+| `RANDOLOCKE_FLAG_SHINY_REPEL` | `FLAG_UNUSED_0x02F` | Flag the **Non-Shiny Repel** toggles. While set, only shiny wild Pokémon are met |
 | `RANDOLOCKE_PORTA_HEAL_REVIVES` | `FALSE` | Whether the **Porta Heal** also revives fainted Pokémon. v1.1's default was "no" |
 | `RANDOLOCKE_FIELD_MOVES_NEED_NO_USER` | `TRUE` | Use HM field moves with no party member that knows them. Badges still required. Kills HM slaves |
 | `RANDOLOCKE_CATCH_RATE_PERCENT` | `150` | Multiplier on every species' base catch rate |
@@ -347,13 +348,16 @@ ones are in `include/config/randomizer.h`.
 | `RANDOLOCKE_SUMMARY_STAT_EDITOR` | `TRUE` | The summary's IV and EV pages can be edited in place. SELECT starts, A moves between stats, D-pad changes the one you are on: Up maxes, Down zeroes, Left/Right step by one. Held to 252 per stat, 510 total, 31 for IVs. Party Pokémon only |
 | `RANDOLOCKE_TM_HOVER_INFO` | `TRUE` | The bag's TM move panel follows the cursor instead of waiting for a selection, and shows a physical/special icon |
 
-### The four custom key items
+### The five custom key items
 
-Defined in `include/constants/items.h` (874–877):
+Defined in `include/constants/items.h` (874–878), and all handed out by the boy by the
+Littleroot pond. He gives only what you are missing, so an older save can go back to him
+for anything added since.
 
 | Item | Effect |
 | --- | --- |
 | **Repellant** | Toggleable infinite repel |
+| **Non-Shiny Repel** | Toggle. While on, every wild Pokémon you would meet walking, surfing or smashing rocks is turned away unless it is **shiny** — whatever its level, and over the Repellant's level check. The shiny clause lets a shiny be caught in any area, so this is how to go looking for one. Fishing, Sweet Scent and scripted encounters are untouched, as they are by any repel. Roamers get through only if shiny |
 | **Porta Heal** | Heals the party anywhere. Reviving is off by default — see `RANDOLOCKE_PORTA_HEAL_REVIVES` |
 | **Endless Candy** | A Rare Candy that is never consumed |
 | **Cap Candy** | Levels a Pokémon straight to the current level cap |
@@ -385,6 +389,21 @@ Defined in `include/constants/items.h` (874–877):
 | `RANDOLOCKE_RANDOMIZE_NPC_GIFTS` | `TRUE` | Items NPCs hand over are randomized like item balls, while the field items flag (`0x021`) is set. HMs and key items are never touched, so nothing the story needs can be lost |
 | `RANDOLOCKE_RANDOMIZE_NPC_GIFT_BALLS` | `FALSE` | Whether Poké Balls from NPCs are randomized too. Off, so the five that start the run stay Poké Balls: under nuzlocke rules, balls are the scarcest thing in the game |
 | `RANDOLOCKE_TM_PICKUPS_NO_DUPES` | `TRUE` | A randomized TM, whether found, hidden or given by an NPC, is drawn from the TMs you do not own yet. TMs are reusable, so a repeat is worth nothing. The PC counts as owned. Once you own them all, any TM can come up |
+
+**Evolution items in every Poké Mart.** The twelve general marts sell Ultra, Fast and Timer
+Balls and **every item any Pokémon evolves by** for ¥200 each: the stones, the trade items,
+the Linking Cord, the Milcery sweets, and the held items that double as evolution items —
+Metal Coat, King's Rock, Razor Claw, Razor Fang, Deep Sea Tooth and Deep Sea Scale. The list
+comes from `tools/randolocke/add_cheap_shop.py`, which reads the item and species data and
+tops up marts already stocked; the Gimmighoul Coin is stocked at its own ¥1.
+
+**Trade evolutions without trading.** Every trade evolution has an item route. One that
+needs a held item during the trade (Onix and a Metal Coat, Seadra and a Dragon Scale,
+Clamperl and a Deep Sea Tooth) evolves when you **use that item on it from the Bag**, like
+a stone — no holding, no level-up. That needs `I_USE_EVO_HELD_ITEMS_FROM_BAG` in
+`include/config/item.h`, which this hack turns on; the engine ships it off, and with it off
+every one of those items is "can't use". One that needs a plain trade, or a trade with a partner
+species (Kadabra, Machoke, Haunter, Karrablast and Shelmet), uses the **Linking Cord**.
 
 ### Screens and menus
 
@@ -487,6 +506,16 @@ header**:
 | `RZ_TM_MOVES_TIER_MODE` | `RZ_TIER_MODE_MOVES` | Tier mode for the move each TM teaches, when TM moves are randomized. Draws from the TM bands, never Bad or Pokemon Homeless, with no repeats. HMs are never touched |
 | `RZ_TUTOR_MOVES_TIER_MODE` | `RZ_TM_MOVES_TIER_MODE` | The same for the ten move tutors. Never a move a TM already teaches |
 
+Neither a TM nor a tutor is ever dealt a move one of the HMs teaches — Cut, Fly, Surf,
+Strength, Flash, Rock Smash, Waterfall, Dive. The story hands you those HMs anyway, so a TM
+Fly would only be a copy. Over 64 seeds, 21 HM moves had been dealt to TMs and tutors
+before this rule.
+
+A gym leader's TM explanation and a tutor's offer describe the move actually on offer: the
+gift is randomized, and so is what it teaches, so the leader reads the TM back from what
+you were given and quotes that move's own description, and the tutor's offer does the
+same. The tutors' flavour lines that described their vanilla move were reworded.
+
 ### Randomized learnsets
 
 Active only when flag `0x028` is set.
@@ -576,7 +605,9 @@ Elite Four, the Champion, and Aqua and Magma's leaders and admins.
 | `RZ_TRAINER_EV_SCALING` | `TRUE` | Trainer Pokémon get EVs that grow with your badges. In vanilla every trainer runs on zero, gym leaders included |
 | `RZ_TRAINER_EVS_BY_BADGE` | `{ 24, 48, 72, 100, 140, 180, 220, 252, 252 }` | EVs per stat for 0 to 8 badges, in two stats: the attacking stat the species uses, and Speed if it is fast or HP if not. At 252 the spare 6 go to the better defence, for the legal 510 |
 | `RZ_TRAINER_EV_SPEED_THRESHOLD` | `67` | Base Speed at which a trainer Pokémon counts as fast, for its EVs and its nature. 67 is the median base Speed in the game |
-| `RZ_TRAINER_IVS` | `TRUE` | A boss's Pokémon get 31 in every stat. Everyone else rolls each stat from 0 to 31, instead of one number six times. The IVs in `trainers.party` are no longer read |
+| `RZ_TRAINER_IVS` | `TRUE` | Every trainer Pokémon rolls each stat from 0 to 31, instead of one number six times, and a boss's best are raised to perfect (below). The IVs in `trainers.party` are no longer read |
+| `RZ_BOSS_IV_RAMP` | `TRUE` | A boss's perfect IVs ramp with your badges instead of covering the whole team from Roxanne on. Ranked by level, ace first: **1** perfect Pokémon at 0 badges, and each badge adds half a step — a Pokémon with three perfect IVs (the attacking stat it uses, HP, and Speed if it is fast or its better defence if not), then another fully perfect one — to **5** perfect at 8 badges. The Elite Four and the Champion are perfect throughout. `FALSE` makes every boss Pokémon perfect |
+| `RZ_BOSS_FULL_PARTY` | `TRUE` | Every boss (gym leaders, Elite Four, Champion, Magma and Aqua leaders and admins) and every rival battle (May or Brendan, Wally) brings **six** Pokémon. The added ones are built from the trainer's own team: a random level between its lowest and highest, a species randomized like any other slot, and a boss's EVs, nature, item and IVs. They go in ahead of the ace, which still comes out last. Not the first rival battle on Route 103 (you have one level-5 Pokémon), and not the Mossdeep double battle with Steven, whose two opponents bring three each by design. Seeded from the trainer and slot, so a boss is the same team every time |
 | `RZ_TRAINER_NATURES` | `TRUE` | Trainer Pokémon get the nature a player would pick, not Hardy. Fast ones trade their unused attacking stat for Speed (Jolly, Timid), slow ones for power (Adamant, Modest) |
 | `RZ_TRAINER_HELD_ITEMS` | `TRUE` | A trainer Pokémon with no item may be given one that suits any species: Leftovers, Sitrus, Lum, Focus Band, Life Orb and so on, or the booster for its attacking category. No Choice items. Items written into `trainers.party` stay |
 | `RZ_TRAINER_ITEM_CHANCE` | `35` | Percent chance an ordinary trainer's Pokémon gets one |

@@ -167,6 +167,39 @@
 // for anyone this touches.
 #define RZ_TRAINER_IVS              TRUE
 
+// If TRUE (with RZ_TRAINER_IVS), a boss's perfect IVs ramp with your badges instead of
+// covering the whole team from the first gym. Every boss Pokemon rolls like anyone
+// else's, then the strongest are raised, ranked by level with the ace first:
+//
+//   badges   perfect    three of six perfect
+//     0         1              --
+//     1         1               1
+//     2         2              --
+//     3         2               1
+//     ...      ...             ...
+//     8         5              --
+//
+// "Three of six" is the three that matter to that species: the attacking stat it uses,
+// HP, and Speed if it is fast enough to use it or its better defence if not. The Elite
+// Four and the Champion are the end of the ramp, perfect across the board. FALSE puts
+// every boss Pokemon at 31 everywhere, from Roxanne on.
+#define RZ_BOSS_IV_RAMP             TRUE
+
+// --- Boss parties -------------------------------------------------------------
+
+// If TRUE, every boss -- the `Boss: Yes` trainers: gym leaders, the Elite Four, the
+// Champion, and Team Magma's and Team Aqua's leaders and admins -- and every rival battle
+// (May or Brendan, and Wally) brings six Pokemon. The ones added are built from the
+// trainer's own team: each takes a random level between the team's lowest and highest,
+// its species is randomized like any other slot's, and it gets the same EVs, nature, item
+// and IVs a boss's Pokemon get. They go in ahead of the ace, so the ace still comes out
+// last. All of it is seeded from the trainer and the slot, so a boss is the same team
+// every time you face them.
+//
+// Left alone: the first rival battle on Route 103, fought with a lone level 5 starter, and
+// the Mossdeep double battle with Steven, whose two opponents bring three each by design.
+#define RZ_BOSS_FULL_PARTY          TRUE
+
 // --- Trainer natures ----------------------------------------------------------
 
 // Not one of the 1825 trainer Pokemon in trainers.party specifies a Nature either, so all

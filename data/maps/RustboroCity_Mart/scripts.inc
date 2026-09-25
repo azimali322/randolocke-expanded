@@ -86,6 +86,12 @@ RustboroCity_Mart_Pokemart_Basic:
 	.2byte ITEM_UNREMARKABLE_TEACUP
 	.2byte ITEM_MASTERPIECE_TEACUP
 	.2byte ITEM_METAL_ALLOY
+	.2byte ITEM_KINGS_ROCK
+	.2byte ITEM_METAL_COAT
+	.2byte ITEM_RAZOR_FANG
+	.2byte ITEM_RAZOR_CLAW
+	.2byte ITEM_DEEP_SEA_TOOTH
+	.2byte ITEM_DEEP_SEA_SCALE
 	pokemartlistend
 
 RustboroCity_Mart_EventScript_PokemartExpanded::
@@ -166,6 +172,12 @@ RustboroCity_Mart_Pokemart_Expanded:
 	.2byte ITEM_UNREMARKABLE_TEACUP
 	.2byte ITEM_MASTERPIECE_TEACUP
 	.2byte ITEM_METAL_ALLOY
+	.2byte ITEM_KINGS_ROCK
+	.2byte ITEM_METAL_COAT
+	.2byte ITEM_RAZOR_FANG
+	.2byte ITEM_RAZOR_CLAW
+	.2byte ITEM_DEEP_SEA_TOOTH
+	.2byte ITEM_DEEP_SEA_SCALE
 	pokemartlistend
 
 RustboroCity_Mart_EventScript_PokefanF::

@@ -32,6 +32,7 @@
 #include "follower_npc.h"
 #include "gpu_regs.h"
 #include "item.h"
+#include "line_break.h"
 #include "lilycove_lady.h"
 #include "main.h"
 #include "map_preview_screen.h"
@@ -2533,17 +2534,65 @@ void RandolockeRollHiddenNature(struct ScriptContext *ctx)
     StringCopy(gStringVar2, gNaturesInfo[nature].name);
 }
 
+// The width of the field message box's text: the standard window is 27 tiles, 216 pixels,
+// and the text starts at its left edge. A little under, so nothing touches the frame.
+#define RANDOLOCKE_MSGBOX_TEXT_WIDTH 208
+
+// A move's description laid out for the field message box. Descriptions are written for
+// the summary screen's window, so their own line breaks come out and the text is broken
+// again at this width, two lines to a box and scrolling on. A message drops it in as
+// {STR_VAR_3} at the start of a paragraph.
+static void BufferMoveDescriptionForMessage(u8 *dest, enum Move move)
+{
+    StringCopy(dest, GetMoveDescription(move));
+    StripLineBreaks(dest);
+    BreakStringAutomatic(dest, RANDOLOCKE_MSGBOX_TEXT_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+}
+
 // randolocke: the move tutor's move lives in VAR_0x8005. Rewrite it, and buffer the name
-// of whatever it ends up being into STR_VAR_1 so the tutor can say it out loud -- the
-// vanilla messages name the move in their own text, which would otherwise be a lie.
+// of whatever it ends up being into STR_VAR_1 and its description into STR_VAR_3, so the
+// tutor can say what it is and what it does -- the vanilla messages named and described
+// the move in their own text, which would otherwise be a lie.
 void RandolockeTutorMove(struct ScriptContext *ctx)
 {
-    #if RANDOMIZER_AVAILABLE == TRUE
-        enum Move move = RandomizeTutorMove(VarGet(VAR_0x8005));
+    enum Move move = VarGet(VAR_0x8005);
 
+    #if RANDOMIZER_AVAILABLE == TRUE
+        move = RandomizeTutorMove(move);
         VarSet(VAR_0x8005, move);
-        StringCopy(gStringVar1, GetMoveName(move));
     #endif
+    StringCopy(gStringVar1, GetMoveName(move));
+    BufferMoveDescriptionForMessage(gStringVar3, move);
+}
+
+// randolocke: a gym leader's TM, for the message that explains it. The gift is randomized
+// twice over -- which TM is handed over, and which move that TM teaches -- so the item is
+// read back from what Std_ObtainItem actually gave. Not from VAR_0x8000, its ITEMID: the
+// pocket-name step after `additem` does `switch VAR_RESULT`, and the switch macro is
+// `copyvar VAR_0x8000`, so by the time the gym script runs on, VAR_0x8000 holds the pocket
+// number -- 3 for the TM case, which is the Great Ball. Std_ObtainItem copies the
+// (randomized) item into VAR_0x8006 before any of that and nothing touches it after.
+// Its name goes to STR_VAR_1, the move it teaches to STR_VAR_2, that move's description
+// to STR_VAR_3.
+void RandolockeBufferGiftTM(struct ScriptContext *ctx)
+{
+    enum Item item = VarGet(VAR_0x8006);
+    enum Move move = GetItemTMHMMoveId(item);
+
+    CopyItemName(item, gStringVar1);
+    if (GetItemPocket(item) == POCKET_TM_HM && move != MOVE_NONE)
+    {
+        StringCopy(gStringVar2, GetMoveName(move));
+        BufferMoveDescriptionForMessage(gStringVar3, move);
+    }
+    else
+    {
+        // Not a TM after all: name the item and let its own description speak.
+        StringCopy(gStringVar2, gStringVar1);
+        StringCopy(gStringVar3, GetItemDescription(item));
+        StripLineBreaks(gStringVar3);
+        BreakStringAutomatic(gStringVar3, RANDOLOCKE_MSGBOX_TEXT_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+    }
 }
 
 bool8 ScrCmd_setwildbattle(struct ScriptContext *ctx)

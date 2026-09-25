@@ -337,7 +337,8 @@ LittlerootTown_EventScript_FatMan::
 	msgbox LittlerootTown_Text_CanUsePCToStoreItems, MSGBOX_NPC
 	end
 
-@ randolocke: all four key items, from one person you meet before leaving town.
+@ randolocke: all five key items, from one person you meet before leaving town. Each is
+@ given only if it is missing, so a save from before the Non-Shiny Repel can come back for it.
 LittlerootTown_EventScript_Boy::
 	lock
 	faceplayer
@@ -349,6 +350,8 @@ LittlerootTown_EventScript_Boy::
 	setvar VAR_0x8008, ITEM_CAP_CANDY
 	call LittlerootTown_EventScript_GiveKeyItemIfMissing
 	setvar VAR_0x8008, ITEM_REPELLANT
+	call LittlerootTown_EventScript_GiveKeyItemIfMissing
+	setvar VAR_0x8008, ITEM_NON_SHINY_REPEL
 	call LittlerootTown_EventScript_GiveKeyItemIfMissing
 	goto_if_eq VAR_0x8009, 0, LittlerootTown_EventScript_BoyNothingToGive
 	msgbox LittlerootTown_Text_BoyKeepThemSafe, MSGBOX_DEFAULT
@@ -376,6 +379,8 @@ LittlerootTown_Text_BoyKeepThemSafe:
 	.string "mad enough to try a run like yours.\p"
 	.string "The CAP CANDY takes a POKéMON as far\n"
 	.string "as the badges allow, all at once.\p"
+	.string "The NON-SHINY REPEL keeps every wild\n"
+	.string "POKéMON away unless it's shiny.\p"
 	.string "None of them ever run out.\n"
 	.string "Don't ask me how.$"
 
