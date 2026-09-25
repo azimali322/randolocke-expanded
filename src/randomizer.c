@@ -1756,6 +1756,9 @@ static enum Species GetAbilityFamilyRoot(enum Species species)
 
 static EWRAM_DATA struct LevelUpMove sRzLearnsetBuf[RZ_LEARNSET_SLOTS + 1] = {0};
 static EWRAM_DATA u16 sRzLearnsetSpecies = SPECIES_NONE;
+// The seed the cached learnset was dealt under. A new game on the same power-on changes the
+// Trainer ID, and with it the seed; a species alone would hand back the last save's deal.
+static EWRAM_DATA u32 sRzLearnsetSeed = 0;
 
 static const u8 sRzLearnsetLevels[RZ_LEARNSET_SLOTS] = RZ_LEARNSET_LEVELS;
 
@@ -2142,7 +2145,7 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
     if (!RandomizerFeatureEnabled(RANDOMIZE_LEARNSET))
         return NULL;
 
-    if (sRzLearnsetSpecies == species)
+    if (sRzLearnsetSpecies == species && sRzLearnsetSeed == GetRandomizerSeed())
         return sRzLearnsetBuf;
 
     t1 = gSpeciesInfo[species].types[0];
@@ -2193,6 +2196,7 @@ const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species)
     #endif
 
     sRzLearnsetSpecies = species;
+    sRzLearnsetSeed = GetRandomizerSeed();
     return sRzLearnsetBuf;
 }
 

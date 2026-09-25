@@ -48,18 +48,34 @@ static void SetTrainerIdSeed(u32 seed)
 // Each stage of a family gets its own randomized 21-move learnset, so a three-stage family
 // can list up to 63 level-up moves -- more than the 60 the relearner used to hold, which
 // overran its arrays. Two-stage families top out at 42 and are not checked.
+//
+// Each seed is split four ways, every fourth species to a part. The runner fails a test that
+// goes 60 seconds without finishing a parametrization, and dealing a randomized learnset
+// takes about a tenth of a second: a whole seed in one go took about 60, and timed out with
+// the toolchain CI builds with. A part takes about 15. Interleaved rather than in ranges,
+// because the three-stage families cluster by generation.
+#define RELEARNER_PARTS 4
+
 TEST("Randolocke: randomized relearner level-up lists fit within MAX_RELEARNER_MOVES")
 {
-    u32 seed = 0;
+    static const u32 sSeeds[] =
+    {
+        0xEDFC0000, // a playtest save
+        0x12345678, // the longest list measured: 63
+        0x00000001,
+    };
+    u32 seed = 0, part = 0;
 
-    PARAMETRIZE { seed = 0xEDFC0000; } // a playtest save
-    PARAMETRIZE { seed = 0x12345678; } // the longest list measured: 63
-    PARAMETRIZE { seed = 0x00000001; }
+    for (u32 i = 0; i < ARRAY_COUNT(sSeeds); i++)
+    {
+        for (u32 p = 0; p < RELEARNER_PARTS; p++)
+            PARAMETRIZE { seed = sSeeds[i]; part = p; }
+    }
 
     FlagSet(RANDOMIZER_FLAG_LEARNSET);
     SetTrainerIdSeed(seed);
 
-    for (u32 species = 1; species < NUM_SPECIES; species++)
+    for (u32 species = 1 + part; species < NUM_SPECIES; species += RELEARNER_PARTS)
     {
         enum Species parent;
         u32 length;

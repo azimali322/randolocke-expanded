@@ -1,5 +1,21 @@
 #include "global.h"
+#include "event_data.h"
 #include "test/battle.h"
+
+// randolocke: the hard level caps (B_EXP_CAP_TYPE, with the badge list in src/caps.c) give
+// no experience at all at or past 14 until the first badge. Most of these tests fight at
+// 20 or higher, so they measured zero: five failed outright, and others passed by comparing
+// zero with zero. Experience is what they are about, so each one fights with the caps
+// lifted -- all eight badges and the Champion's flag, which leave the cap at MAX_LEVEL.
+// FLAG_SET takes one flag per test, hence FlagSet. The caps themselves are covered by
+// test/randolocke_level_caps.c.
+#define LIFT_LEVEL_CAPS()                                       \
+    do                                                          \
+    {                                                           \
+        for (u32 _badge = 0; _badge < NUM_BADGES; _badge++)     \
+            FlagSet(FLAG_BADGE01_GET + _badge);                 \
+        FlagSet(FLAG_IS_CHAMPION);                              \
+    } while (0)
 
 WILD_BATTLE_TEST("Pokemon gain experience after catching a Pokemon (Gen6+)")
 {
@@ -11,6 +27,7 @@ WILD_BATTLE_TEST("Pokemon gain experience after catching a Pokemon (Gen6+)")
     PARAMETRIZE { level = 50;        config = GEN_6; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         WITH_CONFIG(B_EXP_CATCH, config);
         PLAYER(SPECIES_WOBBUFFET) { Level(level); }
         OPPONENT(SPECIES_CATERPIE) { HP(1); }
@@ -35,6 +52,7 @@ WILD_BATTLE_TEST("Higher leveled Pokemon give more exp", s32 exp)
     PARAMETRIZE { level = 10; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET) { Level(20); }
         OPPONENT(SPECIES_CATERPIE) { Level(level); HP(1); }
     } WHEN {
@@ -56,6 +74,7 @@ WILD_BATTLE_TEST("Lucky Egg boosts gained exp points by 50%", s32 exp)
     PARAMETRIZE { item = ITEM_NONE; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET) { Level(20); Item(item); }
         OPPONENT(SPECIES_CATERPIE) { Level(10); HP(1); }
     } WHEN {
@@ -79,6 +98,7 @@ WILD_BATTLE_TEST("Exp is scaled to player and opponent's levels", s32 exp)
     PARAMETRIZE { level = 10; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET) { Level(level); }
         OPPONENT(SPECIES_CATERPIE) { Level(5); HP(1); }
     } WHEN {
@@ -103,6 +123,7 @@ WILD_BATTLE_TEST("Large exp gains are supported", s32 exp) // #1455
     PARAMETRIZE { level = MAX_LEVEL; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET) { Level(1); Item(ITEM_LUCKY_EGG); OTName("Test"); } // OT Name is different so it gets more exp as a traded mon
         OPPONENT(SPECIES_BLISSEY) { Level(level); HP(1); }
     } WHEN {
@@ -139,6 +160,7 @@ WILD_BATTLE_TEST("Transformed Pokemon gives the experience points of the copied 
     }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         WITH_CONFIG(B_SCALED_EXP, GEN_3);
         WITH_CONFIG(B_TRANSFORM_BATTLE_REWARDS, gen);
         PLAYER(SPECIES_BLISSEY) { Level(1); Moves(MOVE_MEMENTO);}
@@ -164,6 +186,7 @@ WILD_BATTLE_TEST("Exp Share(held) gives Experience to mons which did not partici
     PARAMETRIZE { item = ITEM_EXP_SHARE; }
 
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET);
         PLAYER(SPECIES_WYNAUT) { Level(40); Item(item); }
         OPPONENT(SPECIES_CATERPIE) { Level(10); HP(1); }
@@ -187,6 +210,7 @@ WILD_BATTLE_TEST("Exp Share(held) gives Experience to mons which did not partici
 AI_DOUBLE_BATTLE_TEST("Both player Pokemon gain experience in double battles")
 {
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_WOBBUFFET) { Level(99); }
         PLAYER(SPECIES_DITTO) { Level(1); }
         OPPONENT(SPECIES_BRELOOM) { Moves(MOVE_MEMENTO); }
@@ -202,6 +226,7 @@ AI_DOUBLE_BATTLE_TEST("Both player Pokemon gain experience in double battles")
 AI_TWO_VS_ONE_BATTLE_TEST("Partner Pokemon do not gain experience")
 {
     GIVEN {
+        LIFT_LEVEL_CAPS();
         PLAYER(SPECIES_METAPOD) { Level(1); }
         PARTNER(SPECIES_DITTO) { Level(1); }
         OPPONENT(SPECIES_BRELOOM) { Moves(MOVE_MEMENTO); }
@@ -220,6 +245,7 @@ AI_ONE_VS_TWO_BATTLE_TEST("Both opponent's Pokemon give experience in battle aga
     expectedXp += gSpeciesInfo[SPECIES_WYNAUT].expYield * 100 / 7; // level (100) * scaling multipler (1 / 7)
     expectedXp += gSpeciesInfo[SPECIES_WOBBUFFET].expYield * 100 / 7;
     GIVEN {
+        LIFT_LEVEL_CAPS();
         WITH_CONFIG(B_SCALED_EXP, GEN_3);
         WITH_CONFIG(B_UNEVOLVED_EXP_MULTIPLIER, GEN_3);
         PLAYER(SPECIES_METAPOD) { Level(1); Speed(3); }
