@@ -262,22 +262,15 @@ static bool32 IsSmartBattle(void)
 // Raise a trainer's AI to the tier its importance deserves. Every trainer in the game
 // shipped with either Check Bad Move alone or Basic Trainer, bosses included, which is
 // no longer a fair fight once levels, EVs and movesets have all been scaled up.
-static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
+//
+// Split from the lookup below so the tiers can be tested: the test build swaps the
+// trainer table for the test framework's own fixtures, where no real trainer exists.
+u64 RandolockeAiTierFlags(enum TrainerClassID class, bool32 isBoss)
 {
-    enum TrainerClassID class;
-
-    // Partner and other synthetic ids live past the end of the trainer table; looking one
-    // up asserts. The battle test suite fights trainer 865 -- TRAINER_PARTNER(1) -- in its
-    // multi-battle tests, which is how this surfaced.
-    if (trainerId >= TRAINERS_COUNT)
-        return 0;
-
-    class = GetTrainerClassFromId(trainerId);
-
     if (class == TRAINER_CLASS_CHAMPION)
         return RZ_AI_CHAMPION;
 
-    if (IsBossTrainerBattle(trainerId))
+    if (isBoss)
         return RZ_AI_BOSS;
 
     // Gym leaders and the Elite Four are all Boss: Yes, so they were handled above; these
@@ -293,6 +286,17 @@ static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
     default:
         return RZ_AI_BASE;
     }
+}
+
+static u64 RandolockeAiFlagsForTrainer(u16 trainerId)
+{
+    // Partner and other synthetic ids live past the end of the trainer table; looking one
+    // up asserts. The battle test suite fights trainer 865 -- TRAINER_PARTNER(1) -- in its
+    // multi-battle tests, which is how this surfaced.
+    if (trainerId >= TRAINERS_COUNT)
+        return 0;
+
+    return RandolockeAiTierFlags(GetTrainerClassFromId(trainerId), IsBossTrainerBattle(trainerId));
 }
 #endif
 
@@ -323,11 +327,18 @@ static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
         else if (gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_TRAINER_HILL | BATTLE_TYPE_SECRET_BASE))
             flags = AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT;
         else
+        {
             flags = GetTrainerAIFlagsFromId(trainerId);
-
+            // randolocke: the tiers are for the story's own trainers, so they belong here
+            // and nowhere above. Added after the whole chain they reached every battle
+            // type: a recorded battle -- how the test runner plays every battle test, so a
+            // test's own AI_FLAGS came back with Check Bad Move and more on top -- and the
+            // Frontier, whose trainer ids 0-299 are indices into its own table, not story
+            // trainers, so each opponent took the tier of whichever one shares its number.
         #if RZ_TRAINER_AI_TIERS == TRUE
             flags |= RandolockeAiFlagsForTrainer(trainerId);
         #endif
+        }
     }
 
     if (IsDoubleBattle() && flags != 0)
@@ -348,6 +359,14 @@ static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
 
     return flags;
 }
+
+#if TESTING
+// randolocke: GetAiFlags is static; test/battle/ai/randolocke_ai_tiers.c reads it through this.
+u64 RandolockeTestGetAiFlags(u16 trainerId, enum BattlerId battler)
+{
+    return GetAiFlags(trainerId, battler);
+}
+#endif
 
 void BattleAI_SetupFlags(void)
 {

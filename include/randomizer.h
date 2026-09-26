@@ -161,6 +161,18 @@ u16 RandomizeTMMoveReverse(enum Move move);
 // Returns the randomized 21-move level-up learnset, or NULL if the feature is off.
 const struct LevelUpMove *RandomizeLevelUpLearnset(enum Species species);
 
+// Bands of the move tier list (docs/tiering/MOVES_BY_TIER_RANDOLOCKE.md), best first.
+enum RandomizerMoveTier {
+    RANDOMIZER_MOVE_TIER_META_DEFINING,
+    RANDOMIZER_MOVE_TIER_STAPLES,
+    RANDOMIZER_MOVE_TIER_FILLER,
+    RANDOMIZER_MOVE_TIER_NICHE,
+    RANDOMIZER_MOVE_TIER_BAD,
+    RANDOMIZER_MOVE_TIER_HOMELESS,
+    RANDOMIZER_MOVE_TIER_UNRATED,   // not in the list
+};
+u32 RandomizerGetMoveTier(enum Move move);
+
 static inline bool32 GroupSetsIntersect(struct RandomizerGroupSet* originalCache, struct RandomizerGroupSet* targetCache)
 {
     return originalCache->maxGroup >= targetCache->minGroup

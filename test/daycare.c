@@ -1,4 +1,5 @@
 #include "global.h"
+#include "config/randolocke.h"
 #include "config_changes.h"
 #include "daycare.h"
 #include "event_data.h"
@@ -882,6 +883,17 @@ TEST("InheritIVs will always pass the preferred stat from the parent holding the
         givemon SPECIES_BULBASAUR, 100, gender=MON_MALE, hpIv=0, atkIv=0, defIv=0, speedIv=0, spAtkIv=0, spDefIv=0, item=VAR_0x8000;
         givemon SPECIES_BULBASAUR, 100, gender=MON_FEMALE, hpIv=1, atkIv=1, defIv=1, speedIv=1, spAtkIv=1, spDefIv=1;
     );
+#if RANDOLOCKE_PLAYER_IVS != RANDOLOCKE_IVS_VANILLA
+    // randolocke: RANDOLOCKE_PLAYER_IVS overrides the IVs givemon asks for. This test is about
+    // what InheritIVs passes on, not givemon, so the parents get the ones it asked for back.
+    for (j = 0; j < NUM_STATS; j++)
+    {
+        u32 father = 0, mother = 1;
+
+        SetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_HP_IV + j, &father);
+        SetMonData(&gParties[B_TRAINER_PLAYER][1], MON_DATA_HP_IV + j, &mother);
+    }
+#endif
 
     u32 value = 31;
     SetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_HP_IV + powerStat, &value);

@@ -30,5 +30,7 @@ bool32 RandolockeTrainerGetsFullParty(const struct Trainer *trainer, u16 trainer
 struct TrainerMon RandolockeFillerTrainerMon(const struct Trainer *trainer, const u32 *monIndices,
                                              u32 monsCount, u16 trainerId, u32 slot);
 void RandolockeApplyBossIVRamp(struct Pokemon *party, u32 count, const struct Trainer *trainer);
+// randolocke: the four moves a boss of this species brings at this level (RZ_BOSS_SMART_MOVESETS).
+void RandolockeChooseBossMoves(enum Species species, u32 level, enum Move *moves);
 
 #endif // GUARD_TRAINER_UTIL_H

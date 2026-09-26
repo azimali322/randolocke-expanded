@@ -613,7 +613,8 @@ Elite Four, the Champion, and Aqua and Magma's leaders and admins.
 | `RZ_TRAINER_ITEM_CHANCE` | `35` | Percent chance an ordinary trainer's Pokémon gets one |
 | `RZ_TRAINER_ITEM_CHANCE_BOSS` | `100` | The same for a boss's Pokémon |
 | `RZ_TRAINER_REGENERATE_MOVES` | `TRUE` | A trainer Pokémon whose species was randomized gets moves from its own level-up learnset, not the moves written for the one it replaced. Without it, a gym leader's team keeps the old team's moves, with no same-type attacks |
-| `RZ_TRAINER_AI_TIERS` | `TRUE` | Raises each trainer's AI flags at battle start by how important the trainer is, on top of its own. The tiers are the next four rows |
+| `RZ_BOSS_SMART_MOVESETS` | `TRUE` | A boss (`Boss: Yes`) chooses those moves instead of keeping the last four it learned: its strongest same-type attack; the attack of another type that best covers what the first cannot hit; a setup move that raises the stat those attack from, or Speed (else the status move the move tier list rates best, if Filler or better); then new coverage, a status move of that tier, or the strongest attack left. Only moves the species learns by its level, so never a move it could not have. Ordinary trainers keep the last four |
+| `RZ_TRAINER_AI_TIERS` | `TRUE` | Raises each trainer's AI flags at battle start by how important the trainer is, on top of its own. Only in the story's own trainer battles: not the Frontier, the Trainer Hill, secret bases or recorded battles. The tiers are the next four rows |
 | `RZ_AI_BASE` | Check Bad Move, Try To Faint, Check Viability | Every trainer |
 | `RZ_AI_NOTABLE` | Base + HP Aware, Smart Mon Choices, Try To 2HKO | Rivals: May or Brendan, and Wally |
 | `RZ_AI_BOSS` | Notable + Smart Switching, Ace Pokémon, Omniscient | Bosses. Omniscient means the AI knows your moves, abilities and held items without having seen them |

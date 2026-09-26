@@ -357,6 +357,16 @@
 // attacks, and every Pokemon on the team fighting the same way.
 #define RZ_TRAINER_REGENERATE_MOVES TRUE
 
+// A boss (`Boss: Yes`: gym leaders, the Elite Four, the Champion, the team leaders and
+// admins) chooses that fresh moveset instead of keeping the last four moves it learned:
+// its strongest same-type attack, the attack that best covers what that one cannot hit,
+// a setup move that raises the stat those attacks use, and the best of what is left. It
+// chooses only from moves its species learns by its level -- the randomized learnset when
+// that is on -- so a boss never knows a move it could not have. Ordinary trainers keep the
+// last four. A moveset written in the trainer file is still used as written whenever it
+// survives, i.e. when neither the species nor the learnset was randomized.
+#define RZ_BOSS_SMART_MOVESETS      TRUE
+
 #define RZ_STAB_MATCH_CATEGORY      TRUE
 
 // How close base Attack and base Sp. Atk must be, as a percentage of the higher, for a

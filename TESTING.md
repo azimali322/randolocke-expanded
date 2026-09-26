@@ -1173,6 +1173,58 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 59 — Bosses choose their moves, the AI tiers stay in the story, and the whole suite in CI
+
+### What changed
+
+**1. Bosses choose their moves** (`RZ_BOSS_SMART_MOVESETS`). A boss (`Boss: Yes`) used to
+bring the last four moves it learned, like any trainer. It now chooses from everything its
+species learns by its level — the randomized learnset when that is on, so never a move it
+could not have: its strongest same-type attack; an attack of another type that covers what
+that one does not hit well (for a dual type, often its other same-type attack); a setup move
+that raises the stat those attack from, or Speed; then new coverage, a status move the tier
+list rates Filler or better (Toxic, Will-O-Wisp, Protect, Recover), or the strongest attack
+left. "Strongest" is power × accuracy × the base stat the move attacks from, marked down for
+Explosion, recharges, charge turns and moves that need something to have happened first.
+Nothing is random: a boss brings the same moves every time. Ordinary trainers are unchanged.
+Roxanne's Geodude (learnsets left alone) goes from Defense Curl / Rock Polish / Rollout /
+Bulldoze to Bulldoze / Rollout / Rock Polish / Tackle at 14, and has Earthquake / Rock Blast /
+Rock Polish / Stealth Rock at 36.
+
+**2. The AI tiers apply to story trainer battles only** (`RZ_TRAINER_AI_TIERS`). They were
+added after `GetAiFlags` chose by battle type, so every battle type got them: the Battle
+Frontier, the Trainer Hill, secret bases and recorded battles. The Frontier's trainer ids are
+indices into its own table, so each Frontier opponent fought with the tier of whichever
+story trainer shares its number — Frontier trainer 265 with Roxanne's omniscient boss AI.
+Story battles are unchanged.
+
+**3. The Cap Candy's description fits the Bag.** Its first line was a pixel too wide.
+
+**4. A randomized learnset is recomputed when the seed changes.** It was cached by species
+alone, so starting a new game without turning the power off could, for one species, reuse the
+learnset from the last save's seed.
+
+**5. The whole test suite runs in CI again**, on every pull request, with fixes instead of
+the job being switched off. See `CLAUDE.md` for what each job does and the rules for a test
+that fails.
+
+No save-layout change. `test/save.c` now pins this hack's own sizes (SaveBlock1 is 13920
+bytes, not expansion's 15568), so an accidental change fails the tests.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T59.1 | **A gym leader's moves** | Challenge Roxanne; over a few turns, note the moves each Pokémon uses | Same-type attacks, attacks of other types and, where the species learns one, a setup move — rather than a mix of weak early moves |
+| T59.2 | Late bosses | An Elite Four member | Four useful moves: two or three attacks of different types, and a setup or status move — no Splash-style filler while better moves are learnable |
+| T59.3 | Same every time | Lose to a gym leader, battle again | The same Pokémon with the same moves |
+| T59.4 | Ordinary trainers | Any route trainer | Moves as before: the last four they learned |
+| T59.5 | **Story AI unchanged** | Fight a gym leader and a rival | They play as well as in Phase 58 |
+| T59.6 | The Frontier | (Postgame) a Battle Tower round | Opponents play with the facility's own AI, not a boss's |
+| T59.7 | Cap Candy | Open the Key Items pocket | The description sits inside its box |
+| T59.8 | Regression tests | `make check TESTS="Randolocke"` | PASS — 58 |
+| T59.9 | Full suite | `make check` | PASS — 5452, and 0 failed (16 known-failing, 421 to-do and 9 expected-fail are expansion's own) |
+
+---
+
 ## Phase 58 — Six-Pokémon bosses, an IV ramp, the Non-Shiny Repel, and TMs that say what they teach
 
 ### What changed

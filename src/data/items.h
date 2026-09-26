@@ -14166,9 +14166,9 @@ const struct ItemInfo gItemsInfo[] =
         .name = ITEM_NAME("Cap Candy"),
         .price = 0,
         .description = COMPOUND_STRING(
-            "Raises a Pokémon to\n"
-            "the next cap, move\n"
-            "or evolution."),
+            "Raises a Pokémon\n"
+            "to the next cap,\n"
+            "move or evolution."),
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_PARTY_MENU,
