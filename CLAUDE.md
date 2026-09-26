@@ -15,7 +15,7 @@ trainers). **Emerald only**: the FireRed and LeafGreen targets do not build here
 | --- | --- |
 | `make -j$(nproc)` | the ROM, `pokeemerald.gba` |
 | `make -j$(nproc) release` | the ROM players get: `RELEASE`, `NDEBUG`, LTO, no debug menus |
-| `make -j$(nproc) check` | every test, expansion's and the hack's. About 16 minutes on 4 cores (6 to build, 10 to run) |
+| `make -j$(nproc) check` | every test, expansion's and the hack's. About 16 minutes on 4 cores (6 to build, 10 to run); about 25 in CI |
 | `make check TESTS="Randolocke"` | the hack's own tests only — about 15 seconds once the test ROM is built |
 
 `TESTS` takes one pattern per run: a test-name prefix (`TESTS="Capture"`), `*infix`, or an

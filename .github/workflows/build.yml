@@ -99,7 +99,7 @@ jobs:
   # The whole test suite: expansion's tests and this hack's own ("Randolocke: ..."). Where
   # the hack changes a mechanic on purpose, the upstream test checks it only with the hack's
   # setting off, or re-pins its expectation to the hack's value; see CLAUDE.md before
-  # skipping or disabling anything here. About 16 minutes.
+  # skipping or disabling anything here. About 25 minutes on GitHub's runners.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
