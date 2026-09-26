@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_ai_main.h"
+#include "battle_setup.h"
 #include "config/randomizer.h"
 #include "data.h"
 #include "recorded_battle.h"
@@ -30,13 +31,22 @@ static bool32 HasAll(u64 flags, u64 wanted)
 
 // Flags a battle of `battleType` gives `trainerId`; anything a dynamic AI function adds is
 // left out, since whether one is registered depends on what ran before.
+//
+// The trainer is also put in TRAINER_BATTLE_PARAM.opponentA, as a real battle against it
+// would be. GetAiFlags returns nothing at all when IsSmartBattle sees a link, union-room or
+// secret-base opponent there, and the battle tests leave one behind: every singles battle
+// test fights TRAINER_LINK_OPPONENT. Run after one of those -- the order depends on how the
+// suite is split across runners -- this test saw no flags and failed, while passing alone.
 static u64 FlagsIn(u32 battleType, u16 trainerId)
 {
     u32 saved = gBattleTypeFlags;
+    u16 savedOpponent = TRAINER_BATTLE_PARAM.opponentA;
     u64 flags;
 
     gBattleTypeFlags = battleType;
+    TRAINER_BATTLE_PARAM.opponentA = trainerId;
     flags = RandolockeTestGetAiFlags(trainerId, B_BATTLER_1) & ~AI_FLAG_DYNAMIC_FUNC;
+    TRAINER_BATTLE_PARAM.opponentA = savedOpponent;
     gBattleTypeFlags = saved;
     return flags;
 }
