@@ -101,6 +101,20 @@ of those had a fix that kept the test running. Triage every failure by its cause
   compilers: a test near the limit can pass on a Mac and time out in CI.
 - `BATTLE_TYPE_FRONTIER` is every facility at once, the Factory included; set one facility.
 
+## Engine traps (sprites and text)
+
+- **A sprite keeps a pointer to its `SpriteTemplate`.** Give `CreateSprite` one that outlives the
+  sprite (a `static const`), never a copy on the stack: code that walks every sprite reads
+  `template->paletteTag`, the type icons' clean-up among it.
+- **`LoadSpriteSheet` returns the sheet's first tile, and tile 0 is a real one** — the test
+  build's VRAM starts empty. Check `GetSpriteTileStartByTag` instead. `AllocSpriteTiles(0)` is no
+  query either: it frees every unreserved tile.
+- **The sprite text printer writes a glyph's whole cell** (15 rows for the small fonts). A cell
+  that runs past a sprite's bottom goes into the sprite in its `data[2]`, unchecked. Keep each
+  line of text inside its own sprite, as `src/randolocke_stat_tags.c` does.
+- The test runner never opens the real move menu (every battle is a recorded one), so battle UI
+  is checked by calling its code directly in a `TEST` and reading `gSprites` and OBJ VRAM.
+
 ## Adding to the hack
 
 - **A new setting**: add it to `docs/SETTINGS.md` and cover it with a `Randolocke:` test.
