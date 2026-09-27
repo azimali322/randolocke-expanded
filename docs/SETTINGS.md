@@ -405,6 +405,14 @@ a stone — no holding, no level-up. That needs `I_USE_EVO_HELD_ITEMS_FROM_BAG` 
 every one of those items is "can't use". One that needs a plain trade, or a trade with a partner
 species (Kadabra, Machoke, Haunter, Karrablast and Shelmet), uses the **Linking Cord**.
 
+**Meltan evolves with a Metal Coat.** Meltan has no evolution in the main series; only
+Pokémon GO's 400 Meltan Candy makes a Melmetal. Here **using a Metal Coat on it from the Bag**
+does, the same way as for Onix. That makes the two one family, like any other: with abilities
+randomized, a Melmetal has the one the family rolls, so evolving keeps Meltan's
+(`RZ_ABILITY_STABLE_ACROSS_EVOLUTION`); Melmetal can relearn Meltan's moves; and Eviolite now
+works on Meltan. Both are Mythical, so the legendary clause still lets you catch either whatever
+you own. Only with `RANDOLOCKE_LEGENDARY_CLAUSE` off would one be a dupe of the other.
+
 ### Screens and menus
 
 | Setting | Default | What it does |

@@ -1173,6 +1173,38 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 60 — Meltan evolves with a Metal Coat
+
+### What changed
+
+**Using a Metal Coat on a Meltan from the Bag evolves it into Melmetal.** Meltan never
+evolves in the main series (Pokémon GO feeds it 400 Meltan Candy), so a Meltan caught on a
+randomized route stayed at 300 base stat total. Every Poké Mart sells the Metal Coat for ₽200.
+
+Meltan and Melmetal are now one evolution family, with the same knock-on effects as any other:
+
+- A Melmetal's randomized ability is the one the family rolls, so evolving keeps Meltan's
+  (`RZ_ABILITY_STABLE_ACROSS_EVOLUTION`). **A Melmetal already in a save changes ability**
+  with this update, to Meltan's, while abilities are randomized.
+- Melmetal can relearn Meltan's moves at the move relearner (`P_PRE_EVO_MOVES`).
+- Eviolite now works on Meltan: Defense and Sp. Def × 1.5.
+
+The dupes clause is unaffected: both are Mythical, and the legendary clause, which outranks
+it, lets you catch either whatever you own.
+
+No save-layout change.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T60.1 | **Meltan evolves** | Get a Meltan (Debug → Give → Pokémon), buy a Metal Coat at any Poké Mart, use it on Meltan from the Bag | Meltan evolves into Melmetal. The Metal Coat is used up |
+| T60.2 | Same ability | With abilities randomized (§F), note Meltan's ability on the summary's skills page before T60.1 | Melmetal has the same ability. With them off it changes, Magnet Pull to Iron Fist, as for any Pokémon |
+| T60.3 | Only the Metal Coat | Use another evolution item on a Meltan, e.g. a Thunder Stone | "It won't have any effect." The item is kept |
+| T60.4 | Not by levelling | Level a Meltan up a few times with the Endless Candy | It never evolves by level |
+| T60.5 | Regression tests | `make check TESTS="Randolocke"` | PASS — 59 |
+| T60.6 | Full suite | `make check` | PASS — 5453, and 0 failed (16 known-failing, 421 to-do and 9 expected-fail are expansion's own) |
+
+---
+
 ## Phase 59 — Bosses choose their moves, the AI tiers stay in the story, and the whole suite in CI
 
 ### What changed

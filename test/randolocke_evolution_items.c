@@ -59,3 +59,17 @@ TEST("Randolocke: a held-item trade evolution happens from the Bag")
     CalculateMonStats(&mon);
     EXPECT_EQ(GetEvolutionTargetSpecies(&mon, EVO_MODE_ITEM_USE, item, NULL, NULL, CHECK_EVO), target);
 }
+
+// Meltan has no evolution in the main series, only Pokemon GO's 400 Meltan Candy. Here a
+// Metal Coat used from the Bag makes it a Melmetal -- and only that: not levelling, not
+// another item.
+TEST("Randolocke: Meltan evolves into Melmetal with a Metal Coat")
+{
+    struct Pokemon mon;
+
+    CreateMon(&mon, SPECIES_MELTAN, MAX_LEVEL, 0, OTID_STRUCT_PLAYER_ID);
+    CalculateMonStats(&mon);
+    EXPECT_EQ(GetEvolutionTargetSpecies(&mon, EVO_MODE_ITEM_USE, ITEM_METAL_COAT, NULL, NULL, CHECK_EVO), SPECIES_MELMETAL);
+    EXPECT_EQ(GetEvolutionTargetSpecies(&mon, EVO_MODE_ITEM_USE, ITEM_THUNDER_STONE, NULL, NULL, CHECK_EVO), SPECIES_NONE);
+    EXPECT_EQ(GetEvolutionTargetSpecies(&mon, EVO_MODE_NORMAL, ITEM_NONE, NULL, NULL, CHECK_EVO), SPECIES_NONE);
+}
