@@ -163,6 +163,18 @@
 // SELECT, moves to a hold of it (RANDOLOCKE_SELECT_HOLD_FRAMES).
 #define RANDOLOCKE_BATTLE_LOG               TRUE
 
+// --- Stat stage tags ---------------------------------------------------------
+
+// If TRUE, while a move is being chosen -- when the type icons slide in beside the HP boxes --
+// each Pokemon whose stats have been raised or lowered carries a tag per stat, as on Pokemon
+// Showdown: "1.5× Atk" in green for a boost, "0.67× Spe" in red for a drop, in the order Atk,
+// Def, SpA, SpD, Spe, Acc, Eva. The multiplier is the one the engine applies at that stage,
+// whatever changed it: a move of its own, the foe's Growl, Intimidate, Speed Boost, a White
+// Herb, Baton Pass. Singles: under each HP box (a fourth tag of yours starts a row above your
+// box). Doubles: beside each box. They go with the type icons, as a move is picked or the menu
+// closed.
+#define RANDOLOCKE_STAT_STAGE_TAGS          TRUE
+
 // --- Registered key items ---------------------------------------------------
 
 // If TRUE, a second key item can be registered and used by *holding* SELECT, while a tap

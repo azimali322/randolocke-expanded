@@ -11,6 +11,7 @@
 #include "battle_z_move.h"
 #include "config/randolocke.h"
 #include "randolocke_battle_log.h"
+#include "randolocke_stat_tags.h"
 #include "battle_gimmick.h"
 #include "bg.h"
 #include "data.h"
@@ -2225,6 +2226,10 @@ void PlayerHandleChooseMove(enum BattlerId battler)
 void InitMoveSelectionsVarsAndStrings(enum BattlerId battler)
 {
     LoadTypeIcons(battler);
+#if RANDOLOCKE_STAT_STAGE_TAGS == TRUE
+    // randolocke: and a Showdown-style tag under each HP box for every stat stage not at 0.
+    RandolockeLoadStatTags(battler);
+#endif
     MoveSelectionDisplayMoveNames(battler);
     gMultiUsePlayerCursor = 0xFF;
     MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
