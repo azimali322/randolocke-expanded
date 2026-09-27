@@ -405,6 +405,14 @@ a stone — no holding, no level-up. That needs `I_USE_EVO_HELD_ITEMS_FROM_BAG` 
 every one of those items is "can't use". One that needs a plain trade, or a trade with a partner
 species (Kadabra, Machoke, Haunter, Karrablast and Shelmet), uses the **Linking Cord**.
 
+**Meltan evolves with a Metal Coat.** Meltan has no evolution in the main series; only
+Pokémon GO's 400 Meltan Candy makes a Melmetal. Here **using a Metal Coat on it from the Bag**
+does, the same way as for Onix. That makes the two one family, like any other: with abilities
+randomized, a Melmetal has the one the family rolls, so evolving keeps Meltan's
+(`RZ_ABILITY_STABLE_ACROSS_EVOLUTION`); Melmetal can relearn Meltan's moves; and Eviolite now
+works on Meltan. Both are Mythical, so the legendary clause still lets you catch either whatever
+you own. Only with `RANDOLOCKE_LEGENDARY_CLAUSE` off would one be a dupe of the other.
+
 ### Screens and menus
 
 | Setting | Default | What it does |
@@ -418,6 +426,7 @@ species (Kadabra, Machoke, Haunter, Karrablast and Shelmet), uses the **Linking 
 | `RANDOLOCKE_MOVE_SCREEN_STATS` | `TRUE` | SELECT on the "which move should be forgotten?" screen swaps the picture for the six stats and the ability, so you can see whether it hits harder with Attack or Sp. Atk |
 | `RANDOLOCKE_TM_MOVE_DESCRIPTIONS` | `TRUE` | A TM's bag description describes the move it actually teaches, not the one it taught in vanilla |
 | `RANDOLOCKE_BATTLE_LOG` | `TRUE` | Tap SELECT at the battle menu to replay the battle's messages in the text box: everything said before the first turn, then everything since the last turn began. An ability pop-up gets a line naming the Pokémon and the ability, since the message after it often does not — Drizzle's is just "It started to rain!". A goes to the next message, B or SELECT closes it. Not in link battles |
+| `RANDOLOCKE_STAT_STAGE_TAGS` | `TRUE` | While you choose a move, every Pokémon whose stats have been raised or lowered shows a tag per stat beside its HP box, as on Pokémon Showdown: "1.5× Atk" in green for a boost, "0.67× Spe" in red for a drop, in the order Atk, Def, SpA, SpD, Spe, Acc, Eva. The number is the multiplier the engine applies at that stage, whatever changed it — the Pokémon's own move, the foe's Growl, Intimidate, Speed Boost, a White Herb, Baton Pass. For accuracy and evasion this engine's table gives 1.66×, 2.66× and 0.36× where Showdown shows 1.67×, 2.67× and 0.38×. Singles: under each HP box, three to a row; the move menu leaves room for one row under yours, so a fourth tag starts a row above your box. Doubles: beside each box. They come and go with the type icons. Only stages are shown: a Choice Band, a burn or Tailwind is not a stage |
 
 ### Player Pokémon IVs
 

@@ -8101,6 +8101,9 @@ const struct SpeciesInfo gSpeciesInfoGen7[] =
         .perfectIVCount = LEGENDARY_PERFECT_IV_COUNT,
         .levelUpLearnset = sMeltanLevelUpLearnset,
         .teachableLearnset = sMeltanTeachableLearnset,
+        // randolocke: Meltan has no evolution in the main series -- only Pokemon GO's 400
+        // Meltan Candy -- so here a Metal Coat used on it from the Bag makes a Melmetal.
+        .evolutions = EVOLUTION({EVO_ITEM, ITEM_METAL_COAT, SPECIES_MELMETAL}),
     },
 
     [SPECIES_MELMETAL] =

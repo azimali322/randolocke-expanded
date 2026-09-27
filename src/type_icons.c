@@ -507,6 +507,13 @@ static bool32 ShouldHideTypeIcon(enum BattlerId battlerId)
     return TRUE;
 }
 
+// randolocke: the stat stage tags (src/randolocke_stat_tags.c) come and go with the type icons,
+// by this same rule.
+bool32 IsBattlerChoosingMove(enum BattlerId battlerId)
+{
+    return !ShouldHideTypeIcon(battlerId);
+}
+
 static s32 GetTypeIconHideMovement(bool32 useDoubleBattleCoords, u32 position)
 {
     if (useDoubleBattleCoords)

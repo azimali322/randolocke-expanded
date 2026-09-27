@@ -1173,6 +1173,79 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 61 — Stat stage tags while choosing a move
+
+### What changed
+
+**Showdown's stat tags, in the battle screen** (`RANDOLOCKE_STAT_STAGE_TAGS`). When the move
+menu opens, as the type icons slide in, every Pokémon whose stats have been raised or lowered
+shows a small tag per stat beside its HP box: "1.5× Atk" in green for a boost, "0.67× Spe" in
+red for a drop, in Showdown's order (Atk, Def, SpA, SpD, Spe, Acc, Eva). The number is the
+multiplier the engine applies at that stage, whatever changed it — the Pokémon's own move, the
+foe's Growl, Intimidate, Speed Boost, a White Herb, Baton Pass. Accuracy and evasion use the
+engine's own table, which says 1.66×, 2.66× and 0.36× where Showdown says 1.67×, 2.67× and 0.38×.
+
+- **Singles:** under each HP box, three to a row. The move menu leaves room for one row under
+  yours, so a fourth tag starts a row above your box.
+- **Doubles:** beside each box, towards the middle of the screen, beyond the type icons.
+- The tags go when the type icons do: a move picked, or B back to FIGHT / BAG / POKéMON / RUN.
+- Only stages are shown. A Choice Band, a burn, paralysis or Tailwind is not a stage — nor, on
+  Showdown, a boost tag.
+
+No save-layout change. The quickest way to try every case is the debug ROM's battle debug menu
+(hold SELECT at the battle menu) → Stat Stages.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T61.1 | **A boost** | Use Swords Dance, then open FIGHT next turn | Green "2× Atk" under your HP box |
+| T61.2 | **A drop from the foe** | Let the foe use Growl or Tail Whip on you | Red "0.67× Atk" / "0.67× Def" under your box |
+| T61.3 | The foe's own changes | A foe that uses Agility, or one Intimidated by your Pokémon | Its tags under its HP box: "2× Spe", "0.67× Atk" |
+| T61.4 | An ability | Intimidate on a switch-in; Speed Boost at the end of each turn | "0.67× Atk"; "1.5× Spe", then "2× Spe" the turn after |
+| T61.5 | Accuracy and evasion | Sand Attack; Double Team | "0.75× Acc"; "1.33× Eva" |
+| T61.6 | **They go with the menu** | Pick a move; or open FIGHT and press B | The tags leave with the type icons, and come back with FIGHT |
+| T61.7 | They move with the box | Watch the HP box of the Pokémon choosing a move | Its tags bob with it |
+| T61.8 | Back to neutral | Haze, a White Herb, or switching out | The tags go; a Baton Pass keeps them on the Pokémon that comes in |
+| T61.9 | **Many at once** | Debug → Stat Stages, change all seven of yours and the foe's | Foe: three rows under its box. Yours: one under your box, two above it. None over an HP box, a type icon or the move menu |
+| T61.10 | Doubles | A double battle, stages changed on all four | Each Pokémon's tags beside its own box; they stay while choosing a target |
+| T61.11 | Nothing changed | A fresh battle | No tags at all |
+| T61.12 | The rest of the menu | L for move details, SELECT to reorder moves, the effectiveness icons | Unchanged |
+| T61.13 | Regression tests | `make check TESTS="Randolocke"` | PASS — 67 |
+| T61.14 | Full suite | `make check` | PASS — 5461, and 0 failed (16 known-failing, 421 to-do and 9 expected-fail are expansion's own) |
+
+---
+
+## Phase 60 — Meltan evolves with a Metal Coat
+
+### What changed
+
+**Using a Metal Coat on a Meltan from the Bag evolves it into Melmetal.** Meltan never
+evolves in the main series (Pokémon GO feeds it 400 Meltan Candy), so a Meltan caught on a
+randomized route stayed at 300 base stat total. Every Poké Mart sells the Metal Coat for ₽200.
+
+Meltan and Melmetal are now one evolution family, with the same knock-on effects as any other:
+
+- A Melmetal's randomized ability is the one the family rolls, so evolving keeps Meltan's
+  (`RZ_ABILITY_STABLE_ACROSS_EVOLUTION`). **A Melmetal already in a save changes ability**
+  with this update, to Meltan's, while abilities are randomized.
+- Melmetal can relearn Meltan's moves at the move relearner (`P_PRE_EVO_MOVES`).
+- Eviolite now works on Meltan: Defense and Sp. Def × 1.5.
+
+The dupes clause is unaffected: both are Mythical, and the legendary clause, which outranks
+it, lets you catch either whatever you own.
+
+No save-layout change.
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T60.1 | **Meltan evolves** | Get a Meltan (Debug → Give → Pokémon), buy a Metal Coat at any Poké Mart, use it on Meltan from the Bag | Meltan evolves into Melmetal. The Metal Coat is used up |
+| T60.2 | Same ability | With abilities randomized (§F), note Meltan's ability on the summary's skills page before T60.1 | Melmetal has the same ability. With them off it changes, Magnet Pull to Iron Fist, as for any Pokémon |
+| T60.3 | Only the Metal Coat | Use another evolution item on a Meltan, e.g. a Thunder Stone | "It won't have any effect." The item is kept |
+| T60.4 | Not by levelling | Level a Meltan up a few times with the Endless Candy | It never evolves by level |
+| T60.5 | Regression tests | `make check TESTS="Randolocke"` | PASS — 59 |
+| T60.6 | Full suite | `make check` | PASS — 5453, and 0 failed (16 known-failing, 421 to-do and 9 expected-fail are expansion's own) |
+
+---
+
 ## Phase 59 — Bosses choose their moves, the AI tiers stay in the story, and the whole suite in CI
 
 ### What changed
