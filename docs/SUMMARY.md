@@ -154,6 +154,7 @@
 - [Randolocke Expanded]()
     - [Settings reference](SETTINGS.md)
     - [Nuzlocke rules](NUZLOCKE.md)
+    - [Legendary encounters](LEGENDARIES.md)
     - [Cutting a release](RELEASING.md)
     - [Tier lists]()
         - [Abilities by tier](tiering/ABILITIES_BY_TIER.md)
