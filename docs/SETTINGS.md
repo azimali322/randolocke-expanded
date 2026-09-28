@@ -99,7 +99,8 @@ produce, but Pokémon already caught keep what they are.
 #define RANDOLOCKE_UNIQUE_LEGENDARIES   TRUE
 ```
 
-Legendary encounters are handled apart from the species mode, for two reasons.
+Legendary encounters are handled apart from the species mode, for two reasons. (Where each
+one is and how to catch it: [Legendary encounters](LEGENDARIES.md).)
 
 **They stay legendary.** With the mode at `MON_RANDOM`, a legendary *site* would otherwise
 be able to hand you a Zigzagoon. This forces `MON_RANDOM_LEGEND_AWARE` for those twelve

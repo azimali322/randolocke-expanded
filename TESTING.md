@@ -1173,6 +1173,35 @@ Pokémon. It now falls back to the level-up learnset, which is itself randomized
 
 ---
 
+## Phase 62 — Legendary encounters guide
+
+### What changed
+
+**A player's guide to every legendary encounter**, in `docs/LEGENDARIES.md` and listed in the
+docs index. It covers:
+
+- Rayquaza at the Sky Pillar, with maps of the cracked floors and 4F's deliberate drop into 3F.
+- The three Regis: the caves opening at the 8th badge, Flash opening each Braille wall, and the
+  Sealed Chamber for before the badge.
+- The ferry from Lilycove and the four ticket islands, with Birth Island's full route.
+- The roaming Lati, and Terra Cave and Marine Cave.
+
+Every route and rule in it was worked out from the map data and the puzzle code, not played, so the
+tests below check it in the game. **Docs only: the ROM does not change.**
+
+| # | Test | Steps | Expected |
+| --- | --- | --- | --- |
+| T62.1 | **Birth Island route** | From the dock, follow the guide's route table | Each press moves the triangle to the next spot on the guide's map; the 11th press starts the battle |
+| T62.2 | Birth Island reset | Take one extra step on any walk, then press A | The triangle drifts back to the middle |
+| T62.3 | **Sky Pillar 2F** | Bike in Mach mode, start a tile back from the cracks, hold the D-pad round to the stairs | No fall; letting go on a crack drops you to 1F |
+| T62.4 | **Sky Pillar 4F drop** | Ride from the stairs up to `L`, then hold Right for about two tiles | You land in the closed room on 3F, and its stairs come out beside the stairs to 5F |
+| T62.5 | **Flash opens the Regi walls** | Flash anywhere in the first room of the Desert Ruins and of Island Cave; in the Ancient Tomb, off the middle tile and then on it | Both walls open at once; the tomb's opens only from the middle tile |
+| T62.6 | Faraway Island | Walk into the clearing and count steps | Mew shows itself every 8 steps and stays put every 9; Cut in the grass makes it leave |
+| T62.7 | The ferry's first trips | With all four tickets new, talk to the Lilycove sailor twice | First to Faraway Island with no menu; then a menu of the other three |
+| T62.8 | Docs index | `.github/docs_validate/inclusive_summary.py` | PASS: no output |
+
+---
+
 ## Phase 61 — Stat stage tags while choosing a move
 
 ### What changed
